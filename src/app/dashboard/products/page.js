@@ -1,13 +1,17 @@
 "use client";
 import { useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard';
-import Navbar from '@/components/Navbar';
+import DashboardNavbar from '@/components/DashboardNavbar';
 import { API_URL } from '@/utils/constants';
 import { motion } from 'framer-motion';
 import { FaInstagram } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
-export default function Products() {
+export default function DashboardProducts() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -41,13 +45,22 @@ export default function Products() {
     }
   ];
 
+  // Auth kontrolü
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     fetchProducts();
-  }, []);
+  }, [user, router]);
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/products`);
+      const response = await fetch(`${API_URL}/products`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       const data = await response.json();
       setProducts(data);
     } catch (error) {
@@ -58,15 +71,28 @@ export default function Products() {
   };
 
   const filteredProducts = products.filter(product => {
+    // Kategori filtreleme
     const matchesCategory = selectedCategory === 'all' || 
       product.category === selectedCategory;
 
+    // Alt kategori filtreleme - düzeltilmiş hali
     const matchesSubCategory = selectedSubCategory === 'all' || 
       product.subCategory === selectedSubCategory;
 
+    // Arama filtreleme
     const matchesSearch = searchQuery === '' || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Debug için kontrol
+    console.log('Filtering Product:', {
+      product,
+      selectedCategory,
+      selectedSubCategory,
+      matchesCategory,
+      matchesSubCategory,
+      matchesSearch
+    });
 
     return matchesCategory && matchesSubCategory && matchesSearch;
   });
@@ -83,7 +109,7 @@ export default function Products() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <DashboardNavbar />
       
       {/* Modern 3D Hero Section */}
       <div className={`relative overflow-hidden bg-gradient-to-r ${currentCategory.color} py-16 mt-16`}>
@@ -105,7 +131,7 @@ export default function Products() {
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/10 to-primary/20" />
 
-          {/* Simplified Floating Elements */}
+          {/* Simplified Floating Elements - Only 3 instead of 6 */}
           {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
@@ -140,7 +166,7 @@ export default function Products() {
           ))}
         </motion.div>
 
-        {/* Main Content */}
+        {/* Main Content - More Compact */}
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-center gap-8 flex-wrap">
@@ -197,7 +223,7 @@ export default function Products() {
           </div>
         </div>
 
-        {/* Bottom Wave */}
+        {/* Simplified Bottom Wave */}
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
           <svg
             className="relative block w-full h-8"
@@ -369,4 +395,4 @@ export default function Products() {
       </div>
     </div>
   );
-}
+} 

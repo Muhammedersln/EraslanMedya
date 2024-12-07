@@ -3,37 +3,51 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: [true, 'Ürün adı zorunludur']
   },
   description: {
     type: String,
-    required: true
+    required: [true, 'Ürün açıklaması zorunludur']
   },
   price: {
     type: Number,
-    required: true
+    required: [true, 'Fiyat zorunludur'],
+    min: [0, 'Fiyat 0\'dan büyük olmalıdır']
   },
   category: {
     type: String,
-    required: true,
-    enum: ['instagram', 'tiktok']
+    required: [true, 'Kategori zorunludur'],
+    enum: {
+      values: ['instagram', 'tiktok', 'youtube', 'facebook', 'twitter'],
+      message: 'Geçersiz kategori'
+    }
   },
   subCategory: {
     type: String,
-    required: true,
-    enum: ['followers', 'likes', 'views', 'comments']
+    required: [true, 'Alt kategori zorunludur'],
+    enum: {
+      values: ['followers', 'likes', 'views', 'comments', 'shares', 'subscribers'],
+      message: 'Geçersiz alt kategori'
+    }
   },
   minQuantity: {
     type: Number,
-    required: true,
-    default: 1
+    required: [true, 'Minimum miktar zorunludur'],
+    min: [1, 'Minimum miktar 1\'den küçük olamaz']
   },
   maxQuantity: {
     type: Number,
-    required: true
+    required: [true, 'Maksimum miktar zorunludur'],
+    validate: {
+      validator: function(value) {
+        return value > this.minQuantity;
+      },
+      message: 'Maksimum miktar minimum miktardan büyük olmalıdır'
+    }
   },
   image: {
-    type: String
+    type: String,
+    required: [true, 'Ürün görseli zorunludur']
   },
   active: {
     type: Boolean,

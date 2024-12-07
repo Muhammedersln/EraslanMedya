@@ -55,7 +55,7 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <NavLink href="/products">Hizmetler</NavLink>
+            <NavLink href="/products">Ürünler</NavLink>
             <NavLink href="/about">Hakkımızda</NavLink>
             <NavLink href="/contact">İletişim</NavLink>
           </div>

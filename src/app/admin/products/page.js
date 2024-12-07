@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { API_URL } from '@/utils/constants';
+import { FaInstagram, FaTiktok, FaYoutube, FaFacebook, FaTwitter } from 'react-icons/fa';
 
 export default function AdminProducts() {
   const router = useRouter();
@@ -24,11 +25,15 @@ export default function AdminProducts() {
     imageFile: null,
     active: true
   });
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
     { 
       id: 'instagram', 
       name: 'Instagram',
+      icon: <FaInstagram />,
       subCategories: [
         { id: 'followers', name: 'Takipçi' },
         { id: 'likes', name: 'Beğeni' },
@@ -39,6 +44,7 @@ export default function AdminProducts() {
     { 
       id: 'tiktok', 
       name: 'TikTok',
+      icon: <FaTiktok />,
       subCategories: [
         { id: 'followers', name: 'Takipçi' },
         { id: 'likes', name: 'Beğeni' },
@@ -79,26 +85,62 @@ export default function AdminProducts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
       const formDataToSend = new FormData();
       
-      if (formData.imageFile) {
-        formDataToSend.append('image', formData.imageFile);
+      if (!formData.name?.trim()) {
+        toast.error('Ürün adı zorunludur');
+        return;
       }
-      
-      formDataToSend.append('name', String(formData.name).trim());
-      formDataToSend.append('description', String(formData.description).trim());
+
+      if (!formData.price || Number(formData.price) <= 0) {
+        toast.error('Geçerli bir fiyat giriniz');
+        return;
+      }
+
+      if (!formData.category) {
+        toast.error('Kategori seçimi zorunludur');
+        return;
+      }
+
+      if (!formData.subCategory) {
+        toast.error('Alt kategori seçimi zorunludur');
+        return;
+      }
+
+      if (!formData.minQuantity || Number(formData.minQuantity) < 1) {
+        toast.error('Minimum miktar 1\'den küçük olamaz');
+        return;
+      }
+
+      if (!formData.maxQuantity || Number(formData.maxQuantity) <= Number(formData.minQuantity)) {
+        toast.error('Maksimum miktar minimum miktardan büyük olmalıdır');
+        return;
+      }
+
+      formDataToSend.append('name', formData.name.trim());
+      formDataToSend.append('description', formData.description?.trim() || '');
       formDataToSend.append('price', String(Number(formData.price)));
-      formDataToSend.append('category', String(formData.category));
-      formDataToSend.append('subCategory', String(formData.subCategory));
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('subCategory', formData.subCategory);
       formDataToSend.append('minQuantity', String(Number(formData.minQuantity)));
       formDataToSend.append('maxQuantity', String(Number(formData.maxQuantity)));
       formDataToSend.append('active', String(formData.active));
 
+      if (!editingProduct && !formData.imageFile) {
+        toast.error('Lütfen bir ürün görseli seçin');
+        return;
+      }
+      
+      if (formData.imageFile) {
+        formDataToSend.append('image', formData.imageFile);
+      }
+
       const url = editingProduct 
         ? `${API_URL}/admin/products/${editingProduct._id}`
         : `${API_URL}/admin/products`;
-      
+        
       const method = editingProduct ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -110,34 +152,66 @@ export default function AdminProducts() {
       });
 
       const responseData = await response.json();
-      console.log('Sunucu yanıtı:', responseData);
-
+      
       if (!response.ok) {
+        if (responseData.errors) {
+          responseData.errors.forEach(error => {
+            toast.error(`${error.message}`);
+          });
+          return;
+        }
         throw new Error(responseData.message || 'Bir hata oluştu');
       }
 
-      await fetchProducts();
+      toast.success(editingProduct ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!');
       setShowModal(false);
       resetForm();
-      toast.success(editingProduct ? 'Ürün güncellendi!' : 'Ürün eklendi!');
-      
+      fetchProducts();
+
     } catch (error) {
-      console.error('Ürün kaydedilirken hata:', error);
-      toast.error(error.message || 'Ürün kaydedilirken bir hata oluştu');
+      console.error('Ürün işlemi hatası:', error);
+      toast.error(error.message || 'İşlem sırasında bir hata oluştu');
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  
+    if (name === 'category') {
+      const selectedCategory = categories.find(cat => cat.id === value);
+      const defaultSubCategory = selectedCategory?.subCategories[0]?.id || 'followers';
+      
+      setFormData(prev => ({
+        ...prev,
+        category: value,
+        subCategory: defaultSubCategory
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Dosya boyutu kontrolü (örn: 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Dosya boyutu 5MB\'dan küçük olmalıdır');
+        e.target.value = '';
+        return;
+      }
+
+      // Dosya tipi kontrolü
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Sadece JPEG, PNG ve WEBP formatlar desteklenmektedir');
+        e.target.value = '';
+        return;
+      }
+
       setFormData(prev => ({
         ...prev,
         imageFile: file
@@ -162,12 +236,15 @@ export default function AdminProducts() {
   };
 
   const resetForm = () => {
+    const defaultCategory = 'instagram';
+    const defaultSubCategory = categories.find(cat => cat.id === defaultCategory)?.subCategories[0]?.id || 'followers';
+    
     setFormData({
       name: '',
       description: '',
       price: '',
-      category: 'instagram',
-      subCategory: 'followers',
+      category: defaultCategory,
+      subCategory: defaultSubCategory,
       minQuantity: '1',
       maxQuantity: '',
       imageFile: null,
@@ -214,6 +291,23 @@ export default function AdminProducts() {
     return `${API_URL}/uploads/${imagePath}`;
   };
 
+  const filteredProducts = products.filter(product => {
+    // Kategori filtreleme
+    const matchesCategory = selectedCategory === 'all' || 
+      product.category === selectedCategory;
+
+    // Alt kategori filtreleme
+    const matchesSubCategory = selectedSubCategory === 'all' || 
+      product.subCategory === selectedSubCategory;
+
+    // Arama filtreleme
+    const matchesSearch = searchQuery === '' || 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesCategory && matchesSubCategory && matchesSearch;
+  });
+
   if (loading) {
     return <div>Yükleniyor...</div>;
   }
@@ -238,6 +332,45 @@ export default function AdminProducts() {
 
       {/* Ürün Listesi */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="mb-6 flex flex-wrap gap-4">
+          {/* Kategori Filtresi */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-2 border border-gray-200 rounded-lg"
+          >
+            <option value="all">Tüm Kategoriler</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+
+          {/* Alt Kategori Filtresi */}
+          <select
+            value={selectedSubCategory}
+            onChange={(e) => setSelectedSubCategory(e.target.value)}
+            className="px-4 py-2 border border-gray-200 rounded-lg"
+          >
+            <option value="all">Tüm Alt Kategoriler</option>
+            {selectedCategory !== 'all' && 
+              categories
+                .find(cat => cat.id === selectedCategory)
+                ?.subCategories.map(sub => (
+                  <option key={sub.id} value={sub.id}>{sub.name}</option>
+                ))
+            }
+          </select>
+
+          {/* Arama Kutusu */}
+          <input
+            type="text"
+            placeholder="Ürün ara..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-4 py-2 border border-gray-200 rounded-lg"
+          />
+        </div>
+
         {products.length > 0 ? (
           <table className="w-full">
             <thead className="bg-background">
@@ -252,7 +385,7 @@ export default function AdminProducts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary/10">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product._id}>
                   <td className="px-6 py-4 text-sm text-text">{product.name}</td>
                   <td className="px-6 py-4">
@@ -270,8 +403,19 @@ export default function AdminProducts() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-text capitalize">{product.category}</td>
-                  <td className="px-6 py-4 text-sm text-text capitalize">{product.subCategory}</td>
+                  <td className="px-6 py-4 text-sm text-text">
+                    <span className="inline-flex items-center">
+                      {categories.find(cat => cat.id === product.category)?.icon}
+                      <span className="ml-2">
+                        {categories.find(cat => cat.id === product.category)?.name}
+                      </span>
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-text">
+                    {categories
+                      .find(cat => cat.id === product.category)
+                      ?.subCategories.find(sub => sub.id === product.subCategory)?.name}
+                  </td>
                   <td className="px-6 py-4 text-sm text-text">₺{product.price}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs ${
@@ -349,6 +493,48 @@ export default function AdminProducts() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
+                    Kategori
+                  </label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
+                    required
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-light mb-1">
+                    Alt Kategori
+                  </label>
+                  <select
+                    name="subCategory"
+                    value={formData.subCategory}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
+                    required
+                  >
+                    {categories
+                      .find(cat => cat.id === formData.category)
+                      ?.subCategories.map(sub => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-light mb-1">
                     Fiyat (₺)
                   </label>
                   <input
@@ -365,51 +551,6 @@ export default function AdminProducts() {
 
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
-                    Kategori
-                  </label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={(e) => {
-                      const selectedCategory = categories.find(cat => cat.id === e.target.value);
-                      setFormData(prev => ({
-                        ...prev,
-                        category: e.target.value,
-                        subCategory: selectedCategory?.subCategories[0]?.id || 'followers'
-                      }));
-                    }}
-                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
-                  >
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-text-light mb-1">
-                    Alt Kategori
-                  </label>
-                  <select
-                    name="subCategory"
-                    value={formData.subCategory}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
-                  >
-                    {categories
-                      .find(cat => cat.id === formData.category)
-                      ?.subCategories.map(subCat => (
-                        <option key={subCat.id} value={subCat.id}>
-                          {subCat.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text-light mb-1">
                     Min. Miktar
                   </label>
                   <input
@@ -422,7 +563,9 @@ export default function AdminProducts() {
                     required
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Max. Miktar
@@ -437,24 +580,24 @@ export default function AdminProducts() {
                     required
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-text-light mb-1">
-                  ��rün Görseli
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full px-3 py-2 border border-secondary-light rounded-lg"
-                  required={!editingProduct}
-                />
-                {editingProduct && (
-                  <p className="mt-1 text-xs text-text-light">
-                    Yeni bir görsel seçmezseniz mevcut görsel kullanılmaya devam edecektir.
-                  </p>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-text-light mb-1">
+                    Ürün Görseli
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
+                    required={!editingProduct}
+                  />
+                  {editingProduct && (
+                    <p className="mt-1 text-xs text-text-light">
+                      Yeni bir görsel seçmezseniz mevcut görsel kullanılmaya devam edecektir.
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center">
