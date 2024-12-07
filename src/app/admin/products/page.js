@@ -18,11 +18,35 @@ export default function AdminProducts() {
     description: '',
     price: '',
     category: 'instagram',
+    subCategory: 'followers',
     minQuantity: '1',
     maxQuantity: '',
     imageFile: null,
     active: true
   });
+
+  const categories = [
+    { 
+      id: 'instagram', 
+      name: 'Instagram',
+      subCategories: [
+        { id: 'followers', name: 'Takipçi' },
+        { id: 'likes', name: 'Beğeni' },
+        { id: 'views', name: 'İzlenme' },
+        { id: 'comments', name: 'Yorum' }
+      ]
+    },
+    { 
+      id: 'tiktok', 
+      name: 'TikTok',
+      subCategories: [
+        { id: 'followers', name: 'Takipçi' },
+        { id: 'likes', name: 'Beğeni' },
+        { id: 'views', name: 'İzlenme' },
+        { id: 'comments', name: 'Yorum' }
+      ]
+    }
+  ];
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -56,59 +80,26 @@ export default function AdminProducts() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Form verilerini kontrol et
-      console.log('Form verileri:', formData);
-
-      // Tüm alanların dolu olduğunu kontrol et
-      const requiredFields = ['name', 'description', 'price', 'minQuantity', 'maxQuantity'];
-      const emptyFields = requiredFields.filter(field => !formData[field]);
+      const formDataToSend = new FormData();
       
-      if (emptyFields.length > 0) {
-        console.log('Boş alanlar:', emptyFields);
-        throw new Error(`Şu alanlar boş bırakılamaz: ${emptyFields.join(', ')}`);
+      if (formData.imageFile) {
+        formDataToSend.append('image', formData.imageFile);
       }
-
-      if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-        throw new Error('Geçerli bir fiyat giriniz');
-      }
-
-      if (Number(formData.maxQuantity) < Number(formData.minQuantity)) {
-        throw new Error('Maksimum miktar, minimum miktardan küçük olamaz');
-      }
-
-      // Yeni ürün eklerken görsel zorunlu
-      if (!editingProduct && !formData.imageFile) {
-        throw new Error('Lütfen bir ürün görseli seçin');
-      }
+      
+      formDataToSend.append('name', String(formData.name).trim());
+      formDataToSend.append('description', String(formData.description).trim());
+      formDataToSend.append('price', String(Number(formData.price)));
+      formDataToSend.append('category', String(formData.category));
+      formDataToSend.append('subCategory', String(formData.subCategory));
+      formDataToSend.append('minQuantity', String(Number(formData.minQuantity)));
+      formDataToSend.append('maxQuantity', String(Number(formData.maxQuantity)));
+      formDataToSend.append('active', String(formData.active));
 
       const url = editingProduct 
         ? `${API_URL}/admin/products/${editingProduct._id}`
         : `${API_URL}/admin/products`;
       
       const method = editingProduct ? 'PUT' : 'POST';
-
-      // Form verilerini FormData nesnesine dönüştür
-      const formDataToSend = new FormData();
-
-      // Görsel dosyasını ekle
-      if (formData.imageFile) {
-        formDataToSend.append('image', formData.imageFile);
-      }
-
-      // Diğer alanları ekle ve string'e dönüştür
-      formDataToSend.append('name', String(formData.name).trim());
-      formDataToSend.append('description', String(formData.description).trim());
-      formDataToSend.append('price', String(Number(formData.price)));
-      formDataToSend.append('category', String(formData.category));
-      formDataToSend.append('minQuantity', String(Number(formData.minQuantity)));
-      formDataToSend.append('maxQuantity', String(Number(formData.maxQuantity)));
-      formDataToSend.append('active', String(formData.active));
-
-      // FormData içeriğini kontrol et
-      console.log('FormData içeriği:');
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(`${key}: ${value}`);
-      }
 
       const response = await fetch(url, {
         method,
@@ -161,6 +152,7 @@ export default function AdminProducts() {
       description: product.description,
       price: product.price.toString(),
       category: product.category,
+      subCategory: product.subCategory,
       minQuantity: product.minQuantity.toString(),
       maxQuantity: product.maxQuantity.toString(),
       imageFile: null,
@@ -175,6 +167,7 @@ export default function AdminProducts() {
       description: '',
       price: '',
       category: 'instagram',
+      subCategory: 'followers',
       minQuantity: '1',
       maxQuantity: '',
       imageFile: null,
@@ -208,6 +201,19 @@ export default function AdminProducts() {
     }
   };
 
+  // Görsel URL'sini oluşturan yardımcı fonksiyon
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+    // Eğer tam URL ise direkt döndür
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Değilse API_URL ile birleştir
+    return `${API_URL}/uploads/${imagePath}`;
+  };
+
   if (loading) {
     return <div>Yükleniyor...</div>;
   }
@@ -239,6 +245,7 @@ export default function AdminProducts() {
                 <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Ürün Adı</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Görsel</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kategori</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Alt Kategori</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Fiyat</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Durum</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-text-light">İşlemler</th>
@@ -250,15 +257,21 @@ export default function AdminProducts() {
                   <td className="px-6 py-4 text-sm text-text">{product.name}</td>
                   <td className="px-6 py-4">
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden">
-                      <Image
-                        src={`${API_URL}${product.image}`}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                      />
+                      {product.image && (
+                        <Image
+                          src={getImageUrl(product.image)}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            e.target.src = '/placeholder-image.png'; // Yedek görsel
+                          }}
+                        />
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-text capitalize">{product.category}</td>
+                  <td className="px-6 py-4 text-sm text-text capitalize">{product.subCategory}</td>
                   <td className="px-6 py-4 text-sm text-text">₺{product.price}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs ${
@@ -357,17 +370,44 @@ export default function AdminProducts() {
                   <select
                     name="category"
                     value={formData.category}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      const selectedCategory = categories.find(cat => cat.id === e.target.value);
+                      setFormData(prev => ({
+                        ...prev,
+                        category: e.target.value,
+                        subCategory: selectedCategory?.subCategories[0]?.id || 'followers'
+                      }));
+                    }}
                     className="w-full px-3 py-2 border border-secondary-light rounded-lg"
                   >
-                    <option value="instagram">Instagram</option>
-                    <option value="tiktok">TikTok</option>
-                    <option value="youtube">YouTube</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-light mb-1">
+                    Alt Kategori
+                  </label>
+                  <select
+                    name="subCategory"
+                    value={formData.subCategory}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
+                  >
+                    {categories
+                      .find(cat => cat.id === formData.category)
+                      ?.subCategories.map(subCat => (
+                        <option key={subCat.id} value={subCat.id}>
+                          {subCat.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Min. Miktar
@@ -401,7 +441,7 @@ export default function AdminProducts() {
 
               <div>
                 <label className="block text-sm font-medium text-text-light mb-1">
-                  Ürün Görseli
+                  ��rün Görseli
                 </label>
                 <input
                   type="file"

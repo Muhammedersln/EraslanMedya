@@ -1,154 +1,246 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
-import { toast } from 'react-hot-toast';
+import Navbar from '@/components/Navbar';
 import { API_URL } from '@/utils/constants';
+import { motion } from 'framer-motion';
 
 export default function Products() {
-  const [activeCategory, setActiveCategory] = useState('instagram');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const { user } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
-    { id: 'instagram', name: 'Instagram', icon: '📸', color: 'from-pink-500 to-purple-500' },
-    { id: 'tiktok', name: 'TikTok', icon: '🎵', color: 'from-cyan-500 to-blue-500' },
-    { id: 'youtube', name: 'YouTube', icon: '▶️', color: 'from-red-500 to-rose-500' }
+    { 
+      id: 'instagram', 
+      name: 'Instagram', 
+      icon: '📸', 
+      color: 'from-pink-500 to-purple-500',
+      subCategories: [
+        { id: 'followers', name: 'Takipçi' },
+        { id: 'likes', name: 'Beğeni' },
+        { id: 'views', name: 'İzlenme' },
+        { id: 'comments', name: 'Yorum' }
+      ]
+    },
+    { 
+      id: 'tiktok', 
+      name: 'TikTok', 
+      icon: '🎵', 
+      color: 'from-blue-500 to-cyan-500',
+      subCategories: [
+        { id: 'followers', name: 'Takipçi' },
+        { id: 'likes', name: 'Beğeni' },
+        { id: 'views', name: 'İzlenme' },
+        { id: 'comments', name: 'Yorum' }
+      ]
+    }
   ];
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(`${API_URL}/products`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        
-        const filteredProducts = data.filter(product => 
-          product.active && 
-          (!activeCategory || product.category === activeCategory)
-        );
-        
-        setProducts(filteredProducts);
-      } catch (error) {
-        console.error('Ürün çekme hatası:', error);
-        toast.error('Ürünler yüklenirken bir hata oluştu');
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProducts();
-  }, [activeCategory]);
+  }, []);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${API_URL}/products`);
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Ürünler yüklenirken hata:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    const matchesSubCategory = selectedSubCategory === 'all' || product.subCategory === selectedSubCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSubCategory && matchesSearch;
+  });
+
+  const currentCategory = categories.find(cat => cat.id === selectedCategory) || categories[0];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-white">
-        <Navbar />
-        <div className="pt-32 pb-20 flex justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-white">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="container mx-auto px-4 pt-24 pb-20">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary-dark text-transparent bg-clip-text">
-            Sosyal Medya Paketleri
-          </h1>
-          <p className="mt-4 text-text-light max-w-2xl mx-auto">
-            En uygun fiyatlarla kaliteli ve güvenilir sosyal medya hizmetleri sunuyoruz.
-            Hesabınızı büyütmek için doğru yerdesiniz.
-          </p>
+      {/* Hero Section */}
+      <div className={`relative overflow-hidden bg-gradient-to-r ${currentCategory.color} py-16 mt-16`}>
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <span className="text-6xl mb-4 inline-block">{currentCategory.icon}</span>
+            <h1 className="text-4xl font-bold text-white mb-4">
+              {currentCategory.name} Hizmetleri
+            </h1>
+            <p className="text-white/90 text-lg max-w-2xl mx-auto">
+              Hesabınızı büyütmek için ihtiyacınız olan tüm hizmetler
+            </p>
+          </motion.div>
         </div>
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+        </div>
+      </div>
 
-        {/* Search ve Kategori Seçimi */}
-        <div className="max-w-4xl mx-auto mb-12 space-y-6">
-          {/* Arama */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Ürün ara..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-5 py-3 rounded-full bg-white shadow-sm border border-secondary-light/20 focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-text-light">
-              🔍
-            </span>
-          </div>
-
-          {/* Kategoriler */}
-          <div className="flex flex-wrap justify-center gap-3">
-            {categories.map((category) => (
-              <button
+      {/* Main Categories */}
+      <div className="sticky top-0 bg-white shadow-md z-30">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-center space-x-4 py-4">
+            {categories.map(category => (
+              <motion.button
                 key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`
-                  flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300
-                  ${activeCategory === category.id
-                    ? `bg-gradient-to-r ${category.color} text-white shadow-lg scale-105`
-                    : 'bg-white text-text-light hover:bg-primary/5'
-                  }
-                `}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setSelectedCategory(category.id);
+                  setSelectedSubCategory('all');
+                }}
+                className={`px-6 py-3 rounded-xl flex items-center space-x-2 transition-all ${
+                  selectedCategory === category.id
+                    ? `bg-gradient-to-r ${category.color} text-white shadow-lg`
+                    : 'bg-gray-100 hover:bg-gray-200'
+                }`}
               >
                 <span className="text-xl">{category.icon}</span>
                 <span className="font-medium">{category.name}</span>
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Ürün Grid */}
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product._id} product={product} />
+      {/* Sub Categories */}
+      <div className="bg-white border-t border-gray-100">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-center space-x-4 py-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSelectedSubCategory('all')}
+              className={`px-4 py-2 rounded-lg transition-all ${
+                selectedSubCategory === 'all'
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              Tümü
+            </motion.button>
+            {currentCategory.subCategories.map(subCat => (
+              <motion.button
+                key={subCat.id}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedSubCategory(subCat.id)}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  selectedSubCategory === subCat.id
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+              >
+                {subCat.name}
+              </motion.button>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-text mb-2">
-              Ürün Bulunamadı
-            </h3>
-            <p className="text-text-light">
-              {searchTerm
-                ? 'Arama kriterlerinize uygun ürün bulunamadı.'
-                : 'Bu kategoride henüz ürün bulunmuyor.'}
-            </p>
-          </div>
-        )}
+        </div>
+      </div>
 
-        {/* Alt Bilgi */}
-        <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-8 p-6 bg-white rounded-2xl shadow-sm">
-            <div className="text-center">
-              <div className="text-2xl mb-1">🔒</div>
-              <div className="text-sm font-medium text-text">Güvenli Ödeme</div>
+      {/* Search Bar */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="max-w-md mx-auto">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Hizmet ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-5 py-3 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-primary/20 outline-none pl-12"
+            />
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              🔍
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      <div className="container mx-auto px-4 py-8">
+        {filteredProducts.length > 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product, index) => (
+                <motion.div
+                  key={product._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
             </div>
-            <div className="text-center">
-              <div className="text-2xl mb-1">⚡</div>
-              <div className="text-sm font-medium text-text">Hızlı Teslimat</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl mb-1">💬</div>
-              <div className="text-sm font-medium text-text">7/24 Destek</div>
-            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-20"
+          >
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Hizmet Bulunamadı
+            </h3>
+            <p className="text-gray-600">
+              Arama kriterlerinize uygun hizmet bulunamadı. 
+              Farklı bir kategori seçmeyi veya arama terimini değiştirmeyi deneyebilirsiniz.
+            </p>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Features Section */}
+      <div className="bg-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon: '⚡️', title: 'Hızlı Teslimat', desc: 'Siparişleriniz anında işleme alınır' },
+              { icon: '🔒', title: 'Güvenli Ödeme', desc: 'SSL korumalı ödeme sistemi' },
+              { icon: '💬', title: '7/24 Destek', desc: 'Sorularınız için her zaman yanınızdayız' }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.2 }}
+                viewport={{ once: true }}
+                className="text-center p-6 rounded-2xl bg-gray-50 hover:shadow-lg transition-all"
+              >
+                <div className="text-4xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>

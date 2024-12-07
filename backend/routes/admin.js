@@ -11,30 +11,33 @@ const fs = require('fs');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
-    // Eğer uploads dizini yoksa oluştur
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    // Benzersiz dosya adı oluştur
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
   }
 });
 
 const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
-    // Sadece resim dosyalarına izin ver
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('Sadece resim dosyaları yüklenebilir!'), false);
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Sadece resim dosyaları yüklenebilir!'));
     }
-    cb(null, true);
   },
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024 // 5MB
   }
 });
 
@@ -138,7 +141,7 @@ router.post('/products', adminMiddleware, upload.single('image'), async (req, re
       });
     }
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imageUrl = req.file ? req.file.filename : null;
     console.log('Oluşturulan görsel URL:', imageUrl);
 
     const product = new Product({
@@ -183,8 +186,20 @@ router.post('/products', adminMiddleware, upload.single('image'), async (req, re
 router.get('/products', adminMiddleware, async (req, res) => {
   try {
     const products = await Product.find();
-    res.json(products);
+    
+    // Görsel URL'lerini düzenle
+    const productsWithUrls = products.map(product => {
+      const productObj = product.toObject();
+      if (productObj.image) {
+        // Sadece dosya adını döndür, frontend'de tam URL oluşturulacak
+        productObj.image = productObj.image;
+      }
+      return productObj;
+    });
+    
+    res.json(productsWithUrls);
   } catch (error) {
+    console.error('Ürünler getirilirken hata:', error);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
@@ -198,14 +213,13 @@ router.put('/products/:id', adminMiddleware, upload.single('image'), async (req,
       // Eski görseli sil
       const oldProduct = await Product.findById(req.params.id);
       if (oldProduct && oldProduct.image) {
-        const oldImagePath = path.join(__dirname, '..', 'public', oldProduct.image);
+        const oldImagePath = path.join(__dirname, '..', 'public', 'uploads', oldProduct.image);
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
       }
       
-      // Yeni görsel yolunu ekle
-      updateData.image = `/uploads/${req.file.filename}`;
+      updateData.image = req.file.filename;
     }
 
     const product = await Product.findByIdAndUpdate(
@@ -274,6 +288,16 @@ router.get('/stats', adminMiddleware, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Sunucu hatası' });
+  }
+});
+
+// Test endpoint'i
+router.get('/test-image/:filename', (req, res) => {
+  const filePath = path.join(__dirname, '..', 'public', 'uploads', req.params.filename);
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ message: 'Görsel bulunamadı' });
   }
 });
 

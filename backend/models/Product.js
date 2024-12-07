@@ -16,7 +16,12 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['instagram', 'tiktok', 'youtube']
+    enum: ['instagram', 'tiktok']
+  },
+  subCategory: {
+    type: String,
+    required: true,
+    enum: ['followers', 'likes', 'views', 'comments']
   },
   minQuantity: {
     type: Number,
@@ -28,13 +33,14 @@ const productSchema = new mongoose.Schema({
     required: true
   },
   image: {
-    type: String,
-    required: true
+    type: String
   },
   active: {
     type: Boolean,
     default: true
   }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Product', productSchema); 

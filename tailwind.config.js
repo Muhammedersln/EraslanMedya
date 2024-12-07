@@ -1,40 +1,42 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2F755D',
-          dark: '#1F5C46',
-          light: '#408B71',
+          DEFAULT: '#2563eb',
+          dark: '#1d4ed8',
+          light: '#3b82f6'
         },
         secondary: {
-          DEFAULT: '#94A3B8',
-          dark: '#64748B',
-          light: '#CBD5E1',
+          DEFAULT: '#64748b',
+          light: '#94a3b8',
+          dark: '#475569'
         },
-        background: {
-          DEFAULT: '#F0F9F6',
-          dark: '#E0F2ED',
-          light: '#FFFFFF',
-        },
+        background: '#f8fafc',
         text: {
-          DEFAULT: '#0F172A',
-          light: '#334155',
-          lighter: '#64748B',
-        },
-        accent: {
-          DEFAULT: '#2F755D',
-          dark: '#1F5C46',
-          light: '#408B71',
+          DEFAULT: '#1e293b',
+          light: '#64748b'
         }
+      },
+      container: {
+        center: true,
+        padding: '1rem',
+        screens: {
+          sm: '640px',
+          md: '768px',
+          lg: '1024px',
+          xl: '1280px',
+        },
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 };
