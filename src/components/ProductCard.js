@@ -19,7 +19,14 @@ export default function ProductCard({ product }) {
       return;
     }
     // Burada sepete ekleme işlemi yapılacak
-    toast.success('Ürün sepete eklendi');
+    toast.success('Ürün sepete eklendi', {
+      icon: '🛍️',
+      style: {
+        borderRadius: '10px',
+        background: '#333',
+        color: '#fff',
+      },
+    });
   };
 
   const getImageUrl = (imagePath) => {
