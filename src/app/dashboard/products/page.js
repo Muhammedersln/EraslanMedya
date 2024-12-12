@@ -8,6 +8,7 @@ import { FaInstagram } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 export default function DashboardProducts() {
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function DashboardProducts() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const categories = [
     { 
@@ -56,7 +60,7 @@ export default function DashboardProducts() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/products`, {
+      const response = await fetch(`${API_URL}/api/products`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -98,6 +102,55 @@ export default function DashboardProducts() {
   });
 
   const currentCategory = categories.find(cat => cat.id === selectedCategory) || categories[0];
+
+  const handleAddToCart = async (e, product) => {
+    e.stopPropagation();
+    if (!user) {
+      setSelectedProduct(product);
+      setShowAuthModal(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1
+        })
+      });
+
+      if (!response.ok) throw new Error('Ürün sepete eklenemedi');
+
+      toast.success('Ürün sepete eklendi', {
+        icon: '🛍️',
+        style: {
+          borderRadius: '10px',
+          background: '#333',
+          color: '#fff',
+        },
+      });
+
+      // Sepet sayısını güncelle
+      const cartResponse = await fetch(`${API_URL}/api/cart/count`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (cartResponse.ok) {
+        const { count } = await cartResponse.json();
+        setCartCount(count);
+      }
+    } catch (error) {
+      console.error('Sepete eklenirken hata:', error);
+      toast.error('Ürün sepete eklenirken bir hata oluştu');
+    }
+  };
 
   if (loading) {
     return (
@@ -193,7 +246,7 @@ export default function DashboardProducts() {
                     </span>
                   </h1>
                   <p className="text-white/90 text-sm md:text-base mt-1">
-                    Profesyonel çözümlerle hesabınızı büyütün
+                    Profesyonel ��özümlerle hesabınızı büyütün
                   </p>
                 </div>
               </motion.div>

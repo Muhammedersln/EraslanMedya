@@ -23,7 +23,8 @@ export default function AdminProducts() {
     minQuantity: '1',
     maxQuantity: '',
     imageFile: null,
-    active: true
+    active: true,
+    taxRate: '18'
   });
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
@@ -230,7 +231,8 @@ export default function AdminProducts() {
       minQuantity: product.minQuantity.toString(),
       maxQuantity: product.maxQuantity.toString(),
       imageFile: null,
-      active: product.active
+      active: product.active,
+      taxRate: product.taxRate
     });
     setShowModal(true);
   };
@@ -248,7 +250,8 @@ export default function AdminProducts() {
       minQuantity: '1',
       maxQuantity: '',
       imageFile: null,
-      active: true
+      active: true,
+      taxRate: '18'
     });
     setEditingProduct(null);
   };
@@ -308,6 +311,29 @@ export default function AdminProducts() {
     return matchesCategory && matchesSubCategory && matchesSearch;
   });
 
+  const updateAllTaxRates = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/products/update-tax`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ taxRate: 10 }) // yeni KDV oranı
+      });
+
+      if (!response.ok) {
+        throw new Error('KDV oranları güncellenemedi');
+      }
+
+      toast.success('Tüm ürünlerin KDV oranları güncellendi');
+      fetchProducts(); // ürünleri yeniden yükle
+    } catch (error) {
+      console.error('KDV güncelleme hatası:', error);
+      toast.error('KDV oranları güncellenirken bir hata oluştu');
+    }
+  };
+
   if (loading) {
     return <div>Yükleniyor...</div>;
   }
@@ -327,6 +353,12 @@ export default function AdminProducts() {
           className="bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary-dark transition-colors"
         >
           Yeni Ürün Ekle
+        </button>
+        <button
+          onClick={updateAllTaxRates}
+          className="bg-primary text-white px-4 py-2 rounded-lg"
+        >
+          Tüm KDV Oranlarını Güncelle
         </button>
       </div>
 
@@ -581,6 +613,25 @@ export default function AdminProducts() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-text-light mb-1">
+                    KDV Oranı (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="taxRate"
+                    value={formData.taxRate}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
+                    min="0"
+                    max="100"
+                    step="1"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Ürün Görseli

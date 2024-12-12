@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Product = require('../models/Product');
 const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
 const multer = require('multer');
 
 // Multer konfigürasyonu
@@ -123,6 +124,63 @@ router.post('/products', authMiddleware, upload.single('image'), async (req, res
     res.status(400).json({
       message: error.message || 'Ürün eklenirken bir hata oluştu'
     });
+  }
+});
+
+// KDV oranlarını toplu güncelle
+router.post('/update-tax', adminMiddleware, async (req, res) => {
+  try {
+    const { taxRate } = req.body;
+    
+    // Validate tax rate
+    if (taxRate < 0 || taxRate > 100) {
+      return res.status(400).json({ 
+        message: 'KDV oranı 0 ile 100 arasında olmalıdır' 
+      });
+    }
+
+    const result = await Product.updateMany(
+      {}, 
+      { $set: { taxRate: Number(taxRate) } }
+    );
+
+    res.json({ 
+      message: 'KDV oranları güncellendi',
+      updatedCount: result.modifiedCount 
+    });
+  } catch (error) {
+    console.error('KDV güncelleme hatası:', error);
+    res.status(500).json({ message: 'Sunucu hatası' });
+  }
+});
+
+// Tekil ürün için KDV oranı güncelle
+router.patch('/:id/tax', adminMiddleware, async (req, res) => {
+  try {
+    const { taxRate } = req.body;
+    
+    // Validate tax rate
+    if (taxRate < 0 || taxRate > 100) {
+      return res.status(400).json({ 
+        message: 'KDV oranı 0 ile 100 arasında olmalıdır' 
+      });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Ürün bulunamadı' });
+    }
+
+    product.taxRate = Number(taxRate);
+    await product.save();
+
+    res.json({ 
+      message: 'KDV oranı güncellendi',
+      product 
+    });
+  } catch (error) {
+    console.error('KDV güncelleme hatası:', error);
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 

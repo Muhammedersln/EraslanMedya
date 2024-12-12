@@ -11,22 +11,41 @@ export default function ProductCard({ product }) {
   const { user } = useAuth();
   const router = useRouter();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.stopPropagation(); // Prevent click from bubbling to parent
+    
     if (!user) {
-      setShowAuthModal(true);
+      router.push('/login');
       return;
     }
-    // Burada sepete ekleme işlemi yapılacak
-    toast.success('Ürün sepete eklendi', {
-      icon: '🛍️',
-      style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
-      },
-    });
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: product.minQuantity
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Ürün sepete eklenemedi');
+      }
+
+      toast.success('Ürün sepete eklendi');
+    } catch (error) {
+      console.error('Sepete ekleme hatası:', error);
+      toast.error('Ürün sepete eklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getImageUrl = (imagePath) => {
@@ -85,12 +104,17 @@ export default function ProductCard({ product }) {
 
           <button 
             onClick={handleAddToCart}
-            className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2"
+            disabled={loading}
+            className={`w-full bg-primary hover:bg-primary-dark text-white py-2.5 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
+              loading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
           >
-            <span>Sepete Ekle</span>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+            <span>{loading ? 'Ekleniyor...' : 'Sepete Ekle'}</span>
+            {!loading && (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            )}
           </button>
         </div>
       </motion.div>
@@ -140,4 +164,4 @@ export default function ProductCard({ product }) {
       )}
     </>
   );
-} 
+}

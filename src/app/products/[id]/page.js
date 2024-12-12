@@ -25,7 +25,7 @@ export default function ProductDetail() {
 
   const fetchProduct = async () => {
     try {
-      const response = await fetch(`${API_URL}/products/${id}`);
+      const response = await fetch(`${API_URL}/api/products/${id}`);
       const data = await response.json();
       setProduct(data);
       setQuantity(data.minQuantity || 1);

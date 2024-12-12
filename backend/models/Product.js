@@ -49,6 +49,13 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Ürün görseli zorunludur']
   },
+  taxRate: {
+    type: Number,
+    required: [true, 'KDV oranı zorunludur'],
+    default: 12,
+    min: [0, 'KDV oranı 0\'dan küçük olamaz'],
+    max: [100, 'KDV oranı 100\'den büyük olamaz']
+  },
   active: {
     type: Boolean,
     default: true

@@ -6,10 +6,9 @@ import DashboardNavbar from "@/components/DashboardNavbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaInstagram, FaTiktok, FaShoppingCart } from "react-icons/fa";
 import { IoTrendingUp } from "react-icons/io5";
-import Image from "next/image";
 import toast from "react-hot-toast";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from '@/utils/constants';
+import DashboardProductCard from "@/components/DashboardProductCard";
 
 const categories = [
   { 
@@ -50,8 +49,8 @@ export default function Dashboard() {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
+      await fetchProducts();
       await Promise.all([
-        fetchProducts(),
         fetchTrendingProducts(),
         fetchCartCount()
       ]);
@@ -64,23 +63,51 @@ export default function Dashboard() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/products`);
+      const response = await fetch(`${API_URL}/api/products`);
+      if (!response.ok) {
+        throw new Error('Ürünler yüklenemedi');
+      }
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error('Ürünler yüklenirken hata:', error);
+      toast.error('Ürünler yüklenirken bir hata oluştu');
     }
   };
 
   const fetchTrendingProducts = async () => {
-    // Simüle edilmiş trending ürünler - backend'de implement edilebilir
-    const trending = products.sort(() => 0.5 - Math.random()).slice(0, 5);
-    setTrendingProducts(trending);
+    try {
+      const response = await fetch(`${API_URL}/api/products/trending`);
+      if (!response.ok) {
+        const trending = products.sort(() => 0.5 - Math.random()).slice(0, 5);
+        setTrendingProducts(trending);
+        return;
+      }
+      const data = await response.json();
+      setTrendingProducts(data);
+    } catch (error) {
+      console.error('Trend ürünler yüklenirken hata:', error);
+      const trending = products.sort(() => 0.5 - Math.random()).slice(0, 5);
+      setTrendingProducts(trending);
+    }
   };
 
   const fetchCartCount = async () => {
-    // Simüle edilmiş sepet sayısı - backend'de implement edilebilir
-    setCartCount(Math.floor(Math.random() * 5));
+    try {
+      const response = await fetch(`${API_URL}/api/cart/count`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Sepet sayısı alınamadı');
+      }
+      const data = await response.json();
+      setCartCount(data.count);
+    } catch (error) {
+      console.error('Sepet sayısı alınırken hata:', error);
+      setCartCount(0);
+    }
   };
 
   const scrollSlider = (categoryId, direction) => {
@@ -93,68 +120,40 @@ export default function Dashboard() {
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation();
+    
     if (!user) {
-      setSelectedProduct(product);
-      setShowAuthModal(true);
+      router.push('/login');
       return;
     }
 
     try {
-      // Simüle edilmiş sepete ekleme - backend'de implement edilebilir
-      setCartCount(prev => prev + 1);
-      toast.success('Ürün sepete eklendi', {
-        icon: '🛍️',
-        style: {
-          borderRadius: '10px',
-          background: '#333',
-          color: '#fff',
+      const response = await fetch(`${API_URL}/api/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: product.minQuantity
+        })
       });
+
+      if (!response.ok) {
+        throw new Error('Ürün sepete eklenemedi');
+      }
+
+      toast.success('Ürün sepete eklendi');
+      
+      // Sepet sayısını güncelle
+      fetchCartCount();
     } catch (error) {
+      console.error('Sepete ekleme hatası:', error);
       toast.error('Ürün sepete eklenirken bir hata oluştu');
     }
   };
 
   if (!user) return null;
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-image.png';
-    return imagePath.startsWith('http') ? imagePath : `${API_URL}/uploads/${imagePath}`;
-  };
-
-  const ProductCard = ({ product, index }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="min-w-[250px] bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex-shrink-0 snap-start group cursor-pointer overflow-hidden"
-      onClick={() => router.push(`/products/${product._id}`)}
-    >
-      <div className="relative h-32 w-full">
-        <Image
-          src={getImageUrl(product.image)}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-          sizes="250px"
-        />
-      </div>
-      <div className="p-4">
-        <h3 className="font-medium text-gray-900 mb-1 truncate">{product.name}</h3>
-        <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold text-primary">₺{product.price}</span>
-          <button 
-            onClick={(e) => handleAddToCart(e, product)}
-            className="text-sm px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-1"
-          >
-            <FaShoppingCart className="w-3 h-3" />
-            <span>Sepete Ekle</span>
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50">
@@ -207,7 +206,12 @@ export default function Dashboard() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {trendingProducts.map((product, index) => (
-                <ProductCard key={product._id} product={product} index={index} />
+                <DashboardProductCard 
+                  key={product._id} 
+                  product={product} 
+                  index={index}
+                  onCartUpdate={fetchCartCount}
+                />
               ))}
             </div>
           </div>
@@ -267,7 +271,12 @@ export default function Dashboard() {
                   ))
                 ) : (
                   categoryProducts.map((product, index) => (
-                    <ProductCard key={product._id} product={product} index={index} />
+                    <DashboardProductCard 
+                      key={product._id} 
+                      product={product} 
+                      index={index}
+                      onCartUpdate={fetchCartCount}
+                    />
                   ))
                 )}
               </div>

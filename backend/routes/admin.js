@@ -6,6 +6,7 @@ const Order = require('../models/Order');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const Cart = require('../models/Cart');
 
 // Dosya yükleme için multer ayarları
 const storage = multer.diskStorage({
@@ -238,9 +239,18 @@ router.put('/products/:id', adminMiddleware, upload.single('image'), async (req,
 // Ürün sil
 router.delete('/products/:id', adminMiddleware, async (req, res) => {
   try {
+    // First, delete the product
     await Product.findByIdAndDelete(req.params.id);
+    
+    // Then, clean up cart items that reference this product
+    await Cart.updateMany(
+      {},
+      { $pull: { items: { product: req.params.id } } }
+    );
+    
     res.json({ message: 'Ürün silindi' });
   } catch (error) {
+    console.error('Ürün silme hatası:', error);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });

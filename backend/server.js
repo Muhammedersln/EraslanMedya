@@ -18,8 +18,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 // Routes
 app.use('/auth', require('./routes/auth'));
 app.use('/admin', require('./routes/admin'));
-app.use('/products', require('./routes/products'));
-app.use('/orders', require('./routes/orders'));
+app.use('/api/products', require('./routes/products'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/cart', require('./routes/cart'));
 
 // MongoDB bağlantısı
 mongoose.connect(process.env.MONGODB_URI)
