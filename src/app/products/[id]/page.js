@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import Footer from '@/components/Footer';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -36,19 +37,40 @@ export default function ProductDetail() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!user) {
       setShowAuthModal(true);
       return;
     }
-    toast.success('Ürün sepete eklendi', {
-      icon: '🛍️',
-      style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
-      },
-    });
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: quantity
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Ürün sepete eklenemedi');
+      }
+
+      toast.success('Ürün sepete eklendi');
+      
+      // Dispatch cartUpdated event
+      window.dispatchEvent(new Event('cartUpdated'));
+    } catch (error) {
+      console.error('Sepete ekleme hatası:', error);
+      toast.error('Ürün sepete eklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getImageUrl = (imagePath) => {
@@ -138,145 +160,127 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {user ? <DashboardNavbar /> : <Navbar />}
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <nav className="flex mb-8" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-1 md:space-x-3">
-            <li className="inline-flex items-center">
-              <button onClick={() => router.push('/products')} className="text-gray-500 hover:text-primary">
-                Ürünler
-              </button>
-            </li>
-            <li>
-              <div className="flex items-center">
-                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                <span className="text-gray-400">{product.name}</span>
-              </div>
-            </li>
-          </ol>
-        </nav>
+      
+      <main className="flex-grow">
+        <div className="container mx-auto px-4 py-8">
+          {/* Breadcrumb */}
+          <nav className="flex mb-6" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-2">
+              <li>
+                <button onClick={() => router.push('/products')} className="text-gray-400 hover:text-primary text-sm">
+                  Ürünler
+                </button>
+              </li>
+              <li className="text-gray-300">/</li>
+              <li className="text-gray-400 text-sm">{product.name}</li>
+            </ol>
+          </nav>
 
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="md:flex">
-            {/* Ürün Görseli */}
-            <div className="md:w-1/2">
-              <div className="relative h-[500px] w-full group">
-                <Image
-                  src={getImageUrl(product.image)}
-                  alt={product.name}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-                <div className="absolute top-4 right-4">
+          <div className="bg-white rounded-xl p-6 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Ürün Görseli - Minimal */}
+              <div className="lg:col-span-1">
+                <div className="relative h-[250px] w-full rounded-lg overflow-hidden">
+                  <Image
+                    src={getImageUrl(product.image)}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
                   <motion.span 
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`px-4 py-2 rounded-full text-sm font-medium ${
-                      product.category === 'instagram' 
-                        ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'
-                        : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-                    }`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-medium bg-white/90 text-gray-700`}
                   >
                     {product.category === 'instagram' ? 'Instagram' : 'TikTok'}
                   </motion.span>
                 </div>
               </div>
-            </div>
 
-            {/* Ürün Detayları */}
-            <div className="md:w-1/2 p-8">
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-4xl font-bold text-gray-900 mb-4"
-              >
-                {product.name}
-              </motion.h1>
+              {/* Ürün Detayları - Minimal */}
+              <div className="lg:col-span-2">
+                <motion.h1 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-2xl font-medium text-gray-900 mb-4"
+                >
+                  {product.name}
+                </motion.h1>
 
-              {/* Tabs */}
-              <div className="mb-8">
-                <div className="flex space-x-4 border-b">
-                  {['description', 'details', 'reviews'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setSelectedTab(tab)}
-                      className={`pb-4 px-2 text-sm font-medium transition-colors relative ${
-                        selectedTab === tab ? 'text-primary' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                      {selectedTab === tab && (
-                        <motion.div
-                          layoutId="activeTab"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-6">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={selectedTab}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {tabContent[selectedTab]}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* Fiyat ve Sipariş */}
-              <div className="mt-8">
+                {/* Fiyat ve Miktar */}
                 <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <motion.button 
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                  <div className="flex items-center space-x-3">
+                    <button 
                       onClick={() => setQuantity(Math.max(product.minQuantity, quantity - 1))}
-                      className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors text-xl font-medium"
+                      className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-50 text-gray-500"
                     >
                       -
-                    </motion.button>
-                    <span className="text-2xl font-medium w-16 text-center">{quantity}</span>
-                    <motion.button 
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                    </button>
+                    <span className="text-lg w-12 text-center">{quantity}</span>
+                    <button 
                       onClick={() => setQuantity(Math.min(product.maxQuantity, quantity + 1))}
-                      className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors text-xl font-medium"
+                      className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-50 text-gray-500"
                     >
                       +
-                    </motion.button>
+                    </button>
                   </div>
-                  <div className="text-4xl font-bold text-primary">
+                  <div className="text-2xl font-medium text-primary">
                     ₺{product.price}
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={handleAddToCart}
-                  className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-4 px-6 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 hover:shadow-lg hover:from-primary-dark hover:to-primary"
+                  className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition-colors mb-8 flex items-center justify-center gap-2"
                 >
                   <span>Sepete Ekle</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
-                </motion.button>
+                </button>
+
+                {/* Bilgi Sekmeleri - Minimal */}
+                <div className="space-y-4">
+                  {['description', 'details', 'reviews'].map((tab) => (
+                    <div key={tab} className="border-t border-gray-100 pt-4">
+                      <button
+                        onClick={() => setSelectedTab(tab)}
+                        className="w-full flex items-center justify-between py-2"
+                      >
+                        <span className={`text-sm ${selectedTab === tab ? 'text-gray-900' : 'text-gray-500'}`}>
+                          {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        </span>
+                        <svg 
+                          className={`w-4 h-4 transition-transform ${selectedTab === tab ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {selectedTab === tab && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="pt-2 text-sm text-gray-600"
+                        >
+                          {tabContent[tab]}
+                        </motion.div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
 
       {/* Auth Modal */}
       <AnimatePresence>

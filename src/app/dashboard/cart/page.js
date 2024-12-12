@@ -6,7 +6,8 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaShoppingCart, FaArrowRight } from 'react-icons/fa';
+import Footer from '@/components/Footer';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -55,10 +56,9 @@ export default function Cart() {
     
     const taxDetails = validItems.reduce((acc, item) => {
       const itemTotal = item.product.price * item.quantity;
-      const taxRate = item.product.taxRate || 18; // Default to 18% if not specified
+      const taxRate = item.product.taxRate || 18;
       const itemTax = itemTotal * (taxRate / 100);
       
-      // Group by tax rate
       if (!acc[taxRate]) {
         acc[taxRate] = {
           amount: 0,
@@ -134,6 +134,8 @@ export default function Cart() {
       setCartItems(updatedItems);
       calculateTotal(updatedItems);
       toast.success('Ürün sepetten kaldırıldı');
+      
+      window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Ürün silinirken hata:', error);
       toast.error('Ürün silinirken bir hata oluştu');
@@ -158,129 +160,126 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white flex flex-col">
       <DashboardNavbar />
       
-      <main className="container mx-auto px-4 py-8 mt-16">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Sepetim</h1>
+      <main className="flex-grow py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-2xl font-medium text-gray-900">Sepetim ({cartItems.length})</h1>
+            </div>
 
-          {cartItems.length > 0 ? (
-            <div className="space-y-8">
-              {/* Cart Items */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <div className="divide-y divide-gray-100">
-                  <AnimatePresence>
-                    {cartItems.map((item) => {
-                      if (!item.product) return null;
-                      
-                      return (
-                        <motion.div
-                          key={item._id}
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-6 flex items-center gap-6"
-                        >
-                          <div className="relative h-20 w-20 flex-shrink-0">
-                            <Image
-                              src={getImageUrl(item.product.image)}
-                              alt={item.product.name}
-                              fill
-                              className="object-cover rounded-lg"
-                            />
-                          </div>
-                          
-                          <div className="flex-grow">
-                            <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
-                            <p className="text-sm text-gray-500">{item.product.description}</p>
-                          </div>
+            {cartItems.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                  <div className="space-y-4">
+                    <AnimatePresence>
+                      {cartItems.map((item) => {
+                        if (!item.product) return null;
+                        
+                        return (
+                          <motion.div
+                            key={item._id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
+                          >
+                            <div className="relative h-16 w-16 flex-shrink-0">
+                              <Image
+                                src={getImageUrl(item.product.image)}
+                                alt={item.product.name}
+                                fill
+                                className="object-cover rounded-md"
+                              />
+                            </div>
+                            
+                            <div className="flex-grow min-w-0">
+                              <h3 className="font-medium text-gray-900 truncate">{item.product.name}</h3>
+                              <div className="text-sm text-gray-500">₺{item.product.price.toFixed(2)}</div>
+                            </div>
 
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                               <button
                                 onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                                className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                                className="w-6 h-6 rounded bg-white flex items-center justify-center hover:bg-gray-100"
                               >
                                 -
                               </button>
                               <span className="w-8 text-center">{item.quantity}</span>
                               <button
                                 onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                                className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                                className="w-6 h-6 rounded bg-white flex items-center justify-center hover:bg-gray-100"
                               >
                                 +
                               </button>
+                              <button
+                                onClick={() => removeItem(item._id)}
+                                className="ml-2 text-gray-400 hover:text-red-500"
+                              >
+                                <FaTrash size={14} />
+                              </button>
                             </div>
-                            
-                            <div className="w-24 text-right">
-                              <div className="font-semibold">
-                                ₺{(item.product.price * item.quantity).toFixed(2)}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                ₺{item.product.price.toFixed(2)} / adet
-                              </div>
-                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                </div>
 
-                            <button
-                              onClick={() => removeItem(item._id)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
+                <div className="lg:col-span-1">
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h2 className="text-lg font-medium mb-4">Özet</h2>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Ara Toplam</span>
+                        <span>₺{totalPrice.subtotal.toFixed(2)}</span>
+                      </div>
+                      
+                      {totalPrice.taxDetails?.map(detail => (
+                        <div key={detail.rate} className="flex justify-between text-gray-500">
+                          <span>KDV ({detail.rate}%)</span>
+                          <span>₺{detail.taxAmount.toFixed(2)}</span>
+                        </div>
+                      ))}
+                      
+                      <div className="pt-2 border-t border-gray-200 mt-2">
+                        <div className="flex justify-between font-medium">
+                          <span>Toplam</span>
+                          <span>₺{totalPrice.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={handleCheckout}
+                      className="w-full mt-4 bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                    >
+                      Ödemeye Geç
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              {/* Summary */}
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-gray-600">Ara Toplam</span>
-                  <span className="font-semibold">₺{totalPrice.subtotal.toFixed(2)}</span>
-                </div>
-                
-                {/* KDV detayları */}
-                {totalPrice.taxDetails?.map(detail => (
-                  <div key={detail.rate} className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">
-                      KDV ({detail.rate}%)
-                    </span>
-                    <span className="font-semibold">₺{detail.taxAmount.toFixed(2)}</span>
-                  </div>
-                ))}
-                
-                <div className="h-px bg-gray-100 my-4"></div>
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-lg font-semibold">Toplam</span>
-                  <span className="text-xl font-bold text-primary">₺{totalPrice.total.toFixed(2)}</span>
-                </div>
+            ) : (
+              <div className="text-center py-12">
+                <FaShoppingCart className="mx-auto text-4xl text-gray-300 mb-4" />
+                <h2 className="text-xl font-medium text-gray-900 mb-2">Sepetiniz Boş</h2>
+                <p className="text-gray-500 mb-6">Sepetinizde henüz ürün bulunmuyor.</p>
                 <button
-                  onClick={handleCheckout}
-                  className="w-full bg-primary text-white py-4 rounded-xl font-semibold hover:bg-primary-dark transition-colors"
+                  onClick={() => router.push('/dashboard/products')}
+                  className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition-colors"
                 >
-                  Ödemeye Geç
+                  Alışverişe Başla
                 </button>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-              <div className="text-6xl mb-4">🛒</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Sepetiniz Boş</h2>
-              <p className="text-gray-600 mb-8">Sepetinizde henüz ürün bulunmuyor.</p>
-              <button
-                onClick={() => router.push('/dashboard/products')}
-                className="bg-primary text-white px-8 py-3 rounded-xl hover:bg-primary-dark transition-colors"
-              >
-                Alışverişe Başla
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
-} 
+}
