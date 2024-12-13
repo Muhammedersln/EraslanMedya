@@ -7,6 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const Cart = require('../models/Cart');
+const mongoose = require('mongoose');
 
 // Dosya yükleme için multer ayarları
 const storage = multer.diskStorage({
@@ -239,19 +240,46 @@ router.put('/products/:id', adminMiddleware, upload.single('image'), async (req,
 // Ürün sil
 router.delete('/products/:id', adminMiddleware, async (req, res) => {
   try {
-    // First, delete the product
-    await Product.findByIdAndDelete(req.params.id);
-    
-    // Then, clean up cart items that reference this product
-    await Cart.updateMany(
-      {},
-      { $pull: { items: { product: req.params.id } } }
-    );
-    
-    res.json({ message: 'Ürün silindi' });
+    // Transaction başlat
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Ürünü sil
+      const product = await Product.findByIdAndDelete(req.params.id).session(session);
+      
+      if (!product) {
+        await session.abortTransaction();
+        return res.status(404).json({
+          success: false,
+          message: 'Ürün bulunamadı'
+        });
+      }
+
+      // İlgili siparişleri güncelle
+      await Order.updateMany(
+        { product: req.params.id },
+        { $set: { product: null } },
+        { session }
+      );
+
+      await session.commitTransaction();
+      res.json({
+        success: true,
+        message: 'Ürün başarıyla silindi'
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
-    console.error('Ürün silme hatası:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    res.status(500).json({
+      success: false,
+      message: 'Ürün silinirken bir hata oluştu',
+      error: error.message
+    });
   }
 });
 
@@ -284,18 +312,44 @@ router.get('/orders', adminMiddleware, async (req, res) => {
     const orders = await Order.find(query)
       .populate({
         path: 'user',
-        select: 'username email'
+        select: 'username email',
+        options: { retainNullValues: true }
       })
       .populate({
         path: 'product',
-        select: 'name price category subCategory'
+        select: 'name price category subCategory',
+        options: { retainNullValues: true }
       })
       .sort({ createdAt: -1 });
 
-    res.json(orders);
+    // Silinmiş ürün ve kullanıcıları işaretle
+    const processedOrders = orders.map(order => {
+      const orderObj = order.toObject();
+      
+      if (!orderObj.user) {
+        orderObj.user = { username: 'Kullanıcı Silinmiş', email: '-' };
+      }
+      
+      if (!orderObj.product) {
+        orderObj.product = { 
+          name: 'Ürün Silinmiş',
+          price: orderObj.totalPrice,
+          category: '-',
+          subCategory: '-'
+        };
+      }
+      
+      return orderObj;
+    });
+
+    res.json(processedOrders);
   } catch (error) {
     console.error('Siparişler getirme hatası:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Siparişler yüklenirken bir hata oluştu',
+      error: error.message 
+    });
   }
 });
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '@/utils/constants';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -15,17 +16,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      router.push('/');
-      return;
-    }
-    fetchStats();
-  }, [user, router]);
-
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/stats', {
+      const response = await fetch(`${API_URL}/api/admin/stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -45,10 +38,24 @@ export default function AdminDashboard() {
     }
   };
 
+  useEffect(() => {
+    if (!user) {
+      setLoading(true);
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      router.replace('/');
+      return;
+    }
+
+    fetchStats();
+  }, [user, router]);
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -78,7 +85,12 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Gelir</h3>
-          <p className="text-2xl font-bold text-primary">₺{stats.totalRevenue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-primary">
+            ₺{stats.totalRevenue.toLocaleString('tr-TR', { 
+              minimumFractionDigits: 2, 
+              maximumFractionDigits: 2 
+            })}
+          </p>
         </div>
       </div>
     </div>

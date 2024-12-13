@@ -30,6 +30,7 @@ export default function AdminProducts() {
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const categories = [
     { 
@@ -65,21 +66,18 @@ export default function AdminProducts() {
   }, [user, router]);
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/admin/products`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await fetch(`${API_URL}/api/products`);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const error = await response.json();
+        throw new Error(error.message || 'Ürünler yüklenirken bir hata oluştu');
       }
       const data = await response.json();
-      setProducts(Array.isArray(data) ? data : []);
+      setProducts(data);
     } catch (error) {
-      console.error('Ürünler yüklenirken hata:', error);
-      toast.error('Ürünler yüklenirken bir hata oluştu');
-      setProducts([]);
+      setError(error.message);
+      // Toast veya notification gösterilebilir
     } finally {
       setLoading(false);
     }
@@ -266,7 +264,7 @@ export default function AdminProducts() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/admin/products/${productId}`, {
+      const response = await fetch(`${API_URL}/api/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -274,7 +272,8 @@ export default function AdminProducts() {
       });
 
       if (!response.ok) {
-        throw new Error('Ürün silinirken bir hata oluştu');
+        const error = await response.json();
+        throw new Error(error.message || 'Ürün silinirken bir hata oluştu');
       }
 
       await fetchProducts(); // Ürün listesini yenile

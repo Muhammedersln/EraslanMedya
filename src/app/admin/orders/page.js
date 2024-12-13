@@ -94,7 +94,7 @@ export default function AdminOrders() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -143,10 +143,10 @@ export default function AdminOrders() {
                   {order._id.slice(-6).toUpperCase()}
                 </td>
                 <td className="px-6 py-4 text-sm text-text">
-                  {order.user.username}
+                  {order.user?.username || 'Kullanıcı Silinmiş'}
                 </td>
                 <td className="px-6 py-4 text-sm text-text">
-                  {order.product.name}
+                  {order.product?.name || 'Ürün Silinmiş'}
                 </td>
                 <td className="px-6 py-4 text-sm text-text">
                   {order.quantity}
