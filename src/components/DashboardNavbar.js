@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from 'react';
 import { MdEmail, MdDashboard, MdShoppingBag, MdShoppingCart } from 'react-icons/md';
@@ -10,6 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function DashboardNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [cartItemCount, setCartItemCount] = useState(0);
@@ -71,6 +72,11 @@ export default function DashboardNavbar() {
       window.removeEventListener('cartUpdated', fetchCartCount);
     };
   }, [user]);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/'); // Ana sayfaya yönlendir
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b border-secondary/10">
@@ -140,7 +146,7 @@ export default function DashboardNavbar() {
                     <span>Profil Ayarları</span>
                   </Link>
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

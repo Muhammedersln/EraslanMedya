@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '@/utils/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { FaInstagram, FaTiktok } from 'react-icons/fa';
 
 export default function ProductCard({ product }) {
   const { user } = useAuth();
@@ -72,6 +73,24 @@ export default function ProductCard({ product }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder-image.png';
     return imagePath.startsWith('http') ? imagePath : `${API_URL}/uploads/${imagePath}`;
+  };
+
+  const formatPrice = (price) => {
+    return `₺${price.toLocaleString('tr-TR', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
+  };
+
+  const getCategoryIcon = () => {
+    switch (product.category) {
+      case 'instagram':
+        return <FaInstagram className="text-xl" />;
+      case 'tiktok':
+        return <FaTiktok className="text-xl" />;
+      default:
+        return null;
+    }
   };
 
   return (

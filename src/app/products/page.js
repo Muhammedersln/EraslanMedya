@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { FaInstagram } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
+import toast from 'react-hot-toast';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -14,6 +15,7 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [settings, setSettings] = useState({ taxRate: 0.18 });
 
   const categories = [
     { 
@@ -44,17 +46,52 @@ export default function Products() {
 
   useEffect(() => {
     fetchProducts();
+    fetchSettings();
   }, []);
 
   const fetchProducts = async () => {
     try {
       const response = await fetch(`${API_URL}/api/products`);
+      if (!response.ok) {
+        throw new Error('Ürünler yüklenirken bir hata oluştu');
+      }
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error('Ürünler yüklenirken hata:', error);
+      toast.error('Ürünler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/settings/tax-rate`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'KDV oranı alınamadı');
+      }
+
+      const data = await response.json();
+      if (!data || typeof data.taxRate !== 'number') {
+        throw new Error('Geçersiz KDV oranı');
+      }
+
+      setSettings({ taxRate: data.taxRate });
+    } catch (error) {
+      console.error('KDV oranı alınırken hata:', error);
+      if (error.response) {
+        console.error('Response:', await error.response.text());
+      }
+      setSettings({ taxRate: 0.18 }); // Varsayılan değer
     }
   };
 
@@ -321,7 +358,13 @@ export default function Products() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
-                    <ProductCard product={product} />
+                    <ProductCard 
+                      key={product._id} 
+                      product={{
+                        ...product,
+                        priceWithTax: product.price * (1 + settings.taxRate)
+                      }} 
+                    />
                   </motion.div>
                 ))}
               </div>

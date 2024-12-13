@@ -111,7 +111,7 @@ export default function Support() {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="text-center mb-16">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Destek Merkezi</h1>
+            <h1 className="text-4xl font-bold text-primary mb-4">Destek Merkezi</h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Size nasıl yardımcı olabiliriz? Aşağıdaki formu doldurarak destek ekibimizle iletişime geçebilirsiniz.
             </p>

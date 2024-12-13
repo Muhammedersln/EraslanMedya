@@ -19,6 +19,7 @@ export default function Cart() {
   const [totalPrice, setTotalPrice] = useState({ subtotal: 0, tax: 0, total: 0, taxDetails: [] });
   const [editingItem, setEditingItem] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [settings, setSettings] = useState({ taxRate: 0.18 });
 
   useEffect(() => {
     if (!user) {
@@ -26,7 +27,14 @@ export default function Cart() {
       return;
     }
     fetchCartItems();
+    fetchSettings();
   }, [user, router]);
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      calculateTotal(cartItems);
+    }
+  }, [settings]);
 
   const fetchCartItems = async () => {
     try {
@@ -50,46 +58,59 @@ export default function Cart() {
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/settings/tax-rate`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'KDV oranı alınamadı');
+      }
+
+      const data = await response.json();
+      if (!data || typeof data.taxRate !== 'number') {
+        throw new Error('Geçersiz KDV oranı');
+      }
+
+      setSettings({ taxRate: data.taxRate });
+    } catch (error) {
+      console.error('KDV oranı alınırken hata:', error);
+      if (error.response) {
+        console.error('Response:', await error.response.text());
+      }
+      // Varsayılan değeri kullan
+      setSettings({ taxRate: 0.18 });
+    }
+  };
+
   const calculateTotal = (items) => {
     const validItems = items.filter(item => item.product);
     
     const subtotal = validItems.reduce((sum, item) => 
       sum + (item.product.price * item.quantity), 0);
     
-    const taxDetails = validItems.reduce((acc, item) => {
-      const itemTotal = item.product.price * item.quantity;
-      const taxRate = item.product.taxRate || 18;
-      const itemTax = itemTotal * (taxRate / 100);
-      
-      if (!acc[taxRate]) {
-        acc[taxRate] = {
-          amount: 0,
-          taxAmount: 0
-        };
-      }
-      
-      acc[taxRate].amount += itemTotal;
-      acc[taxRate].taxAmount += itemTax;
-      
-      return acc;
-    }, {});
-    
-    const totalTax = Object.values(taxDetails).reduce((sum, detail) => 
-      sum + detail.taxAmount, 0);
+    const taxRate = settings.taxRate;
+    const taxAmount = subtotal * taxRate;
     
     const roundedSubtotal = parseFloat(subtotal.toFixed(2));
-    const roundedTax = parseFloat(totalTax.toFixed(2));
+    const roundedTax = parseFloat(taxAmount.toFixed(2));
     const total = parseFloat((roundedSubtotal + roundedTax).toFixed(2));
 
     setTotalPrice({
       subtotal: roundedSubtotal,
       tax: roundedTax,
       total: total,
-      taxDetails: Object.entries(taxDetails).map(([rate, detail]) => ({
-        rate: Number(rate),
-        amount: parseFloat(detail.amount.toFixed(2)),
-        taxAmount: parseFloat(detail.taxAmount.toFixed(2))
-      }))
+      taxDetails: [{
+        rate: taxRate * 100,
+        amount: roundedSubtotal,
+        taxAmount: roundedTax
+      }]
     });
   };
 
@@ -182,20 +203,30 @@ export default function Cart() {
       const response = await fetch(`${API_URL}/api/orders`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          cartItems: cartItems.map(item => ({
+            product: item.product._id,
+            quantity: item.quantity,
+            productData: item.productData,
+            targetCount: item.quantity
+          }))
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Sipariş oluşturulamadı');
+        const error = await response.json();
+        throw new Error(error.message || 'Sipariş oluşturulamadı');
       }
 
-      const orders = await response.json();
+      const result = await response.json();
       toast.success('Siparişiniz başarıyla oluşturuldu!');
-      router.push('/dashboard/orders'); // Siparişler sayfasına yönlendir
+      router.push('/dashboard/orders');
     } catch (error) {
       console.error('Checkout hatası:', error);
-      toast.error('Sipariş oluşturulurken bir hata oluştu');
+      toast.error(error.message || 'Sipariş oluşturulurken bir hata oluştu');
     }
   };
 
@@ -336,7 +367,7 @@ export default function Cart() {
                       
                       {totalPrice.taxDetails?.map(detail => (
                         <div key={detail.rate} className="flex justify-between text-gray-500">
-                          <span>KDV ({detail.rate}%)</span>
+                          <span>KDV ({Math.round(detail.rate)}%)</span>
                           <span>₺{detail.taxAmount.toFixed(2)}</span>
                         </div>
                       ))}

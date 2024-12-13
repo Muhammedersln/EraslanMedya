@@ -18,20 +18,32 @@ const orderSchema = new mongoose.Schema({
   },
   totalPrice: {
     type: Number,
-    required: true
-  },
-  productData: {
-    username: String,
-    link: String
+    required: true,
+    min: 0
   },
   status: {
     type: String,
     enum: ['pending', 'processing', 'completed', 'cancelled'],
     default: 'pending'
   },
+  productData: {
+    username: String,
+    link: String
+  },
+  startCount: {
+    type: Number,
+    default: 0
+  },
+  currentCount: {
+    type: Number,
+    default: 0
+  },
+  targetCount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
   notes: String,
-  startCount: Number,
-  currentCount: Number,
   createdAt: {
     type: Date,
     default: Date.now
@@ -39,40 +51,7 @@ const orderSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'completed', 'failed'],
-    default: 'pending'
-  },
-  paymentMethod: {
-    type: String,
-    enum: ['credit_card', 'bank_transfer', 'crypto'],
-    required: false
-  },
-  paymentDetails: {
-    type: mongoose.Schema.Types.Mixed,
-    required: false
-  },
-  processedCount: {
-    type: Number,
-    default: 0
-  },
-  targetCount: {
-    type: Number,
-    required: true
-  },
-  errorLog: [{
-    message: String,
-    date: { type: Date, default: Date.now }
-  }]
-}, {
-  timestamps: true
-});
-
-orderSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
+  }
 });
 
 module.exports = mongoose.model('Order', orderSchema); 

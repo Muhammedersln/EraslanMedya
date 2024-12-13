@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const Cart = require('../models/Cart');
 const mongoose = require('mongoose');
+const Settings = require('../models/Settings');
 
 // Dosya yükleme için multer ayarları
 const storage = multer.diskStorage({
@@ -156,22 +157,25 @@ router.post('/products', adminMiddleware, upload.single('image'), async (req, re
 // Ürünleri getir
 router.get('/products', adminMiddleware, async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.getProductsWithTax();
     
     // Görsel URL'lerini düzenle
     const productsWithUrls = products.map(product => {
-      const productObj = product.toObject();
-      if (productObj.image) {
+      if (product.image) {
         // Sadece dosya adını döndür, frontend'de tam URL oluşturulacak
-        productObj.image = productObj.image;
+        product.image = product.image;
       }
-      return productObj;
+      return product;
     });
     
     res.json(productsWithUrls);
   } catch (error) {
     console.error('Ürünler getirilirken hata:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Ürünler yüklenirken bir hata oluştu',
+      error: error.message 
+    });
   }
 });
 
@@ -180,51 +184,79 @@ router.put('/products/:id', adminMiddleware, upload.single('image'), async (req,
   try {
     const updateData = { ...req.body };
     
-    // Kategori kontrolü
+    // Sayısal değerleri dönüştür
+    if (updateData.minQuantity) updateData.minQuantity = Number(updateData.minQuantity);
+    if (updateData.maxQuantity) updateData.maxQuantity = Number(updateData.maxQuantity);
+    if (updateData.price) updateData.price = Number(updateData.price);
+
+    // Önce mevcut ürünü al
+    const currentProduct = await Product.findById(req.params.id);
+    if (!currentProduct) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ürün bulunamadı'
+      });
+    }
+
+    // Min-Max miktar kontrolü
+    const minQuantity = updateData.minQuantity || currentProduct.minQuantity;
+    const maxQuantity = updateData.maxQuantity || currentProduct.maxQuantity;
+
+    if (maxQuantity <= minQuantity) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maksimum miktar minimum miktardan büyük olmalıdır'
+      });
+    }
+
+    // Diğer validasyonlar...
     if (updateData.category && !['instagram', 'tiktok'].includes(updateData.category)) {
       return res.status(400).json({
-        message: 'Validasyon hatası',
-        errors: [{ field: 'category', message: 'Geçersiz kategori' }]
+        success: false,
+        message: 'Geçersiz kategori'
       });
     }
 
-    // Alt kategori kontrolü
     if (updateData.subCategory && !['followers', 'likes', 'views', 'comments'].includes(updateData.subCategory)) {
       return res.status(400).json({
-        message: 'Validasyon hatası',
-        errors: [{ field: 'subCategory', message: 'Geçersiz alt kategori' }]
+        success: false,
+        message: 'Geçersiz alt kategori'
       });
     }
 
+    // Görsel işleme
     if (req.file) {
-      // Eski görseli sil
-      const oldProduct = await Product.findById(req.params.id);
-      if (oldProduct && oldProduct.image) {
-        const oldImagePath = path.join(__dirname, '..', 'public', 'uploads', oldProduct.image);
+      if (currentProduct.image) {
+        const oldImagePath = path.join(__dirname, '..', 'public', 'uploads', currentProduct.image);
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
       }
-      
       updateData.image = req.file.filename;
     }
 
+    // Ürünü güncelle
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      updateData,
-      { new: true, runValidators: true }
+      { $set: updateData },
+      { 
+        new: true,
+        runValidators: true,
+        context: 'query' // Validator context'ini ayarla
+      }
     );
 
-    if (!product) {
-      return res.status(404).json({ message: 'Ürün bulunamadı' });
-    }
-
-    res.json(product);
+    res.json({
+      success: true,
+      message: 'Ürün başarıyla güncellendi',
+      product
+    });
   } catch (error) {
     console.error('Ürün güncelleme hatası:', error);
     
     if (error.name === 'ValidationError') {
       return res.status(400).json({
+        success: false,
         message: 'Validasyon hatası',
         errors: Object.values(error.errors).map(err => ({
           field: err.path,
@@ -233,48 +265,64 @@ router.put('/products/:id', adminMiddleware, upload.single('image'), async (req,
       });
     }
 
-    res.status(500).json({ message: 'Sunucu hatası' });
+    res.status(500).json({
+      success: false,
+      message: 'Ürün güncellenirken bir hata oluştu',
+      error: error.message
+    });
   }
 });
 
 // Ürün sil
 router.delete('/products/:id', adminMiddleware, async (req, res) => {
   try {
-    // Transaction başlat
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      // Ürünü sil
-      const product = await Product.findByIdAndDelete(req.params.id).session(session);
-      
-      if (!product) {
-        await session.abortTransaction();
-        return res.status(404).json({
-          success: false,
-          message: 'Ürün bulunamadı'
-        });
-      }
-
-      // İlgili siparişleri güncelle
-      await Order.updateMany(
-        { product: req.params.id },
-        { $set: { product: null } },
-        { session }
-      );
-
-      await session.commitTransaction();
-      res.json({
-        success: true,
-        message: 'Ürün başarıyla silindi'
+    // Ürünü bul
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ürün bulunamadı'
       });
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
     }
+
+    // Ürünle ilişkili siparişleri kontrol et
+    const hasOrders = await Order.exists({ product: req.params.id });
+    if (hasOrders) {
+      // Siparişi olan ürünleri silme, sadece deaktive et
+      product.active = false;
+      await product.save();
+      
+      return res.json({
+        success: true,
+        message: 'Ürün deaktive edildi (siparişleri olduğu için silinemedi)'
+      });
+    }
+
+    // Ürün görselini sil
+    if (product.image) {
+      const imagePath = path.join(__dirname, '..', 'public', 'uploads', product.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    // Ürünü sil
+    await Product.findByIdAndDelete(req.params.id);
+
+    // Sepetlerden ürünü kaldır
+    await Cart.updateMany(
+      { 'items.product': req.params.id },
+      { $pull: { items: { product: req.params.id } } }
+    );
+
+    res.json({
+      success: true,
+      message: 'Ürün başarıyla silindi'
+    });
+
   } catch (error) {
+    console.error('Ürün silme hatası:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Ürün silinirken bir hata oluştu',
@@ -418,6 +466,41 @@ router.get('/test-image/:filename', (req, res) => {
     res.sendFile(filePath);
   } else {
     res.status(404).json({ message: 'Görsel bulunamadı' });
+  }
+});
+
+// Sadece admin KDV oranını güncelleyebilir
+router.post('/settings/tax-rate', adminMiddleware, async (req, res) => {
+  try {
+    const { taxRate } = req.body;
+    
+    if (taxRate === undefined || taxRate < 0 || taxRate > 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçerli bir KDV oranı giriniz (0-1 arası)'
+      });
+    }
+
+    const settings = await Settings.findOne();
+    if (settings) {
+      settings.taxRate = taxRate;
+      settings.updatedAt = Date.now();
+      await settings.save();
+    } else {
+      await Settings.create({ taxRate });
+    }
+
+    res.json({
+      success: true,
+      message: 'KDV oranı güncellendi',
+      taxRate
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'KDV oranı güncellenirken bir hata oluştu',
+      error: error.message
+    });
   }
 });
 

@@ -14,7 +14,8 @@ app.use(express.urlencoded({ extended: true }));
 // Statik dosyalar için public klasörü
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// Routes
+// Routes - Sıralama önemli!
+app.use('/api/settings', require('./routes/settings'));
 app.use('/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/products', require('./routes/products'));
@@ -56,6 +57,27 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Port ayarı
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server ${PORT} portunda çalışıyor`);
+
+const Settings = require('./models/Settings');
+
+// Uygulama başlatıldığında ayarları kontrol et
+const initializeSettings = async () => {
+  try {
+    const settings = await Settings.findOne();
+    if (!settings) {
+      await Settings.create({
+        taxRate: 0.18,
+        updatedAt: new Date()
+      });
+      console.log('Varsayılan ayarlar oluşturuldu');
+    }
+  } catch (error) {
+    console.error('Ayarlar başlatılırken hata:', error);
+  }
+};
+
+// Server başlatılmadan önce ayarları kontrol et
+app.listen(PORT, async () => {
+  await initializeSettings();
+  console.log(`Server is running on port ${PORT}`);
 }); 

@@ -23,14 +23,18 @@ export default function AdminProducts() {
     minQuantity: '1',
     maxQuantity: '',
     imageFile: null,
-    active: true,
-    taxRate: '18'
+    active: true
   });
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [settings, setSettings] = useState({
+    taxRate: 0.18
+  });
+  const [showTaxModal, setShowTaxModal] = useState(false);
+  const [newTaxRate, setNewTaxRate] = useState('');
 
   const categories = [
     { 
@@ -63,6 +67,7 @@ export default function AdminProducts() {
       return;
     }
     fetchProducts();
+    fetchSettings();
   }, [user, router]);
 
   const fetchProducts = async () => {
@@ -80,6 +85,77 @@ export default function AdminProducts() {
       // Toast veya notification gösterilebilir
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/settings`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('API yanıtı JSON formatında değil');
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Ayarlar yüklenemedi');
+      }
+      
+      const data = await response.json();
+      if (!data || typeof data.taxRate !== 'number') {
+        throw new Error('Geçersiz ayar verisi');
+      }
+
+      setSettings(data);
+    } catch (error) {
+      console.error('Ayarlar yüklenirken hata:', error);
+      // Hata durumunda varsayılan değeri kullan
+      setSettings({ taxRate: 0.18 });
+      toast.error('Ayarlar yüklenirken bir hata oluştu, varsayılan değerler kullanılıyor');
+    }
+  };
+
+  const updateTaxRate = async () => {
+    try {
+      const taxRate = parseFloat(newTaxRate) / 100;
+      
+      if (isNaN(taxRate) || taxRate < 0 || taxRate > 1) {
+        toast.error('Geçerli bir KDV oranı giriniz (0-100 arası)');
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/admin/settings/tax-rate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ taxRate })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'KDV oranı güncellenemedi');
+      }
+
+      const data = await response.json();
+      setSettings(prev => ({ ...prev, taxRate }));
+      setShowTaxModal(false);
+      setNewTaxRate('');
+      toast.success('KDV oranı güncellendi');
+      
+      // Ürünleri yeniden yükle
+      fetchProducts();
+    } catch (error) {
+      console.error('KDV güncelleme hatası:', error);
+      toast.error(error.message || 'KDV oranı güncellenirken bir hata oluştu');
     }
   };
 
@@ -233,8 +309,7 @@ export default function AdminProducts() {
       minQuantity: product.minQuantity.toString(),
       maxQuantity: product.maxQuantity.toString(),
       imageFile: null,
-      active: product.active,
-      taxRate: product.taxRate
+      active: product.active
     });
     setShowModal(true);
   };
@@ -252,14 +327,14 @@ export default function AdminProducts() {
       minQuantity: '1',
       maxQuantity: '',
       imageFile: null,
-      active: true,
-      taxRate: '18'
+      active: true
     });
     setEditingProduct(null);
   };
 
   const handleDelete = async (productId) => {
-    if (!confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
+    // Silme işlemi öncesi onay al
+    if (!window.confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
       return;
     }
 
@@ -267,7 +342,8 @@ export default function AdminProducts() {
       const response = await fetch(`${API_URL}/api/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -276,8 +352,14 @@ export default function AdminProducts() {
         throw new Error(error.message || 'Ürün silinirken bir hata oluştu');
       }
 
-      await fetchProducts(); // Ürün listesini yenile
-      toast.success('Ürün başarıyla silindi');
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success(result.message);
+        fetchProducts(); // Ürün listesini yenile
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error) {
       console.error('Ürün silinirken hata:', error);
       toast.error(error.message || 'Ürün silinirken bir hata oluştu');
@@ -345,6 +427,15 @@ export default function AdminProducts() {
     return errors;
   };
 
+  // Ürün tablosunda fiyat gösterimi için yardımcı fonksiyon
+  const formatPrice = (price, withTax = false) => {
+    const value = withTax ? price * (1 + settings.taxRate) : price;
+    return `₺${value.toLocaleString('tr-TR', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
+  };
+
   if (loading) {
     return <div>Yükleniyor...</div>;
   }
@@ -356,145 +447,145 @@ export default function AdminProducts() {
           <h1 className="text-2xl font-bold text-text">Ürünler</h1>
           <p className="text-text-light">Ürünleri yönetin</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary-dark transition-colors"
-        >
-          Yeni Ürün Ekle
-        </button>
-        <button
-          onClick={updateAllTaxRates}
-          className="bg-primary text-white px-4 py-2 rounded-lg"
-        >
-          Tüm KDV Oranlarını Güncelle
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => setShowTaxModal(true)}
+            className="bg-secondary text-white px-4 py-2 rounded-xl hover:bg-secondary-dark transition-colors"
+          >
+            KDV Oranını Düzenle ({(settings.taxRate * 100).toFixed(0)}%)
+          </button>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary-dark transition-colors"
+          >
+            Yeni Ürün Ekle
+          </button>
+        </div>
       </div>
 
-      {/* Ürün Listesi */}
+      {/* Ürün tablosu */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="mb-6 flex flex-wrap gap-4">
-          {/* Kategori Filtresi */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg"
-          >
-            <option value="all">Tüm Kategoriler</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-
-          {/* Alt Kategori Filtresi */}
-          <select
-            value={selectedSubCategory}
-            onChange={(e) => setSelectedSubCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg"
-          >
-            <option value="all">Tüm Alt Kategoriler</option>
-            {selectedCategory !== 'all' && 
-              categories
-                .find(cat => cat.id === selectedCategory)
-                ?.subCategories.map(sub => (
-                  <option key={sub.id} value={sub.id}>{sub.name}</option>
-                ))
-            }
-          </select>
-
-          {/* Arama Kutusu */}
-          <input
-            type="text"
-            placeholder="Ürün ara..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg"
-          />
-        </div>
-
-        {products.length > 0 ? (
-          <table className="w-full">
-            <thead className="bg-background">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Ürün Adı</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Görsel</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kategori</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Alt Kategori</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Fiyat</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Durum</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondary/10">
-              {filteredProducts.map((product) => (
-                <tr key={product._id}>
-                  <td className="px-6 py-4 text-sm text-text">{product.name}</td>
-                  <td className="px-6 py-4">
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden">
-                      {product.image && (
+        <table className="w-full">
+          <thead className="bg-background">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ürün</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiyat (KDV'siz)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiyat (KDV'li)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-secondary/10">
+            {products.map((product) => (
+              <tr key={product._id}>
+                <td className="px-6 py-4">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 flex-shrink-0">
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden">
                         <Image
                           src={getImageUrl(product.image)}
                           alt={product.name}
                           fill
                           className="object-cover"
-                          onError={(e) => {
-                            e.target.src = '/placeholder-image.png'; // Yedek görsel
-                          }}
                         />
-                      )}
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-text">
-                    <span className="inline-flex items-center">
-                      {categories.find(cat => cat.id === product.category)?.icon}
-                      <span className="ml-2">
-                        {categories.find(cat => cat.id === product.category)?.name}
-                      </span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-text">
-                    {categories
-                      .find(cat => cat.id === product.category)
-                      ?.subCategories.find(sub => sub.id === product.subCategory)?.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-text">₺{product.price}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      product.active 
-                        ? 'bg-green-50 text-green-600' 
-                        : 'bg-red-50 text-red-600'
-                    }`}>
-                      {product.active ? 'Aktif' : 'Pasif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm space-x-3">
-                    <button 
-                      onClick={() => handleEdit(product)}
-                      className="text-primary hover:text-primary-dark"
-                    >
-                      Düzenle
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(product._id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Sil
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-text-light">
-              Henüz ürün bulunmuyor veya ürünler yüklenirken bir hata oluştu.
-            </p>
-          </div>
-        )}
+                    <div className="ml-4">
+                      <div className="font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm text-gray-500">{product.description}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex items-center">
+                    {product.category === 'instagram' ? <FaInstagram className="mr-2" /> : <FaTiktok className="mr-2" />}
+                    {product.subCategory}
+                  </span>
+                </td>
+                <td className="px-6 py-4">{formatPrice(product.price)}</td>
+                <td className="px-6 py-4">{formatPrice(product.price, true)}</td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    product.active 
+                      ? 'bg-green-50 text-green-600' 
+                      : 'bg-red-50 text-red-600'
+                  }`}>
+                    {product.active ? 'Aktif' : 'Pasif'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 space-x-3">
+                  <button 
+                    onClick={() => handleEdit(product)}
+                    className="text-primary hover:text-primary-dark"
+                  >
+                    Düzenle
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(product._id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Sil
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+
+      {/* KDV Oranı Modal */}
+      {showTaxModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-semibold mb-4">KDV Oranını Güncelle</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  KDV Oranı (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={newTaxRate}
+                    onChange={(e) => setNewTaxRate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Örn: 18"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    %
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  Örnek: 18 için KDV oranı %18 olacaktır
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowTaxModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={updateTaxRate}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                >
+                  Güncelle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Ürün Ekleme/Düzenleme Modal */}
       {showModal && (
@@ -529,6 +620,21 @@ export default function AdminProducts() {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-secondary-light rounded-lg"
                   rows="3"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-light mb-1">
+                  Fiyat (₺)
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-secondary-light rounded-lg"
+                  min="0"
+                  step="0.01"
                   required
                 />
               </div>
@@ -546,9 +652,7 @@ export default function AdminProducts() {
                     required
                   >
                     {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
                 </div>
@@ -564,34 +668,14 @@ export default function AdminProducts() {
                     className="w-full px-3 py-2 border border-secondary-light rounded-lg"
                     required
                   >
-                    {categories
-                      .find(cat => cat.id === formData.category)
-                      ?.subCategories.map(sub => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.name}
-                        </option>
+                    {categories.find(cat => cat.id === formData.category)?.subCategories.map(sub => (
+                      <option key={sub.id} value={sub.id}>{sub.name}</option>
                       ))}
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-text-light mb-1">
-                    Fiyat (₺)
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Min. Miktar
@@ -605,10 +689,8 @@ export default function AdminProducts() {
                     min="1"
                     required
                   />
-                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Max. Miktar
@@ -623,26 +705,8 @@ export default function AdminProducts() {
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text-light mb-1">
-                    KDV Oranı (%)
-                  </label>
-                  <input
-                    type="number"
-                    name="taxRate"
-                    value={formData.taxRate}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-secondary-light rounded-lg"
-                    min="0"
-                    max="100"
-                    step="1"
-                    required
-                  />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Ürün Görseli
@@ -654,12 +718,6 @@ export default function AdminProducts() {
                     className="w-full px-3 py-2 border border-secondary-light rounded-lg"
                     required={!editingProduct}
                   />
-                  {editingProduct && (
-                    <p className="mt-1 text-xs text-text-light">
-                      Yeni bir görsel seçmezseniz mevcut görsel kullanılmaya devam edecektir.
-                    </p>
-                  )}
-                </div>
               </div>
 
               <div className="flex items-center">
@@ -688,9 +746,10 @@ export default function AdminProducts() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
-                  {editingProduct ? 'Güncelle' : 'Ekle'}
+                  {submitting ? 'Kaydediliyor...' : (editingProduct ? 'Güncelle' : 'Ekle')}
                 </button>
               </div>
             </form>
