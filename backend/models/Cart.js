@@ -16,6 +16,22 @@ const cartSchema = new mongoose.Schema({
       type: Number,
       required: true,
       min: 1
+    },
+    productData: {
+      username: {
+        type: String,
+        required: function() {
+          return this.product && this.product.subCategory === 'followers';
+        }
+      },
+      link: {
+        type: String,
+        required: function() {
+          return this.product && (this.product.subCategory === 'likes' || 
+                                this.product.subCategory === 'views' || 
+                                this.product.subCategory === 'comments');
+        }
+      }
     }
   }],
   createdAt: {

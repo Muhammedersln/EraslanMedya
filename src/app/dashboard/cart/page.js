@@ -6,7 +6,7 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { FaTrash, FaShoppingCart, FaArrowRight } from 'react-icons/fa';
+import { FaTrash, FaShoppingCart, FaArrowRight, FaInstagram, FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -17,6 +17,8 @@ export default function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalPrice, setTotalPrice] = useState({ subtotal: 0, tax: 0, total: 0, taxDetails: [] });
+  const [editingItem, setEditingItem] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -119,6 +121,39 @@ export default function Cart() {
     }
   };
 
+  const updateProductData = async (itemId, productData) => {
+    try {
+      const item = cartItems.find(item => item._id === itemId);
+      if (!item) return;
+
+      const response = await fetch(`${API_URL}/api/cart/${itemId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          quantity: item.quantity,
+          productData
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Bilgiler güncellenemedi');
+      }
+
+      await fetchCartItems();
+      
+      setShowEditModal(false);
+      setEditingItem(null);
+      toast.success('Bilgiler güncellendi');
+    } catch (error) {
+      console.error('Bilgiler güncellenirken hata:', error);
+      toast.error(error.message || 'Bilgiler güncellenirken bir hata oluştu');
+    }
+  };
+
   const removeItem = async (itemId) => {
     try {
       const response = await fetch(`${API_URL}/api/cart/${itemId}`, {
@@ -184,42 +219,85 @@ export default function Cart() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
+                            className="flex flex-col p-4 bg-gray-50 rounded-lg"
                           >
-                            <div className="relative h-16 w-16 flex-shrink-0">
-                              <Image
-                                src={getImageUrl(item.product.image)}
-                                alt={item.product.name}
-                                fill
-                                className="object-cover rounded-md"
-                              />
-                            </div>
-                            
-                            <div className="flex-grow min-w-0">
-                              <h3 className="font-medium text-gray-900 truncate">{item.product.name}</h3>
-                              <div className="text-sm text-gray-500">₺{item.product.price.toFixed(2)}</div>
+                            <div className="flex items-center gap-4">
+                              <div className="relative h-16 w-16 flex-shrink-0">
+                                <Image
+                                  src={getImageUrl(item.product.image)}
+                                  alt={item.product.name}
+                                  fill
+                                  className="object-cover rounded-md"
+                                />
+                              </div>
+                              
+                              <div className="flex-grow min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-gray-900 truncate">{item.product.name}</h3>
+                                  {item.product.category === 'instagram' ? (
+                                    <FaInstagram className="text-pink-500" />
+                                  ) : (
+                                    <FaTiktok className="text-blue-500" />
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-500">₺{item.product.price.toFixed(2)}</div>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                                  className="w-6 h-6 rounded bg-white flex items-center justify-center hover:bg-gray-100"
+                                >
+                                  -
+                                </button>
+                                <span className="w-8 text-center">{item.quantity}</span>
+                                <button
+                                  onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                                  className="w-6 h-6 rounded bg-white flex items-center justify-center hover:bg-gray-100"
+                                >
+                                  +
+                                </button>
+                                <button
+                                  onClick={() => removeItem(item._id)}
+                                  className="ml-2 text-gray-400 hover:text-red-500"
+                                >
+                                  <FaTrash size={14} />
+                                </button>
+                              </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                                className="w-6 h-6 rounded bg-white flex items-center justify-center hover:bg-gray-100"
-                              >
-                                -
-                              </button>
-                              <span className="w-8 text-center">{item.quantity}</span>
-                              <button
-                                onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                                className="w-6 h-6 rounded bg-white flex items-center justify-center hover:bg-gray-100"
-                              >
-                                +
-                              </button>
-                              <button
-                                onClick={() => removeItem(item._id)}
-                                className="ml-2 text-gray-400 hover:text-red-500"
-                              >
-                                <FaTrash size={14} />
-                              </button>
+                            {/* Product Data Section */}
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-grow">
+                                  {item.product.subCategory === 'followers' ? (
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                      <span className="font-medium">Kullanıcı Adı:</span>
+                                      <span className="text-gray-900">{item.productData?.username || '-'}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                      <span className="font-medium">
+                                        {item.product.subCategory === 'likes' ? 'Beğeni' : 
+                                         item.product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} Linki:
+                                      </span>
+                                      <span className="text-gray-900 break-all">{item.productData?.link || '-'}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setEditingItem({
+                                      ...item,
+                                      productData: item.productData || { username: '', link: '' }
+                                    });
+                                    setShowEditModal(true);
+                                  }}
+                                  className="text-primary hover:text-primary-dark text-sm font-medium ml-4"
+                                >
+                                  Düzenle
+                                </button>
+                              </div>
                             </div>
                           </motion.div>
                         );
@@ -255,9 +333,10 @@ export default function Cart() {
                     
                     <button
                       onClick={handleCheckout}
-                      className="w-full mt-4 bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                      className="w-full mt-4 bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                     >
-                      Ödemeye Geç
+                      <span>Ödemeye Geç</span>
+                      <FaArrowRight />
                     </button>
                   </div>
                 </div>
@@ -278,6 +357,108 @@ export default function Cart() {
           </div>
         </div>
       </main>
+
+      {/* Edit Product Data Modal */}
+      <AnimatePresence>
+        {showEditModal && editingItem && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {editingItem.product.subCategory === 'followers' ? 'Takipçi Bilgileri' : 
+                   editingItem.product.subCategory === 'likes' ? 'Beğeni Bilgileri' : 
+                   editingItem.product.subCategory === 'views' ? 'İzlenme Bilgileri' : 'Yorum Bilgileri'}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {editingItem.product.subCategory === 'followers' 
+                    ? `${editingItem.product.category === 'instagram' ? 'Instagram' : 'TikTok'} kullanıcı adınızı güncelleyin`
+                    : `${editingItem.product.category === 'instagram' ? 'Instagram gönderi' : 'TikTok video'} linkini güncelleyin`
+                  }
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {editingItem.product.subCategory === 'followers' ? (
+                  <div>
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                      {editingItem.product.category === 'instagram' ? 'Instagram' : 'TikTok'} Kullanıcı Adı
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="username"
+                      value={editingItem.productData?.username || ''}
+                      onChange={(e) => {
+                        setEditingItem({
+                          ...editingItem,
+                          productData: {
+                            ...editingItem.productData,
+                            username: e.target.value
+                          }
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="@kullaniciadi"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label htmlFor="link" className="block text-sm font-medium text-gray-700 mb-1">
+                      {editingItem.product.category === 'instagram' ? 'Gönderi Linki' : 'Video Linki'}
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="link"
+                      value={editingItem.productData?.link || ''}
+                      onChange={(e) => {
+                        setEditingItem({
+                          ...editingItem,
+                          productData: {
+                            ...editingItem.productData,
+                            link: e.target.value
+                          }
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder={editingItem.product.category === 'instagram' ? 'https://instagram.com/...' : 'https://tiktok.com/...'}
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingItem(null);
+                    }}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    onClick={() => {
+                      const data = editingItem.product.subCategory === 'followers'
+                        ? { username: editingItem.productData?.username?.trim() }
+                        : { link: editingItem.productData?.link?.trim() };
+                      updateProductData(editingItem._id, data);
+                    }}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                  >
+                    Güncelle
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>

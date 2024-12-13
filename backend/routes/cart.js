@@ -9,15 +9,17 @@ router.get('/', authMiddleware, async (req, res) => {
     let cart = await Cart.findOne({ user: req.user._id })
       .populate({
         path: 'items.product',
-        select: 'name description price image minQuantity maxQuantity'
+        select: 'name description price image minQuantity maxQuantity category subCategory'
       });
 
     if (!cart) {
       cart = { items: [] };
     }
 
+    // productData'yı da içeren tam sepet bilgisini döndür
     res.json(cart.items);
   } catch (error) {
+    console.error('Sepet getirme hatası:', error);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
@@ -25,7 +27,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // Sepete ürün ekle
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { productId, quantity } = req.body;
+    const { productId, quantity, productData } = req.body;
 
     // Ürünü kontrol et
     const product = await Product.findById(productId);
@@ -40,13 +42,35 @@ router.post('/', authMiddleware, async (req, res) => {
       });
     }
 
+    // ProductData validasyonu
+    if (product.subCategory === 'followers' && !productData?.username?.trim()) {
+      return res.status(400).json({ 
+        message: 'Takipçi ürünleri için kullanıcı adı zorunludur' 
+      });
+    }
+
+    if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments') && !productData?.link?.trim()) {
+      return res.status(400).json({ 
+        message: `${product.subCategory === 'likes' ? 'Beğeni' : 
+                  product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} 
+                  ürünleri için link zorunludur` 
+      });
+    }
+
     let cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
       // Yeni sepet oluştur
       cart = new Cart({
         user: req.user._id,
-        items: [{ product: productId, quantity }]
+        items: [{
+          product: productId,
+          quantity,
+          productData: {
+            username: productData?.username?.trim(),
+            link: productData?.link?.trim()
+          }
+        }]
       });
     } else {
       // Ürün sepette var mı kontrol et
@@ -55,11 +79,22 @@ router.post('/', authMiddleware, async (req, res) => {
       );
 
       if (itemIndex > -1) {
-        // Ürün varsa miktarı güncelle
+        // Ürün varsa miktarı ve productData'yı güncelle
         cart.items[itemIndex].quantity = quantity;
+        cart.items[itemIndex].productData = {
+          username: productData?.username?.trim(),
+          link: productData?.link?.trim()
+        };
       } else {
         // Ürün yoksa ekle
-        cart.items.push({ product: productId, quantity });
+        cart.items.push({
+          product: productId,
+          quantity,
+          productData: {
+            username: productData?.username?.trim(),
+            link: productData?.link?.trim()
+          }
+        });
       }
     }
 
@@ -69,19 +104,20 @@ router.post('/', authMiddleware, async (req, res) => {
     const updatedCart = await Cart.findById(cart._id)
       .populate({
         path: 'items.product',
-        select: 'name description price image minQuantity maxQuantity'
+        select: 'name description price image minQuantity maxQuantity category subCategory'
       });
 
-    res.status(200).json(updatedCart.items);
+    res.json(updatedCart.items);
   } catch (error) {
+    console.error('Sepete ekleme hatası:', error);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
-// Sepetteki ürün miktarını güncelle
+// Sepetteki ürün miktarını ve bilgilerini güncelle
 router.patch('/:itemId', authMiddleware, async (req, res) => {
   try {
-    const { quantity } = req.body;
+    const { quantity, productData } = req.body;
     const cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
@@ -93,33 +129,64 @@ router.patch('/:itemId', authMiddleware, async (req, res) => {
     );
 
     if (itemIndex === -1) {
-      return res.status(404).json({ message: 'Ürün sepette bulunamadı' });
+      return res.status(404).json({ message: 'Ürün bulunamadı' });
     }
 
-    // Ürün kontrolü
+    // Ürünü kontrol et
     const product = await Product.findById(cart.items[itemIndex].product);
+    if (!product) {
+      return res.status(404).json({ message: 'Ürün bulunamadı' });
+    }
+
+    // Miktar kontrolü
     if (quantity < product.minQuantity || quantity > product.maxQuantity) {
       return res.status(400).json({ 
         message: `Miktar ${product.minQuantity} ile ${product.maxQuantity} arasında olmalıdır` 
       });
     }
 
+    // ProductData validasyonu
+    if (productData) {
+      if (product.subCategory === 'followers' && !productData?.username?.trim()) {
+        return res.status(400).json({ 
+          message: 'Takipçi ürünleri için kullanıcı adı zorunludur' 
+        });
+      }
+
+      if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments') && !productData?.link?.trim()) {
+        return res.status(400).json({ 
+          message: `${product.subCategory === 'likes' ? 'Beğeni' : 
+                    product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} 
+                    ürünleri için link zorunludur` 
+        });
+      }
+    }
+
     cart.items[itemIndex].quantity = quantity;
+    if (productData) {
+      cart.items[itemIndex].productData = {
+        username: productData?.username?.trim(),
+        link: productData?.link?.trim()
+      };
+    }
+
     await cart.save();
 
+    // Güncel sepeti döndür
     const updatedCart = await Cart.findById(cart._id)
       .populate({
         path: 'items.product',
-        select: 'name description price image minQuantity maxQuantity'
+        select: 'name description price image minQuantity maxQuantity category subCategory'
       });
 
     res.json(updatedCart.items);
   } catch (error) {
+    console.error('Ürün güncelleme hatası:', error);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
-// Sepetten ürün sil
+// Sepetten ürün kaldır
 router.delete('/:itemId', authMiddleware, async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id });

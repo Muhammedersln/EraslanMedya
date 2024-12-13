@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '@/utils/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -11,13 +11,28 @@ export default function ProductCard({ product }) {
   const { user } = useAuth();
   const router = useRouter();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProductDataModal, setShowProductDataModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [productData, setProductData] = useState({
+    username: '',
+    link: ''
+  });
   
   const handleAddToCart = async (e) => {
-    e.stopPropagation(); // Prevent click from bubbling to parent
+    e.stopPropagation();
     
     if (!user) {
       setShowAuthModal(true);
+      return;
+    }
+
+    if (product.subCategory === 'followers' && !productData.username) {
+      setShowProductDataModal(true);
+      return;
+    }
+
+    if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments') && !productData.link) {
+      setShowProductDataModal(true);
       return;
     }
 
@@ -31,21 +46,24 @@ export default function ProductCard({ product }) {
         },
         body: JSON.stringify({
           productId: product._id,
-          quantity: product.minQuantity
+          quantity: product.minQuantity,
+          productData
         })
       });
 
       if (!response.ok) {
-        throw new Error('Ürün sepete eklenemedi');
+        const error = await response.json();
+        throw new Error(error.message || 'Ürün sepete eklenemedi');
       }
 
       toast.success('Ürün sepete eklendi');
+      setShowProductDataModal(false);
+      setProductData({ username: '', link: '' });
       
-      // Dispatch cartUpdated event
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Sepete ekleme hatası:', error);
-      toast.error('Ürün sepete eklenirken bir hata oluştu');
+      toast.error(error.message || 'Ürün sepete eklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -59,7 +77,10 @@ export default function ProductCard({ product }) {
   return (
     <>
       <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -5 }}
+        transition={{ duration: 0.3 }}
         className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
         onClick={() => router.push(`/products/${product._id}`)}
       >
@@ -123,68 +144,148 @@ export default function ProductCard({ product }) {
       </motion.div>
 
       {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
-          >
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+      <AnimatePresence>
+        {showAuthModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
+            >
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Giriş Yapın
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Ürünleri satın almak için lütfen giriş yapın veya yeni bir hesap oluşturun.
+                </p>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Giriş Yapın
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Ürünleri satın almak için lütfen giriş yapın veya yeni bir hesap oluşturun.
-              </p>
-            </div>
 
-            <div className="space-y-4">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowAuthModal(false);
-                  router.push('/login');
-                }}
-                className="w-full bg-primary hover:bg-primary-dark text-white py-3 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-                <span>Giriş Yap</span>
-              </motion.button>
+              <div className="space-y-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowAuthModal(false);
+                    router.push('/login');
+                  }}
+                  className="w-full bg-primary hover:bg-primary-dark text-white py-3 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Giriş Yap</span>
+                </motion.button>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowAuthModal(false);
-                  router.push('/register');
-                }}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-                <span>Kayıt Ol</span>
-              </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowAuthModal(false);
+                    router.push('/register');
+                  }}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  <span>Kayıt Ol</span>
+                </motion.button>
 
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="w-full text-gray-500 hover:text-gray-700 text-sm mt-4"
-              >
-                Vazgeç
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="w-full text-gray-500 hover:text-gray-700 text-sm mt-4"
+                >
+                  Vazgeç
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Product Data Modal */}
+      <AnimatePresence>
+        {showProductDataModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {product.subCategory === 'followers' ? 'Takipçi Bilgileri' : 
+                   product.subCategory === 'likes' ? 'Beğeni Bilgileri' : 
+                   product.subCategory === 'views' ? 'İzlenme Bilgileri' : 'Yorum Bilgileri'}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {product.subCategory === 'followers' 
+                    ? `${product.category === 'instagram' ? 'Instagram' : 'TikTok'} kullanıcı adınızı girin`
+                    : `${product.category === 'instagram' ? 'Instagram gönderi' : 'TikTok video'} linkini girin`
+                  }
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {product.subCategory === 'followers' ? (
+                  <div>
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                      {product.category === 'instagram' ? 'Instagram' : 'TikTok'} Kullanıcı Adı
+                    </label>
+                    <input
+                      type="text"
+                      id="username"
+                      value={productData.username}
+                      onChange={(e) => setProductData(prev => ({ ...prev, username: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="@kullaniciadi"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label htmlFor="link" className="block text-sm font-medium text-gray-700 mb-1">
+                      {product.category === 'instagram' ? 'Gönderi Linki' : 'Video Linki'}
+                    </label>
+                    <input
+                      type="text"
+                      id="link"
+                      value={productData.link}
+                      onChange={(e) => setProductData(prev => ({ ...prev, link: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder={product.category === 'instagram' ? 'https://instagram.com/...' : 'https://tiktok.com/...'}
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowProductDataModal(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={loading}
+                    className={`px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors ${
+                      loading ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {loading ? 'Ekleniyor...' : 'Sepete Ekle'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -15,23 +15,42 @@ export default function ProductDetail() {
   const router = useRouter();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
   const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState('description');
+  const [productData, setProductData] = useState({
+    username: '',
+    link: ''
+  });
 
   useEffect(() => {
     fetchProduct();
   }, [id]);
 
+  useEffect(() => {
+    if (product) {
+      setQuantity(product.minQuantity || 1);
+      setProductData({ username: '', link: '' });
+    }
+  }, [product]);
+
   const fetchProduct = async () => {
     try {
+      setLoading(true);
       const response = await fetch(`${API_URL}/api/products/${id}`);
+      
+      if (!response.ok) {
+        throw new Error('Ürün bulunamadı');
+      }
+      
       const data = await response.json();
       setProduct(data);
       setQuantity(data.minQuantity || 1);
     } catch (error) {
       console.error('Ürün yüklenirken hata:', error);
+      toast.error('Ürün yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -43,8 +62,23 @@ export default function ProductDetail() {
       return;
     }
 
+    if (quantity < product.minQuantity || quantity > product.maxQuantity) {
+      toast.error(`Miktar ${product.minQuantity} ile ${product.maxQuantity} arasında olmalıdır`);
+      return;
+    }
+
+    if (product.subCategory === 'followers' && !productData.username?.trim()) {
+      toast.error('Lütfen kullanıcı adını girin');
+      return;
+    }
+
+    if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments') && !productData.link?.trim()) {
+      toast.error('Lütfen linki girin');
+      return;
+    }
+
     try {
-      setLoading(true);
+      setAddingToCart(true);
       const response = await fetch(`${API_URL}/api/cart`, {
         method: 'POST',
         headers: {
@@ -53,23 +87,28 @@ export default function ProductDetail() {
         },
         body: JSON.stringify({
           productId: product._id,
-          quantity: quantity
+          quantity: quantity,
+          productData: {
+            username: productData.username?.trim(),
+            link: productData.link?.trim()
+          }
         })
       });
 
       if (!response.ok) {
-        throw new Error('Ürün sepete eklenemedi');
+        const error = await response.json();
+        throw new Error(error.message || 'Ürün sepete eklenemedi');
       }
 
       toast.success('Ürün sepete eklendi');
+      setProductData({ username: '', link: '' });
       
-      // Dispatch cartUpdated event
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Sepete ekleme hatası:', error);
-      toast.error('Ürün sepete eklenirken bir hata oluştu');
+      toast.error(error.message || 'Ürün sepete eklenirken bir hata oluştu');
     } finally {
-      setLoading(false);
+      setAddingToCart(false);
     }
   };
 
@@ -180,7 +219,7 @@ export default function ProductDetail() {
 
           <div className="bg-white rounded-xl p-6 max-w-4xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Ürün Görseli - Minimal */}
+              {/* Ürün Görseli */}
               <div className="lg:col-span-1">
                 <div className="relative h-[250px] w-full rounded-lg overflow-hidden">
                   <Image
@@ -200,7 +239,7 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Ürün Detayları - Minimal */}
+              {/* Ürün Detayları */}
               <div className="lg:col-span-2">
                 <motion.h1 
                   initial={{ opacity: 0 }}
@@ -232,17 +271,69 @@ export default function ProductDetail() {
                   </div>
                 </div>
 
+                {/* Product Data Fields */}
+                <div className="space-y-4 mb-6">
+                  {product.subCategory === 'followers' ? (
+                    <div>
+                      <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                        {product.category === 'instagram' ? 'Instagram' : 'TikTok'} Kullanıcı Adı
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="username"
+                        value={productData.username}
+                        onChange={(e) => setProductData(prev => ({ ...prev, username: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="@kullaniciadi"
+                        disabled={addingToCart}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label htmlFor="link" className="block text-sm font-medium text-gray-700 mb-1">
+                        {product.category === 'instagram' ? 'Gönderi Linki' : 'Video Linki'}
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="link"
+                        value={productData.link}
+                        onChange={(e) => setProductData(prev => ({ ...prev, link: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder={product.category === 'instagram' ? 'https://instagram.com/...' : 'https://tiktok.com/...'}
+                        disabled={addingToCart}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <button
                   onClick={handleAddToCart}
-                  className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition-colors mb-8 flex items-center justify-center gap-2"
+                  disabled={addingToCart}
+                  className={`w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition-colors mb-8 flex items-center justify-center gap-2 ${
+                    addingToCart ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
                 >
-                  <span>Sepete Ekle</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
+                  {addingToCart ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Ekleniyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sepete Ekle</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </>
+                  )}
                 </button>
 
-                {/* Bilgi Sekmeleri - Minimal */}
+                {/* Bilgi Sekmeleri */}
                 <div className="space-y-4">
                   {['description', 'details', 'reviews'].map((tab) => (
                     <div key={tab} className="border-t border-gray-100 pt-4">
@@ -251,7 +342,8 @@ export default function ProductDetail() {
                         className="w-full flex items-center justify-between py-2"
                       >
                         <span className={`text-sm ${selectedTab === tab ? 'text-gray-900' : 'text-gray-500'}`}>
-                          {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                          {tab === 'description' ? 'Açıklama' : 
+                           tab === 'details' ? 'Detaylar' : 'Değerlendirmeler'}
                         </span>
                         <svg 
                           className={`w-4 h-4 transition-transform ${selectedTab === tab ? 'rotate-180' : ''}`} 
@@ -266,7 +358,7 @@ export default function ProductDetail() {
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
-                          className="pt-2 text-sm text-gray-600"
+                          className="pt-4"
                         >
                           {tabContent[tab]}
                         </motion.div>
@@ -280,33 +372,16 @@ export default function ProductDetail() {
         </div>
       </main>
 
-      <Footer />
-
       {/* Auth Modal */}
       <AnimatePresence>
         {showAuthModal && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 relative"
+              className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
             >
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -315,7 +390,7 @@ export default function ProductDetail() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   Giriş Yapın
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 mb-6">
                   Ürünleri satın almak için lütfen giriş yapın veya yeni bir hesap oluşturun.
                 </p>
               </div>
@@ -350,11 +425,20 @@ export default function ProductDetail() {
                   </svg>
                   <span>Kayıt Ol</span>
                 </motion.button>
+
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="w-full text-gray-500 hover:text-gray-700 text-sm mt-4"
+                >
+                  Vazgeç
+                </button>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
+
+      <Footer />
     </div>
   );
 } 
