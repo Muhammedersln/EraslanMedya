@@ -131,8 +131,14 @@ export function AuthProvider({ children }) {
     toast.success('Çıkış yapıldı');
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+    // Eğer localStorage'da user bilgisi tutuyorsanız onu da güncelleyin
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

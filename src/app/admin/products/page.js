@@ -29,6 +29,7 @@ export default function AdminProducts() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const categories = [
     { 
@@ -65,7 +66,7 @@ export default function AdminProducts() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/admin/products`, {
+      const response = await fetch(`${API_URL}/api/admin/products`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -85,10 +86,9 @@ export default function AdminProducts() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+    setSubmitting(true);
     try {
-      const formDataToSend = new FormData();
+      e.preventDefault();
       
       if (!formData.name?.trim()) {
         toast.error('Ürün adı zorunludur');
@@ -120,6 +120,8 @@ export default function AdminProducts() {
         return;
       }
 
+      const formDataToSend = new FormData();
+      
       formDataToSend.append('name', formData.name.trim());
       formDataToSend.append('description', formData.description?.trim() || '');
       formDataToSend.append('price', String(Number(formData.price)));
@@ -139,8 +141,8 @@ export default function AdminProducts() {
       }
 
       const url = editingProduct 
-        ? `${API_URL}/admin/products/${editingProduct._id}`
-        : `${API_URL}/admin/products`;
+        ? `${API_URL}/api/admin/products/${editingProduct._id}`
+        : `${API_URL}/api/admin/products`;
         
       const method = editingProduct ? 'PUT' : 'POST';
 
@@ -172,6 +174,8 @@ export default function AdminProducts() {
     } catch (error) {
       console.error('Ürün işlemi hatası:', error);
       toast.error(error.message || 'İşlem sırasında bir hata oluştu');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -332,6 +336,14 @@ export default function AdminProducts() {
       console.error('KDV güncelleme hatası:', error);
       toast.error('KDV oranları güncellenirken bir hata oluştu');
     }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name?.trim()) errors.name = 'Ürün adı zorunludur';
+    if (!formData.price || Number(formData.price) <= 0) errors.price = 'Geçerli bir fiyat giriniz';
+    // ...
+    return errors;
   };
 
   if (loading) {

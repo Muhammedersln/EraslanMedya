@@ -255,29 +255,83 @@ router.delete('/products/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// Siparişleri getir
+// Siparişleri listele (filtreleme ile)
 router.get('/orders', adminMiddleware, async (req, res) => {
   try {
-    const orders = await Order.find()
-      .populate('user', 'username email')
-      .populate('product', 'name price');
+    const { status, startDate, endDate, search } = req.query;
+    let query = {};
+
+    // Status filtresi
+    if (status) {
+      query.status = status;
+    }
+
+    // Tarih filtresi
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+
+    // Arama filtresi
+    if (search) {
+      query.$or = [
+        { 'productData.username': { $regex: search, $options: 'i' } },
+        { 'productData.link': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const orders = await Order.find(query)
+      .populate({
+        path: 'user',
+        select: 'username email'
+      })
+      .populate({
+        path: 'product',
+        select: 'name price category subCategory'
+      })
+      .sort({ createdAt: -1 });
+
     res.json(orders);
   } catch (error) {
+    console.error('Siparişler getirme hatası:', error);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
 // Sipariş durumunu güncelle
-router.put('/orders/:id/status', adminMiddleware, async (req, res) => {
+router.patch('/orders/:id', adminMiddleware, async (req, res) => {
   try {
+    const { status, notes, startCount, currentCount } = req.body;
+    
+    // Önce siparişin var olduğunu kontrol et
+    const existingOrder = await Order.findById(req.params.id);
+    if (!existingOrder) {
+      return res.status(404).json({ message: 'Sipariş bulunamadı' });
+    }
+
+    // Siparişi güncelle
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      { status: req.body.status },
+      {
+        status,
+        notes,
+        startCount,
+        currentCount,
+        updatedAt: Date.now()
+      },
       { new: true }
-    );
+    )
+    .populate('user', 'username email')
+    .populate('product');
+
     res.json(order);
   } catch (error) {
-    res.status(500).json({ message: 'Sunucu hatası' });
+    console.error('Sipariş güncelleme hatası:', error);
+    res.status(500).json({ 
+      message: 'Sipariş güncellenirken bir hata oluştu',
+      error: error.message 
+    });
   }
 });
 

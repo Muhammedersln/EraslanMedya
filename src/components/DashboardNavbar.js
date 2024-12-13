@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from 'react';
 import { MdEmail, MdDashboard, MdShoppingBag, MdShoppingCart } from 'react-icons/md';
+import { FaUserCircle } from 'react-icons/fa';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -12,6 +13,7 @@ export default function DashboardNavbar() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [cartItemCount, setCartItemCount] = useState(0);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const navigation = [
     {
@@ -33,10 +35,10 @@ export default function DashboardNavbar() {
       current: pathname === '/dashboard/cart'
     },
     {
-      name: 'İletişim',
-      href: '/contact',
+      name: 'Destek',
+      href: '/dashboard/support',
       icon: <MdEmail className="w-6 h-6" />,
-      current: pathname === '/contact'
+      current: pathname === '/dashboard/support'
     }
   ];
 
@@ -96,30 +98,59 @@ export default function DashboardNavbar() {
               <span>Sepetim</span>
               <span className="ml-2 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">{cartItemCount}</span>
             </Link>
-            <Link href="/contact" className="text-text-light hover:text-primary transition-colors">
-              İletişim
+            <Link href="/dashboard/support" className="text-text-light hover:text-primary transition-colors">
+              Destek
             </Link>
           </div>
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 border-r pr-4 mr-4">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-medium">
-                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-                </span>
-              </div>
-              <div className="text-sm">
-                <p className="font-medium text-text">{user?.username}</p>
-                <p className="text-text-light text-xs">{user?.email}</p>
-              </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center space-x-3 hover:bg-gray-50/80 p-2.5 rounded-xl transition-all duration-200 border border-transparent hover:border-gray-100"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-md">
+                  <span className="text-white font-semibold text-sm">
+                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                  </span>
+                </div>
+                <div className="text-sm hidden md:block">
+                  <p className="font-semibold text-gray-800">{user?.username}</p>
+                  <p className="text-gray-500 text-xs">{user?.email}</p>
+                </div>
+                <svg 
+                  className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Profil Menüsü */}
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl py-2 z-50 border border-gray-100 transform transition-all duration-200">
+                  <Link
+                    href="/dashboard/profile"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <FaUserCircle className="w-4 h-4 mr-3 text-primary" />
+                    <span>Profil Ayarları</span>
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Çıkış Yap</span>
+                  </button>
+                </div>
+              )}
             </div>
-            <button
-              onClick={logout}
-              className="text-sm px-4 py-2 text-text-light hover:text-primary transition-colors"
-            >
-              Çıkış Yap
-            </button>
           </div>
         </div>
       </div>

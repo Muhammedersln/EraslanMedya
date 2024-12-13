@@ -20,25 +20,58 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  productData: {
+    username: String,
+    link: String
+  },
   status: {
     type: String,
     enum: ['pending', 'processing', 'completed', 'cancelled'],
     default: 'pending'
   },
+  notes: String,
+  startCount: Number,
+  currentCount: Number,
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'completed', 'failed'],
+    default: 'pending'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['credit_card', 'bank_transfer', 'crypto'],
+    required: false
+  },
+  paymentDetails: {
+    type: mongoose.Schema.Types.Mixed,
+    required: false
+  },
+  processedCount: {
+    type: Number,
+    default: 0
+  },
+  targetCount: {
+    type: Number,
+    required: true
+  },
+  errorLog: [{
+    message: String,
+    date: { type: Date, default: Date.now }
+  }]
+}, {
+  timestamps: true
 });
 
-// Sipariş oluşturulmadan önce toplam fiyatı hesapla
-orderSchema.pre('save', async function(next) {
-  if (this.isModified('quantity') || this.isNew) {
-    const product = await mongoose.model('Product').findById(this.product);
-    if (product) {
-      this.totalPrice = product.price * this.quantity;
-    }
-  }
+orderSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
   next();
 });
 

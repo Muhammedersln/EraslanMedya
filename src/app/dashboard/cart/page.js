@@ -177,8 +177,26 @@ export default function Cart() {
     }
   };
 
-  const handleCheckout = () => {
-    router.push('/checkout');
+  const handleCheckout = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Sipariş oluşturulamadı');
+      }
+
+      const orders = await response.json();
+      toast.success('Siparişiniz başarıyla oluşturuldu!');
+      router.push('/dashboard/orders'); // Siparişler sayfasına yönlendir
+    } catch (error) {
+      console.error('Checkout hatası:', error);
+      toast.error('Sipariş oluşturulurken bir hata oluştu');
+    }
   };
 
   const getImageUrl = (imagePath) => {
@@ -333,10 +351,10 @@ export default function Cart() {
                     
                     <button
                       onClick={handleCheckout}
-                      className="w-full mt-4 bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                      disabled={cartItems.length === 0}
+                      className="w-full bg-primary text-white py-3 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <span>Ödemeye Geç</span>
-                      <FaArrowRight />
+                      Siparişi Onayla
                     </button>
                   </div>
                 </div>

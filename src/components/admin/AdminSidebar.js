@@ -2,17 +2,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-
-const menuItems = [
-  { path: '/admin', label: 'Dashboard', icon: '📊' },
-  { path: '/admin/users', label: 'Kullanıcılar', icon: '👥' },
-  { path: '/admin/products', label: 'Ürünler', icon: '🛍️' },
-  { path: '/admin/orders', label: 'Siparişler', icon: '📦' },
-];
+import { MdEmail } from "react-icons/md";
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
+
+  const menuItems = [
+    { path: '/admin', label: 'Dashboard', icon: '📊' },
+    { path: '/admin/users', label: 'Kullanıcılar', icon: '👥' },
+    { path: '/admin/products', label: 'Ürünler', icon: '🛍️' },
+    { path: '/admin/orders', label: 'Siparişler', icon: '📦' },
+    { 
+      path: '/admin/support', 
+      label: 'Destek Talepleri', 
+      icon: <MdEmail className="w-6 h-6" />
+    }
+  ];
 
   return (
     <div className="w-64 bg-white border-r border-secondary/10 min-h-screen p-4">

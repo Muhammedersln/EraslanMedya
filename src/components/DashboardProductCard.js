@@ -82,10 +82,10 @@ export default function DashboardProductCard({ product, index, onCartUpdate }) {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -5 }}
         transition={{ duration: 0.3, delay: index * 0.1 }}
-        className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
+        className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer h-[340px] flex flex-col"
         onClick={() => router.push(`/products/${product._id}`)}
       >
-        <div className="relative h-48 w-full bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="relative h-40 w-full bg-gradient-to-br from-gray-100 to-gray-200">
           <Image
             src={getImageUrl(product.image)}
             alt={product.name}
@@ -104,20 +104,20 @@ export default function DashboardProductCard({ product, index, onCartUpdate }) {
           </div>
         </div>
 
-        <div className="p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="p-4 flex flex-col flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
             {product.name}
           </h3>
           
-          <p className="text-sm text-gray-600 mb-6 line-clamp-2">
+          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
             {product.description}
           </p>
 
-          <div className="flex items-center justify-between">
+          <div className="mt-auto flex items-center gap-3">
             <button 
               onClick={handleAddToCart}
               disabled={loading}
-              className={`flex-1 mr-4 bg-primary hover:bg-primary-dark text-white py-2.5 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
+              className={`flex-1 bg-primary hover:bg-primary-dark text-white py-2.5 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
                 loading ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
@@ -138,20 +138,21 @@ export default function DashboardProductCard({ product, index, onCartUpdate }) {
       {/* Product Data Modal */}
       <AnimatePresence>
         {showProductDataModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   {product.subCategory === 'followers' ? 'Takipçi Bilgileri' : 
                    product.subCategory === 'likes' ? 'Beğeni Bilgileri' : 
                    product.subCategory === 'views' ? 'İzlenme Bilgileri' : 'Yorum Bilgileri'}
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600">
                   {product.subCategory === 'followers' 
                     ? `${product.category === 'instagram' ? 'Instagram' : 'TikTok'} kullanıcı adınızı girin`
                     : `${product.category === 'instagram' ? 'Instagram gönderi' : 'TikTok video'} linkini girin`
@@ -159,10 +160,25 @@ export default function DashboardProductCard({ product, index, onCartUpdate }) {
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">
+                      <strong>Önemli:</strong> İşlemin başarılı olabilmesi için hesabınızın gizlilik ayarlarının kapalı (hesabın herkese açık) olması gerekmektedir.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-5">
                 {product.subCategory === 'followers' ? (
                   <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
                       {product.category === 'instagram' ? 'Instagram' : 'TikTok'} Kullanıcı Adı
                     </label>
                     <input
@@ -170,13 +186,13 @@ export default function DashboardProductCard({ product, index, onCartUpdate }) {
                       id="username"
                       value={productData.username}
                       onChange={(e) => setProductData(prev => ({ ...prev, username: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
                       placeholder="@kullaniciadi"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label htmlFor="link" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="link" className="block text-sm font-medium text-gray-700 mb-2">
                       {product.category === 'instagram' ? 'Gönderi Linki' : 'Video Linki'}
                     </label>
                     <input
@@ -184,23 +200,23 @@ export default function DashboardProductCard({ product, index, onCartUpdate }) {
                       id="link"
                       value={productData.link}
                       onChange={(e) => setProductData(prev => ({ ...prev, link: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
                       placeholder={product.category === 'instagram' ? 'https://instagram.com/...' : 'https://tiktok.com/...'}
                     />
                   </div>
                 )}
 
-                <div className="flex justify-end space-x-3 mt-6">
+                <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
                   <button
                     onClick={() => setShowProductDataModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    className="w-full sm:w-auto px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors duration-200 font-medium"
                   >
                     İptal
                   </button>
                   <button
                     onClick={handleAddToCart}
                     disabled={loading}
-                    className={`px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors ${
+                    className={`w-full sm:w-auto px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors duration-200 font-medium ${
                       loading ? 'opacity-70 cursor-not-allowed' : ''
                     }`}
                   >

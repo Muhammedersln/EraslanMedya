@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import toast from 'react-hot-toast';
+import { API_URL } from '@/utils/constants';
+import { useRouter } from 'next/navigation';
 
 const STATUS_COLORS = {
   pending: { bg: 'bg-yellow-50', text: 'text-yellow-600', label: 'Bekliyor' },
@@ -11,26 +13,40 @@ const STATUS_COLORS = {
 };
 
 export default function AdminOrders() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
     fetchOrders();
-  }, []);
+  }, [user, router]);
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/orders', {
+      const response = await fetch(`${API_URL}/api/admin/orders`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Siparişler getirilemedi');
+      }
+
       const data = await response.json();
-      setOrders(data);
+      setOrders(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Siparişler yüklenirken hata:', error);
+      toast.error(error.message || 'Siparişler yüklenirken bir hata oluştu');
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -38,32 +54,53 @@ export default function AdminOrders() {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/status`, {
-        method: 'PUT',
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Oturum bulunamadı');
+      }
+
+      const response = await fetch(`${API_URL}/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ 
+          status: newStatus,
+          notes: selectedOrder.notes || '',
+          startCount: selectedOrder.startCount || 0,
+          currentCount: selectedOrder.currentCount || 0
+        })
       });
 
-      if (response.ok) {
-        fetchOrders();
-        setShowModal(false);
-        toast.success('Sipariş durumu güncellendi!');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          message: 'Sunucu hatası'
+        }));
+        throw new Error(errorData.message || 'Durum güncellenemedi');
       }
+
+      const updatedOrder = await response.json();
+      await fetchOrders(); // Siparişleri yeniden yükle
+      setShowModal(false);
+      toast.success('Sipariş durumu güncellendi!');
     } catch (error) {
       console.error('Sipariş durumu güncellenirken hata:', error);
-      toast.error('Sipariş durumu güncellenirken bir hata oluştu');
+      toast.error(error.message || 'Sipariş durumu güncellenirken bir hata oluştu');
     }
   };
 
   if (loading) {
-    return <div>Yükleniyor...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
-    <div>
+    <div className="p-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-text">Siparişler</h1>
         <p className="text-text-light">Tüm siparişleri yönetin</p>
@@ -73,18 +110,34 @@ export default function AdminOrders() {
         <table className="w-full">
           <thead className="bg-background">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Sipariş ID</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kullanıcı</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Ürün</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Miktar</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Toplam</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Durum</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Tarih</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">İşlemler</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sipariş ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Kullanıcı
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ürün
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Miktar
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Toplam
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Durum
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tarih
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                İşlemler
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-secondary/10">
-            {orders.map((order) => (
+            {Array.isArray(orders) && orders.map((order) => (
               <tr key={order._id}>
                 <td className="px-6 py-4 text-sm text-text">
                   {order._id.slice(-6).toUpperCase()}
@@ -128,41 +181,43 @@ export default function AdminOrders() {
 
       {/* Sipariş Düzenleme Modal */}
       {showModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <h2 className="text-xl font-semibold mb-4">
               Sipariş Durumunu Güncelle
             </h2>
             
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-text-light">Sipariş ID</p>
+                <p className="text-sm text-gray-500">Sipariş ID</p>
                 <p className="font-medium">{selectedOrder._id.slice(-6).toUpperCase()}</p>
               </div>
 
               <div>
-                <p className="text-sm text-text-light">Kullanıcı</p>
+                <p className="text-sm text-gray-500">Kullanıcı</p>
                 <p className="font-medium">{selectedOrder.user.username}</p>
               </div>
 
               <div>
-                <p className="text-sm text-text-light">Ürün</p>
+                <p className="text-sm text-gray-500">Ürün</p>
                 <p className="font-medium">{selectedOrder.product.name}</p>
               </div>
 
               <div>
-                <p className="text-sm text-text-light">Hedef URL</p>
-                <p className="font-medium break-all">{selectedOrder.targetUrl}</p>
+                <p className="text-sm text-gray-500">Hedef URL/Kullanıcı</p>
+                <p className="font-medium break-all">
+                  {selectedOrder.productData?.username || selectedOrder.productData?.link}
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-light mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Durum
                 </label>
                 <select
                   value={selectedOrder.status}
                   onChange={(e) => handleStatusChange(selectedOrder._id, e.target.value)}
-                  className="w-full px-3 py-2 border border-secondary-light rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 >
                   <option value="pending">Bekliyor</option>
                   <option value="processing">İşleniyor</option>
@@ -171,12 +226,30 @@ export default function AdminOrders() {
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notlar
+                </label>
+                <textarea
+                  value={selectedOrder.notes || ''}
+                  onChange={(e) => setSelectedOrder({...selectedOrder, notes: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  rows="3"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-text-light hover:text-text transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Kapat
+                </button>
+                <button
+                  onClick={() => handleStatusChange(selectedOrder._id, selectedOrder.status)}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                >
+                  Güncelle
                 </button>
               </div>
             </div>

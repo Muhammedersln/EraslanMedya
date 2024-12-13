@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -12,14 +13,19 @@ export default function AdminDashboard() {
     totalRevenue: 0
   });
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
     fetchStats();
-  }, []);
+  }, [user, router]);
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/admin/stats', {
+      const response = await fetch('http://localhost:5000/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

@@ -45,9 +45,23 @@ const cartSchema = new mongoose.Schema({
 });
 
 // Güncelleme zamanını otomatik güncelle
-cartSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
+cartSchema.pre('save', async function(next) {
+  try {
+    for (const item of this.items) {
+      const product = await mongoose.model('Product').findById(item.product);
+      
+      if (!product) {
+        throw new Error('Ürün bulunamadı');
+      }
+
+      if (item.quantity < product.minQuantity || item.quantity > product.maxQuantity) {
+        throw new Error(`Miktar ${product.minQuantity} ile ${product.maxQuantity} arasında olmalıdır`);
+      }
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = mongoose.model('Cart', cartSchema);
