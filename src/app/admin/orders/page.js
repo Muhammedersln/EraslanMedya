@@ -19,6 +19,7 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -162,7 +163,7 @@ export default function AdminOrders() {
                 <td className="px-6 py-4 text-sm text-text">
                   {new Date(order.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-6 py-4 text-sm space-x-3">
                   <button
                     onClick={() => {
                       setSelectedOrder(order);
@@ -171,6 +172,15 @@ export default function AdminOrders() {
                     className="text-primary hover:text-primary-dark"
                   >
                     Düzenle
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setShowDetailsModal(true);
+                    }}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    Detaylar
                   </button>
                 </td>
               </tr>
@@ -201,13 +211,6 @@ export default function AdminOrders() {
               <div>
                 <p className="text-sm text-gray-500">Ürün</p>
                 <p className="font-medium">{selectedOrder.product.name}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">Hedef URL/Kullanıcı</p>
-                <p className="font-medium break-all">
-                  {selectedOrder.productData?.username || selectedOrder.productData?.link}
-                </p>
               </div>
 
               <div>
@@ -249,7 +252,99 @@ export default function AdminOrders() {
                   onClick={() => handleStatusChange(selectedOrder._id, selectedOrder.status)}
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                 >
-                  Güncelle
+                  Kaydet
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sipariş Detay Modal */}
+      {showDetailsModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-semibold mb-4">
+              Sipariş Detayları
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Sipariş ID</p>
+                <p className="font-medium">{selectedOrder._id.slice(-6).toUpperCase()}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Kullanıcı</p>
+                <p className="font-medium">{selectedOrder.user?.username || '-'}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Ürün</p>
+                <p className="font-medium">{selectedOrder.product?.name || '-'}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Alt Kategori</p>
+                <p className="font-medium">{selectedOrder.product?.subCategory || '-'}</p>
+              </div>
+
+              {selectedOrder.product?.subCategory === 'followers' ? (
+                <div>
+                  <p className="text-sm text-gray-500">Kullanıcı Adı</p>
+                  <p className="font-medium break-all">
+                    {selectedOrder.productData?.username || '-'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm text-gray-500">Gönderi Sayısı</p>
+                    <p className="font-medium">
+                      {selectedOrder.productData?.postCount || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Gönderiler</p>
+                    <div className="mt-1 space-y-1">
+                      {selectedOrder.productData?.links?.map((link, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="text-gray-500 text-sm">{index + 1}.</span>
+                          <a 
+                            href={link} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-primary hover:text-primary-dark text-sm break-all"
+                          >
+                            {link}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <p className="text-sm text-gray-500">Durum</p>
+                <p className={`font-medium ${STATUS_COLORS[selectedOrder.status].text}`}>
+                  {STATUS_COLORS[selectedOrder.status].label}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Notlar</p>
+                <p className="font-medium whitespace-pre-wrap">
+                  {selectedOrder.notes || '-'}
+                </p>
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Kapat
                 </button>
               </div>
             </div>

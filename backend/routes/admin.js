@@ -353,7 +353,7 @@ router.get('/orders', adminMiddleware, async (req, res) => {
     if (search) {
       query.$or = [
         { 'productData.username': { $regex: search, $options: 'i' } },
-        { 'productData.link': { $regex: search, $options: 'i' } }
+        { 'productData.links': { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -385,6 +385,20 @@ router.get('/orders', adminMiddleware, async (req, res) => {
           category: '-',
           subCategory: '-'
         };
+      }
+
+      // productData'yı düzenle
+      if (orderObj.productData) {
+        if (orderObj.product.subCategory === 'followers') {
+          orderObj.productData = {
+            username: orderObj.productData.username || '-'
+          };
+        } else {
+          orderObj.productData = {
+            postCount: orderObj.productData.postCount || 0,
+            links: Array.isArray(orderObj.productData.links) ? orderObj.productData.links : []
+          };
+        }
       }
       
       return orderObj;

@@ -28,7 +28,8 @@ const orderSchema = new mongoose.Schema({
   },
   productData: {
     username: String,
-    link: String
+    postCount: Number,
+    links: [String]
   },
   startCount: {
     type: Number,

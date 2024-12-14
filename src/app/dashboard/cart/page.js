@@ -325,12 +325,29 @@ export default function Cart() {
                                       <span className="text-gray-900">{item.productData?.username || '-'}</span>
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                      <span className="font-medium">
-                                        {item.product.subCategory === 'likes' ? 'Beğeni' : 
-                                         item.product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} Linki:
-                                      </span>
-                                      <span className="text-gray-900 break-all">{item.productData?.link || '-'}</span>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <span className="font-medium">Gönderi Sayısı:</span>
+                                        <span className="text-gray-900">{item.productData?.postCount || '-'}</span>
+                                      </div>
+                                      <div className="text-sm text-gray-600">
+                                        <span className="font-medium">Gönderiler:</span>
+                                        <div className="mt-1 space-y-1">
+                                          {item.productData?.links?.map((link, index) => (
+                                            <div key={index} className="flex items-center gap-2">
+                                              <span className="text-gray-500">{index + 1}.</span>
+                                              <a 
+                                                href={link} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="text-primary hover:text-primary-dark break-all"
+                                              >
+                                                {link}
+                                              </a>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                                 </div>

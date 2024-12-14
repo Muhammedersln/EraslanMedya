@@ -49,12 +49,20 @@ router.post('/', authMiddleware, async (req, res) => {
       });
     }
 
-    if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments') && !productData?.link?.trim()) {
-      return res.status(400).json({ 
-        message: `${product.subCategory === 'likes' ? 'Beğeni' : 
-                  product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} 
-                  ürünleri için link zorunludur` 
-      });
+    if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments')) {
+      if (!productData?.links || !Array.isArray(productData.links) || productData.links.length === 0) {
+        return res.status(400).json({ 
+          message: `${product.subCategory === 'likes' ? 'Beğeni' : 
+                    product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} 
+                    ürünleri için en az bir link zorunludur` 
+        });
+      }
+
+      if (productData.links.some(link => !link || !link.trim())) {
+        return res.status(400).json({ 
+          message: 'Tüm gönderi linkleri doldurulmalıdır' 
+        });
+      }
     }
 
     let cart = await Cart.findOne({ user: req.user._id });
@@ -68,7 +76,8 @@ router.post('/', authMiddleware, async (req, res) => {
           quantity,
           productData: {
             username: productData?.username?.trim(),
-            link: productData?.link?.trim()
+            postCount: productData?.postCount,
+            links: productData?.links?.map(link => link.trim())
           }
         }]
       });
@@ -83,7 +92,8 @@ router.post('/', authMiddleware, async (req, res) => {
         cart.items[itemIndex].quantity = quantity;
         cart.items[itemIndex].productData = {
           username: productData?.username?.trim(),
-          link: productData?.link?.trim()
+          postCount: productData?.postCount,
+          links: productData?.links?.map(link => link.trim())
         };
       } else {
         // Ürün yoksa ekle
@@ -92,7 +102,8 @@ router.post('/', authMiddleware, async (req, res) => {
           quantity,
           productData: {
             username: productData?.username?.trim(),
-            link: productData?.link?.trim()
+            postCount: productData?.postCount,
+            links: productData?.links?.map(link => link.trim())
           }
         });
       }
@@ -153,12 +164,20 @@ router.patch('/:itemId', authMiddleware, async (req, res) => {
         });
       }
 
-      if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments') && !productData?.link?.trim()) {
-        return res.status(400).json({ 
-          message: `${product.subCategory === 'likes' ? 'Beğeni' : 
-                    product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} 
-                    ürünleri için link zorunludur` 
-        });
+      if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments')) {
+        if (!productData?.links || !Array.isArray(productData.links) || productData.links.length === 0) {
+          return res.status(400).json({ 
+            message: `${product.subCategory === 'likes' ? 'Beğeni' : 
+                      product.subCategory === 'views' ? 'İzlenme' : 'Yorum'} 
+                      ürünleri için en az bir link zorunludur` 
+          });
+        }
+
+        if (productData.links.some(link => !link || !link.trim())) {
+          return res.status(400).json({ 
+            message: 'Tüm gönderi linkleri doldurulmalıdır' 
+          });
+        }
       }
     }
 
@@ -166,7 +185,8 @@ router.patch('/:itemId', authMiddleware, async (req, res) => {
     if (productData) {
       cart.items[itemIndex].productData = {
         username: productData?.username?.trim(),
-        link: productData?.link?.trim()
+        postCount: productData?.postCount,
+        links: productData?.links?.map(link => link.trim())
       };
     }
 

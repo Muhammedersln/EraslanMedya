@@ -20,7 +20,7 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -122,18 +122,18 @@ export default function Orders() {
                           {STATUS_COLORS[order.status].label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm text-text">
                         {new Date(order.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <button
                           onClick={() => {
                             setSelectedOrder(order);
-                            setShowModal(true);
+                            setShowDetailsModal(true);
                           }}
-                          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200"
+                          className="text-primary hover:text-primary-dark"
                         >
-                          Detay
+                          Detaylar
                         </button>
                       </td>
                     </tr>
@@ -157,61 +157,101 @@ export default function Orders() {
       </main>
 
       {/* Sipariş Detay Modal */}
-      {showModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-lg mx-4 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">
-              Sipariş Detayı
+      {showDetailsModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-semibold mb-4">
+              Sipariş Detayları
             </h2>
             
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Sipariş ID</p>
-                  <p className="text-lg font-semibold">#{selectedOrder._id.slice(-6).toUpperCase()}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Ürün</p>
-                  <p className="text-lg font-semibold">{selectedOrder.product.name}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Miktar</p>
-                  <p className="text-lg font-semibold">{selectedOrder.quantity}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Toplam Tutar</p>
-                  <p className="text-lg font-semibold text-primary">₺{selectedOrder.totalPrice}</p>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Sipariş ID</p>
+                <p className="font-medium">{selectedOrder._id.slice(-6).toUpperCase()}</p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Durum</p>
-                <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold ${STATUS_COLORS[selectedOrder.status].bg} ${STATUS_COLORS[selectedOrder.status].text}`}>
+                <p className="text-sm text-gray-500">Ürün</p>
+                <p className="font-medium">{selectedOrder.product?.name || '-'}</p>
+              </div>
+
+              {selectedOrder.product?.subCategory === 'followers' ? (
+                <div>
+                  <p className="text-sm text-gray-500">Kullanıcı Adı</p>
+                  <p className="font-medium break-all">
+                    {selectedOrder.productData?.username || '-'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm text-gray-500">Gönderi Sayısı</p>
+                    <p className="font-medium">
+                      {selectedOrder.productData?.postCount || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Gönderiler</p>
+                    <div className="mt-1 space-y-1">
+                      {selectedOrder.productData?.links?.map((link, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="text-gray-500 text-sm">{index + 1}.</span>
+                          <a 
+                            href={link} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-primary hover:text-primary-dark text-sm break-all"
+                          >
+                            {link}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <p className="text-sm text-gray-500">Durum</p>
+                <p className={`font-medium ${STATUS_COLORS[selectedOrder.status].text}`}>
                   {STATUS_COLORS[selectedOrder.status].label}
-                </span>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Hedef URL/Kullanıcı</p>
-                <p className="text-lg font-semibold break-all">
-                  {selectedOrder.productData?.username || selectedOrder.productData?.link}
                 </p>
               </div>
 
-              {selectedOrder.notes && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Admin Notları</p>
-                  <p className="text-lg font-semibold">{selectedOrder.notes}</p>
+              <div>
+                <p className="text-sm text-gray-500">İlerleme</p>
+                <div className="mt-1">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-primary h-2.5 rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${Math.min(100, (selectedOrder.currentCount / selectedOrder.targetCount) * 100)}%` 
+                      }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>{selectedOrder.currentCount}</span>
+                    <span>{selectedOrder.targetCount}</span>
+                  </div>
                 </div>
-              )}
+              </div>
 
-              <div className="flex justify-end pt-4">
+              <div>
+                <p className="text-sm text-gray-500">Toplam Tutar</p>
+                <p className="font-medium">₺{selectedOrder.totalPrice}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Sipariş Tarihi</p>
+                <p className="font-medium">
+                  {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="flex justify-end mt-6">
                 <button
-                  onClick={() => setShowModal(false)}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-semibold"
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Kapat
                 </button>

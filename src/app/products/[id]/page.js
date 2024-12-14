@@ -22,7 +22,8 @@ export default function ProductDetail() {
   const [selectedTab, setSelectedTab] = useState('description');
   const [productData, setProductData] = useState({
     username: '',
-    link: ''
+    postCount: 1,
+    links: ['']
   });
 
   useEffect(() => {
@@ -32,9 +33,31 @@ export default function ProductDetail() {
   useEffect(() => {
     if (product) {
       setQuantity(product.minQuantity || 1);
-      setProductData({ username: '', link: '' });
+      setProductData({ username: '', postCount: 1, links: [''] });
     }
   }, [product]);
+
+  const handlePostCountChange = (e) => {
+    const count = parseInt(e.target.value) || 1;
+    const validCount = Math.min(10, Math.max(1, count));
+    
+    setProductData(prev => ({
+      ...prev,
+      postCount: validCount,
+      links: Array(validCount).fill('') // Yeni link array'i oluştur
+    }));
+  };
+
+  const handleLinkChange = (index, value) => {
+    setProductData(prev => {
+      const newLinks = [...prev.links];
+      newLinks[index] = value;
+      return {
+        ...prev,
+        links: newLinks
+      };
+    });
+  };
 
   const fetchProduct = async () => {
     try {
@@ -72,9 +95,17 @@ export default function ProductDetail() {
       return;
     }
 
-    if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments') && !productData.link?.trim()) {
-      toast.error('Lütfen linki girin');
-      return;
+    if (product.subCategory !== 'followers') {
+      if (!productData.postCount || productData.postCount < 1 || productData.postCount > 10) {
+        toast.error('Gönderi sayısı 1 ile 10 arasında olmalıdır');
+        return;
+      }
+
+      // Boş link kontrolü
+      if (!productData.links || productData.links.some(link => !link || !link.trim())) {
+        toast.error('Lütfen tüm gönderi linklerini girin');
+        return;
+      }
     }
 
     try {
@@ -88,10 +119,12 @@ export default function ProductDetail() {
         body: JSON.stringify({
           productId: product._id,
           quantity: quantity,
-          productData: {
-            username: productData.username?.trim(),
-            link: productData.link?.trim()
-          }
+          productData: product.subCategory === 'followers' 
+            ? { username: productData.username?.trim() }
+            : {
+                postCount: productData.postCount,
+                links: productData.links.filter(link => link && link.trim())
+              }
         })
       });
 
@@ -101,7 +134,7 @@ export default function ProductDetail() {
       }
 
       toast.success('Ürün sepete eklendi');
-      setProductData({ username: '', link: '' });
+      setProductData({ username: '', postCount: 1, links: [''] });
       
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
@@ -220,17 +253,42 @@ export default function ProductDetail() {
                           />
                         </div>
                       ) : (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {product.category === 'instagram' ? 'Gönderi Linki' : 'Video Linki'}
-                          </label>
-                          <input
-                            type="text"
-                            value={productData.link}
-                            onChange={(e) => setProductData(prev => ({ ...prev, link: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                            placeholder={product.category === 'instagram' ? 'https://instagram.com/...' : 'https://tiktok.com/...'}
-                          />
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Gönderi Sayısı (Maksimum 10)
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="10"
+                              value={productData.postCount}
+                              onChange={handlePostCountChange}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                              placeholder="Gönderi sayısı girin"
+                            />
+                            <p className="mt-1 text-sm text-gray-500">
+                              Her gönderiye {Math.floor(quantity / productData.postCount)} adet {
+                                product.subCategory === 'likes' ? 'beğeni' : 
+                                product.subCategory === 'views' ? 'izlenme' : 'yorum'
+                              } eklenecek
+                            </p>
+                          </div>
+
+                          {productData.links.map((link, index) => (
+                            <div key={index}>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {index + 1}. Gönderi Linki
+                              </label>
+                              <input
+                                type="url"
+                                value={link}
+                                onChange={(e) => handleLinkChange(index, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                placeholder={`${index + 1}. gönderi linkini girin`}
+                              />
+                            </div>
+                          ))}
                         </div>
                       )}
 

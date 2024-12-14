@@ -24,12 +24,23 @@ const cartSchema = new mongoose.Schema({
           return this.product && this.product.subCategory === 'followers';
         }
       },
-      link: {
-        type: String,
+      postCount: {
+        type: Number,
+        min: 1,
         required: function() {
-          return this.product && (this.product.subCategory === 'likes' || 
-                                this.product.subCategory === 'views' || 
-                                this.product.subCategory === 'comments');
+          return this.product && this.product.subCategory !== 'followers';
+        }
+      },
+      links: {
+        type: [String],
+        required: function() {
+          return this.product && this.product.subCategory !== 'followers';
+        },
+        validate: {
+          validator: function(links) {
+            return links && links.length > 0 && links.every(link => link && link.trim().length > 0);
+          },
+          message: 'Tüm gönderi linkleri doldurulmalıdır'
         }
       }
     }
@@ -44,7 +55,7 @@ const cartSchema = new mongoose.Schema({
   }
 });
 
-// Güncelleme zamanını otomatik güncelle
+// Validation
 cartSchema.pre('save', async function(next) {
   try {
     for (const item of this.items) {
@@ -56,6 +67,21 @@ cartSchema.pre('save', async function(next) {
 
       if (item.quantity < product.minQuantity || item.quantity > product.maxQuantity) {
         throw new Error(`Miktar ${product.minQuantity} ile ${product.maxQuantity} arasında olmalıdır`);
+      }
+
+      // Takipçi harici hizmetler için link kontrolü
+      if (product.subCategory !== 'followers') {
+        if (!item.productData.postCount || item.productData.postCount < 1) {
+          throw new Error('Gönderi sayısı en az 1 olmalıdır');
+        }
+
+        if (!item.productData.links || !Array.isArray(item.productData.links) || item.productData.links.length === 0) {
+          throw new Error('En az bir gönderi linki girilmelidir');
+        }
+
+        if (item.productData.links.some(link => !link || !link.trim())) {
+          throw new Error('Tüm gönderi linkleri doldurulmalıdır');
+        }
       }
     }
     next();
