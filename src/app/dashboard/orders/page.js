@@ -67,15 +67,15 @@ export default function Orders() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <DashboardNavbar />
       
-      <main className="container mx-auto px-4 py-12">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-extrabold text-primary mb-2">Siparişlerim</h1>
-          <p className="text-gray-600 text-lg">Tüm siparişlerinizi görüntüleyin ve takip edin</p>
+      <main className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="mb-8 sm:mb-10 text-center">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-primary mb-2">Siparişlerim</h1>
+          <p className="text-gray-600 text-base sm:text-lg">Tüm siparişlerinizi görüntüleyin ve takip edin</p>
         </div>
 
         {orders.length > 0 ? (
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
@@ -141,14 +141,72 @@ export default function Orders() {
                 </tbody>
               </table>
             </div>
+
+            <div className="md:hidden">
+              {orders.map((order) => (
+                <div 
+                  key={order._id} 
+                  className="bg-white mb-4 rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                >
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          #{order._id.slice(-6).toUpperCase()}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[order.status].bg} ${STATUS_COLORS[order.status].text}`}>
+                        {STATUS_COLORS[order.status].label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="pb-3 border-b border-gray-100">
+                        <p className="text-sm text-gray-500">Ürün</p>
+                        <p className="font-medium text-gray-900 mt-0.5">{order.product.name}</p>
+                      </div>
+
+                      <div className="flex justify-between py-2">
+                        <div>
+                          <p className="text-sm text-gray-500">Miktar</p>
+                          <p className="font-medium text-gray-900 mt-0.5">{order.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Toplam</p>
+                          <p className="font-bold text-primary mt-0.5">₺{order.totalPrice}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-3 bg-gray-50 text-right">
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setShowDetailsModal(true);
+                      }}
+                      className="text-primary hover:text-primary-dark font-medium text-sm inline-flex items-center"
+                    >
+                      Detayları Görüntüle
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
-          <div className="text-center py-16 bg-white rounded-2xl shadow-lg border border-gray-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Henüz siparişiniz bulunmuyor</h3>
-            <p className="text-gray-600 text-lg mb-8">Hemen alışverişe başlayın!</p>
+          <div className="text-center py-12 sm:py-16 bg-white rounded-2xl shadow-lg border border-gray-100 px-4">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Henüz siparişiniz bulunmuyor</h3>
+            <p className="text-gray-600 text-base sm:text-lg mb-6 sm:mb-8">Hemen alışverişe başlayın!</p>
             <button
               onClick={() => router.push('/dashboard/products')}
-              className="bg-primary text-white px-8 py-3 rounded-xl text-lg font-semibold hover:bg-primary-dark transform hover:scale-105 transition-all duration-200"
+              className="bg-primary text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-base sm:text-lg font-semibold hover:bg-primary-dark transform hover:scale-105 transition-all duration-200"
             >
               Ürünleri İncele
             </button>
@@ -156,11 +214,11 @@ export default function Orders() {
         )}
       </main>
 
-      {/* Sipariş Detay Modal */}
+      {/* Responsive Modal */}
       {showDetailsModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-semibold mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4">
               Sipariş Detayları
             </h2>
             
@@ -247,15 +305,15 @@ export default function Orders() {
                   {new Date(selectedOrder.createdAt).toLocaleDateString()}
                 </p>
               </div>
+            </div>
 
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  Kapat
-                </button>
-              </div>
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Kapat
+              </button>
             </div>
           </div>
         </div>

@@ -135,7 +135,6 @@ export default function Cart() {
       
       setCartItems(updatedItems);
       calculateTotal(updatedItems);
-      toast.success('Miktar güncellendi');
     } catch (error) {
       console.error('Miktar güncellenirken hata:', error);
       toast.error('Miktar güncellenirken bir hata oluştu');
@@ -247,17 +246,17 @@ export default function Cart() {
     <div className="min-h-screen bg-white flex flex-col">
       <DashboardNavbar />
       
-      <main className="flex-grow py-8">
+      <main className="flex-grow py-4 sm:py-8 mb-8">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-2xl font-medium text-gray-900">Sepetim ({cartItems.length})</h1>
-            </div>
-
-            {cartItems.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                  <div className="space-y-4">
+          <div className="lg:hidden">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-xl sm:text-2xl font-medium text-gray-900">Sepetim ({cartItems.length})</h1>
+              </div>
+              
+              {cartItems.length > 0 ? (
+                <div className="space-y-6">
+                  <div className="space-y-3 sm:space-y-4">
                     <AnimatePresence>
                       {cartItems.map((item) => {
                         if (!item.product) return null;
@@ -315,7 +314,6 @@ export default function Cart() {
                               </div>
                             </div>
 
-                            {/* Product Data Section */}
                             <div className="mt-4 pt-4 border-t border-gray-200">
                               <div className="flex items-center justify-between">
                                 <div className="flex-grow">
@@ -370,53 +368,234 @@ export default function Cart() {
                       })}
                     </AnimatePresence>
                   </div>
-                </div>
 
-                <div className="lg:col-span-1">
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <h2 className="text-lg font-medium mb-4">Özet</h2>
+                  <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                    <h2 className="text-lg font-medium mb-4">Sipariş Özeti</h2>
                     
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm sm:text-base">
                         <span>Ara Toplam</span>
                         <span>₺{totalPrice.subtotal.toFixed(2)}</span>
                       </div>
                       
                       {totalPrice.taxDetails?.map(detail => (
-                        <div key={detail.rate} className="flex justify-between text-gray-500">
+                        <div key={detail.rate} className="flex justify-between text-sm sm:text-base text-gray-500">
                           <span>KDV ({Math.round(detail.rate)}%)</span>
                           <span>₺{detail.taxAmount.toFixed(2)}</span>
                         </div>
                       ))}
                       
-                      <div className="pt-2 border-t border-gray-200 mt-2">
-                        <div className="flex justify-between font-medium">
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex justify-between font-medium text-base sm:text-lg">
                           <span>Toplam</span>
                           <span>₺{totalPrice.total.toFixed(2)}</span>
                         </div>
                       </div>
+
+                      <button
+                        onClick={handleCheckout}
+                        disabled={cartItems.length === 0}
+                        className="w-full mt-4 bg-primary text-white py-3 sm:py-4 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium"
+                      >
+                        Siparişi Onayla
+                      </button>
                     </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <FaShoppingCart className="mx-auto text-4xl text-gray-300 mb-4" />
+                  <h2 className="text-xl font-medium text-gray-900 mb-2">Sepetiniz Boş</h2>
+                  <p className="text-gray-500 mb-6">Sepetinizde henüz ürün bulunmuyor.</p>
+                  <button
+                    onClick={() => router.push('/dashboard/products')}
+                    className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                  >
+                    Alışverişe Başla
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="hidden lg:block">
+            <h1 className="text-2xl font-medium text-gray-900 mb-8">Sepetim ({cartItems.length})</h1>
+            
+            {cartItems.length > 0 ? (
+              <div className="grid grid-cols-12 gap-8">
+                <div className="col-span-8">
+                  <div className="bg-white rounded-xl shadow-sm">
+                    <div className="divide-y divide-gray-100">
+                      <AnimatePresence>
+                        {cartItems.map((item) => {
+                          if (!item.product) return null;
+                          
+                          return (
+                            <motion.div
+                              key={item._id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="p-6 hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex gap-6">
+                                <div className="relative h-24 w-24 flex-shrink-0">
+                                  <Image
+                                    src={getImageUrl(item.product.image)}
+                                    alt={item.product.name}
+                                    fill
+                                    className="object-cover rounded-lg"
+                                  />
+                                </div>
+                                
+                                <div className="flex-grow">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-medium text-lg text-gray-900">{item.product.name}</h3>
+                                      {item.product.category === 'instagram' ? (
+                                        <FaInstagram className="text-pink-500 text-xl" />
+                                      ) : (
+                                        <FaTiktok className="text-blue-500 text-xl" />
+                                      )}
+                                    </div>
+                                    <div className="text-lg font-medium text-gray-900">
+                                      ₺{(item.product.price * item.quantity).toFixed(2)}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center justify-between mt-4">
+                                    <div className="flex items-center gap-3 bg-gray-100 rounded-lg p-1">
+                                      <button
+                                        onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                                        className="w-8 h-8 rounded-md bg-white shadow-sm flex items-center justify-center hover:bg-gray-50"
+                                      >
+                                        -
+                                      </button>
+                                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                      <button
+                                        onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                                        className="w-8 h-8 rounded-md bg-white shadow-sm flex items-center justify-center hover:bg-gray-50"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4">
+                                      <button
+                                        onClick={() => {
+                                          setEditingItem({
+                                            ...item,
+                                            productData: item.productData || { username: '', link: '' }
+                                          });
+                                          setShowEditModal(true);
+                                        }}
+                                        className="text-primary hover:text-primary-dark font-medium"
+                                      >
+                                        Düzenle
+                                      </button>
+                                      <button
+                                        onClick={() => removeItem(item._id)}
+                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                      >
+                                        <FaTrash size={16} />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4 pt-4 border-t border-gray-100">
+                                    {item.product.subCategory === 'followers' ? (
+                                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <span className="font-medium">Kullanıcı Adı:</span>
+                                        <span className="text-gray-900">{item.productData?.username || '-'}</span>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                          <span className="font-medium">Gönderi Sayısı:</span>
+                                          <span className="text-gray-900">{item.productData?.postCount || '-'}</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          <span className="font-medium">Gönderiler:</span>
+                                          <div className="mt-1 space-y-1">
+                                            {item.productData?.links?.map((link, index) => (
+                                              <div key={index} className="flex items-center gap-2">
+                                                <span className="text-gray-500">{index + 1}.</span>
+                                                <a 
+                                                  href={link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:text-primary-dark break-all"
+                                          >
+                                                  {link}
+                                          </a>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-4">
+                  <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
+                    <h2 className="text-xl font-medium mb-6">Sipariş Özeti</h2>
                     
-                    <button
-                      onClick={handleCheckout}
-                      disabled={cartItems.length === 0}
-                      className="w-full bg-primary text-white py-3 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Siparişi Onayla
-                    </button>
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-base">
+                        <span className="text-gray-600">Ara Toplam</span>
+                        <span className="font-medium">₺{totalPrice.subtotal.toFixed(2)}</span>
+                      </div>
+                      
+                      {totalPrice.taxDetails?.map(detail => (
+                        <div key={detail.rate} className="flex justify-between text-base text-gray-600">
+                          <span>KDV ({Math.round(detail.rate)}%)</span>
+                          <span>₺{detail.taxAmount.toFixed(2)}</span>
+                        </div>
+                      ))}
+                      
+                      <div className="pt-4 border-t border-gray-100">
+                        <div className="flex justify-between text-lg font-medium">
+                          <span>Toplam</span>
+                          <span className="text-primary">₺{totalPrice.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleCheckout}
+                        disabled={cartItems.length === 0}
+                        className="w-full mt-6 bg-primary text-white py-4 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                      >
+                        <span>Siparişi Onayla</span>
+                        <FaArrowRight size={16} />
+                      </button>
+
+                      <p className="text-sm text-gray-500 text-center mt-4">
+                        Siparişi onaylayarak satın alma koşullarını kabul etmiş olursunuz.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-12">
-                <FaShoppingCart className="mx-auto text-4xl text-gray-300 mb-4" />
-                <h2 className="text-xl font-medium text-gray-900 mb-2">Sepetiniz Boş</h2>
-                <p className="text-gray-500 mb-6">Sepetinizde henüz ürün bulunmuyor.</p>
+              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                <FaShoppingCart className="mx-auto text-5xl text-gray-300 mb-6" />
+                <h2 className="text-2xl font-medium text-gray-900 mb-3">Sepetiniz Boş</h2>
+                <p className="text-gray-500 mb-8">Sepetinizde henüz ürün bulunmuyor.</p>
                 <button
                   onClick={() => router.push('/dashboard/products')}
-                  className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                  className="bg-primary text-white px-8 py-3 rounded-xl hover:bg-primary-dark transition-colors inline-flex items-center gap-2"
                 >
-                  Alışverişe Başla
+                  <span>Alışverişe Başla</span>
+                  <FaArrowRight size={16} />
                 </button>
               </div>
             )}
@@ -424,7 +603,6 @@ export default function Cart() {
         </div>
       </main>
 
-      {/* Edit Product Data Modal */}
       <AnimatePresence>
         {showEditModal && editingItem && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

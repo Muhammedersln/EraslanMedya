@@ -43,13 +43,20 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     // ProductData validasyonu
-    if (product.subCategory === 'followers' && !productData?.username?.trim()) {
-      return res.status(400).json({ 
-        message: 'Takipçi ürünleri için kullanıcı adı zorunludur' 
-      });
-    }
+    if (product.subCategory === 'followers') {
+      if (!productData?.username?.trim()) {
+        return res.status(400).json({ 
+          message: 'Takipçi ürünleri için kullanıcı adı zorunludur' 
+        });
+      }
+    } else {
+      // Beğeni, izlenme ve yorum için postCount ve links kontrolü
+      if (!productData?.postCount || productData.postCount < 1 || productData.postCount > 10) {
+        return res.status(400).json({ 
+          message: 'Gönderi sayısı 1 ile 10 arasında olmalıdır' 
+        });
+      }
 
-    if ((product.subCategory === 'likes' || product.subCategory === 'views' || product.subCategory === 'comments')) {
       if (!productData?.links || !Array.isArray(productData.links) || productData.links.length === 0) {
         return res.status(400).json({ 
           message: `${product.subCategory === 'likes' ? 'Beğeni' : 
@@ -74,11 +81,12 @@ router.post('/', authMiddleware, async (req, res) => {
         items: [{
           product: productId,
           quantity,
-          productData: {
-            username: productData?.username?.trim(),
-            postCount: productData?.postCount,
-            links: productData?.links?.map(link => link.trim())
-          }
+          productData: product.subCategory === 'followers' 
+            ? { username: productData.username.trim() }
+            : {
+                postCount: productData.postCount,
+                links: productData.links.map(link => link.trim())
+              }
         }]
       });
     } else {
@@ -90,21 +98,23 @@ router.post('/', authMiddleware, async (req, res) => {
       if (itemIndex > -1) {
         // Ürün varsa miktarı ve productData'yı güncelle
         cart.items[itemIndex].quantity = quantity;
-        cart.items[itemIndex].productData = {
-          username: productData?.username?.trim(),
-          postCount: productData?.postCount,
-          links: productData?.links?.map(link => link.trim())
-        };
+        cart.items[itemIndex].productData = product.subCategory === 'followers'
+          ? { username: productData.username.trim() }
+          : {
+              postCount: productData.postCount,
+              links: productData.links.map(link => link.trim())
+            };
       } else {
         // Ürün yoksa ekle
         cart.items.push({
           product: productId,
           quantity,
-          productData: {
-            username: productData?.username?.trim(),
-            postCount: productData?.postCount,
-            links: productData?.links?.map(link => link.trim())
-          }
+          productData: product.subCategory === 'followers'
+            ? { username: productData.username.trim() }
+            : {
+                postCount: productData.postCount,
+                links: productData.links.map(link => link.trim())
+              }
         });
       }
     }

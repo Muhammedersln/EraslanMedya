@@ -89,8 +89,6 @@ export default function ProductCard({ product }) {
             }
       };
 
-      console.log('Gönderilen veri:', requestData); // Debug için
-
       const response = await fetch(`${API_URL}/api/cart`, {
         method: 'POST',
         headers: {
@@ -203,72 +201,213 @@ export default function ProductCard({ product }) {
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -5 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
-        onClick={() => router.push(`/products/${product._id}`)}
-      >
-        {/* Görsel Alanı */}
-        <div className="relative h-48 w-full bg-gradient-to-br from-gray-100 to-gray-200">
-          <Image
-            src={getImageUrl(product.image)}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-          <div className="absolute top-3 right-3">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-              product.category === 'instagram' 
-                ? 'bg-pink-100 text-pink-600'
-                : 'bg-blue-100 text-blue-600'
-            }`}>
-              {product.category === 'instagram' ? 'Instagram' : 'TikTok'}
-            </span>
-          </div>
-        </div>
+      {/* Mobil Tasarım */}
+      <div className="md:hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-2xl shadow-sm overflow-hidden h-full flex flex-col mx-2"
+          onClick={() => router.push(`/products/${product._id}`)}
+        >
+          {/* Görsel Alanı */}
+          <div className="relative aspect-[3/2] w-full group overflow-hidden">
+            <Image
+              src={getImageUrl(product.image)}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+            
+            {/* Kategori Etiketleri */}
+            <div className="absolute top-3 left-3 flex items-center gap-2">
+              {/* Ana Kategori */}
+              <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2.5 py-1.5 rounded-lg">
+                {product.category === 'instagram' ? (
+                  <FaInstagram className="text-white text-sm" />
+                ) : (
+                  <FaTiktok className="text-white text-sm" />
+                )}
+              </div>
 
-        {/* İçerik Alanı */}
-        <div className="p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {product.name}
-          </h3>
-          
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-            {product.description}
-          </p>
-
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Min:</span>
-              <span className="text-sm font-medium">{product.minQuantity}</span>
-              <span className="text-xs text-gray-500 ml-2">Max:</span>
-              <span className="text-sm font-medium">{product.maxQuantity}</span>
+              {/* Alt Kategori */}
+              <div className={`px-2.5 py-1.5 rounded-lg text-xs font-medium backdrop-blur-sm
+                ${product.subCategory === 'followers' 
+                  ? 'bg-indigo-500/70 text-white' 
+                  : product.subCategory === 'likes' 
+                  ? 'bg-rose-500/70 text-white'
+                  : product.subCategory === 'views' 
+                  ? 'bg-sky-500/70 text-white'
+                  : 'bg-emerald-500/70 text-white'}`}
+              >
+                {product.subCategory === 'followers' ? 'Takipçi' :
+                 product.subCategory === 'likes' ? 'Beğeni' :
+                 product.subCategory === 'views' ? 'İzlenme' : 'Yorum'}
+              </div>
             </div>
-            <span className="text-lg font-bold text-primary">
-              ₺{product.price}
-            </span>
+
+            {/* Fiyat Etiketi */}
+            <div className="absolute bottom-2 right-2">
+              <span className="px-2.5 py-1 rounded-full text-sm font-bold bg-white/90 text-primary shadow-lg">
+                {formatPrice(product.price)}
+              </span>
+            </div>
           </div>
 
-          <button 
-            onClick={handleAddToCart}
-            disabled={loading}
-            className={`w-full bg-primary hover:bg-primary-dark text-white py-2.5 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
-              loading ? 'opacity-70 cursor-not-allowed' : ''
-            }`}
-          >
-            <span>{loading ? 'Ekleniyor...' : 'Sepete Ekle'}</span>
-            {!loading && (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </motion.div>
+          {/* İçerik Alanı */}
+          <div className="p-3 flex-grow flex flex-col">
+            <h3 className="text-base font-semibold text-gray-900 mb-1 line-clamp-1">
+              {product.name}
+            </h3>
+            
+            <p className="text-xs text-gray-600 mb-3 line-clamp-2 flex-grow">
+              {product.description}
+            </p>
+
+            {/* Miktar Bilgisi */}
+            <div className="flex items-center justify-between mb-3 p-2 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-500">Min</span>
+                  <span className="text-xs font-semibold">{product.minQuantity}</span>
+                </div>
+                <div className="w-px h-8 bg-gray-200" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-500">Max</span>
+                  <span className="text-xs font-semibold">{product.maxQuantity}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sepete Ekle Butonu */}
+            <button 
+              onClick={handleAddToCart}
+              disabled={loading}
+              className={`w-full bg-primary hover:bg-primary-dark text-white py-2.5 px-4 rounded-xl font-medium 
+                transition-all duration-300 flex items-center justify-center gap-2 text-sm
+                ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Ekleniyor...
+                </span>
+              ) : (
+                <>
+                  <span>Sepete Ekle</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Desktop Tasarım */}
+      <div className="hidden md:block">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ y: -5 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer h-full flex flex-col"
+          onClick={() => router.push(`/products/${product._id}`)}
+        >
+          {/* Mevcut desktop tasarımı buraya */}
+          <div className="relative aspect-[3/2] w-full group overflow-hidden">
+            <Image
+              src={getImageUrl(product.image)}
+              alt={product.name}
+              fill
+              className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-2xl" />
+            
+            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+              <span className={`px-2.5 py-1 rounded-full text-sm font-medium backdrop-blur-sm 
+                ${product.category === 'instagram' 
+                  ? 'bg-pink-500/80 text-white' 
+                  : 'bg-black/80 text-white'
+                } flex items-center gap-1.5`}>
+                {getCategoryIcon()}
+                {product.category === 'instagram' ? 'Instagram' : 'TikTok'}
+              </span>
+              <span className={`px-2.5 py-1 rounded-full text-sm font-medium backdrop-blur-sm
+                ${product.subCategory === 'followers' ? 'bg-purple-500/80' :
+                  product.subCategory === 'likes' ? 'bg-red-500/80' :
+                  product.subCategory === 'views' ? 'bg-blue-500/80' :
+                  'bg-green-500/80'} text-white`}>
+                {product.subCategory === 'followers' ? 'Takipçi' :
+                 product.subCategory === 'likes' ? 'Beğeni' :
+                 product.subCategory === 'views' ? 'İzlenme' : 'Yorum'}
+              </span>
+            </div>
+
+            <div className="absolute bottom-3 right-3">
+              <span className="px-2.5 py-1 rounded-full text-sm font-bold bg-white/90 text-primary shadow-lg">
+                {formatPrice(product.price)}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4 flex-grow flex flex-col">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+              {product.name}
+            </h3>
+            
+            <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-grow">
+              {product.description}
+            </p>
+
+            <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500">Min</span>
+                  <span className="text-sm font-semibold">{product.minQuantity}</span>
+                </div>
+                <div className="w-px h-8 bg-gray-200" />
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500">Max</span>
+                  <span className="text-sm font-semibold">{product.maxQuantity}</span>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleAddToCart}
+              disabled={loading}
+              className={`w-full bg-primary hover:bg-primary-dark text-white py-3 px-4 rounded-xl font-medium 
+                transition-all duration-300 flex items-center justify-center gap-2 text-base
+                ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Ekleniyor...
+                </span>
+              ) : (
+                <>
+                  <span>Sepete Ekle</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
+      </div>
 
       {/* Auth Modal */}
       <AnimatePresence>
@@ -320,7 +459,7 @@ export default function ProductCard({ product }) {
                   className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0H6m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                   <span>Kayıt Ol</span>
                 </motion.button>

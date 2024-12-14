@@ -1,61 +1,45 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const cartSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+const cartItemSchema = new Schema({
+  product: {
+    type: Schema.Types.ObjectId,
+    ref: 'Product',
     required: true
   },
-  items: [{
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1
-    },
-    productData: {
-      username: {
-        type: String,
-        required: function() {
-          return this.product && this.product.subCategory === 'followers';
-        }
-      },
-      postCount: {
-        type: Number,
-        min: 1,
-        required: function() {
-          return this.product && this.product.subCategory !== 'followers';
-        }
-      },
-      links: {
-        type: [String],
-        required: function() {
-          return this.product && this.product.subCategory !== 'followers';
-        },
-        validate: {
-          validator: function(links) {
-            return links && links.length > 0 && links.every(link => link && link.trim().length > 0);
-          },
-          message: 'Tüm gönderi linkleri doldurulmalıdır'
-        }
-      }
-    }
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now
+  quantity: {
+    type: Number,
+    required: true,
+    min: 1
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  productData: {
+    username: {
+      type: String,
+      trim: true
+    },
+    postCount: {
+      type: Number,
+      min: 1,
+      max: 10
+    },
+    links: {
+      type: [String]
+    }
   }
 });
 
-// Validation
+const cartSchema = new Schema({
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  items: [cartItemSchema]
+}, {
+  timestamps: true
+});
+
+// Pre-save middleware for validation
 cartSchema.pre('save', async function(next) {
   try {
     for (const item of this.items) {
@@ -65,21 +49,20 @@ cartSchema.pre('save', async function(next) {
         throw new Error('Ürün bulunamadı');
       }
 
-      if (item.quantity < product.minQuantity || item.quantity > product.maxQuantity) {
-        throw new Error(`Miktar ${product.minQuantity} ile ${product.maxQuantity} arasında olmalıdır`);
-      }
-
-      // Takipçi harici hizmetler için link kontrolü
-      if (product.subCategory !== 'followers') {
-        if (!item.productData.postCount || item.productData.postCount < 1) {
-          throw new Error('Gönderi sayısı en az 1 olmalıdır');
+      // Takipçi ürünleri için sadece username kontrolü
+      if (product.subCategory === 'followers') {
+        if (!item.productData.username || !item.productData.username.trim()) {
+          throw new Error('Takipçi ürünleri için kullanıcı adı zorunludur');
+        }
+      } else {
+        // Diğer ürünler için postCount ve links kontrolü
+        if (!item.productData.postCount || item.productData.postCount < 1 || item.productData.postCount > 10) {
+          throw new Error('Gönderi sayısı 1 ile 10 arasında olmalıdır');
         }
 
-        if (!item.productData.links || !Array.isArray(item.productData.links) || item.productData.links.length === 0) {
-          throw new Error('En az bir gönderi linki girilmelidir');
-        }
-
-        if (item.productData.links.some(link => !link || !link.trim())) {
+        if (!item.productData.links || !Array.isArray(item.productData.links) || 
+            item.productData.links.length === 0 || 
+            item.productData.links.some(link => !link || !link.trim())) {
           throw new Error('Tüm gönderi linkleri doldurulmalıdır');
         }
       }

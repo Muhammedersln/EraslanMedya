@@ -8,6 +8,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_URL } from '@/utils/constants';
 import ProductCard from "@/components/ProductCard";
+import heroImage from "../../public/images/herosection.png";
+
 
 export default function Home() {
   const router = useRouter();
@@ -20,22 +22,65 @@ export default function Home() {
     const interval = setInterval(() => {
       const slider = document.getElementById('product-slider');
       if (slider) {
-        slider.scrollBy({
-          left: 250,
-          behavior: 'smooth'
-        });
+        const scrollAmount = slider.clientWidth;
+        const maxScroll = slider.scrollWidth - slider.clientWidth;
+        const currentScroll = slider.scrollLeft;
 
-        // Eğer sona geldiyse başa dön
-        if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth) {
+        // Eğer sona yaklaşıyorsa başa dön
+        if (currentScroll >= maxScroll - 20) {
           slider.scrollTo({
             left: 0,
             behavior: 'smooth'
           });
+        } else {
+          // Bir sonraki karta kaydır
+          slider.scrollTo({
+            left: currentScroll + scrollAmount,
+            behavior: 'smooth'
+          });
         }
       }
-    }, 3000);
+    }, 5000);
 
     setSliderInterval(interval);
+  };
+
+  // Slider'ı manuel kaydırma fonksiyonu
+  const scrollSlider = (direction) => {
+    const slider = document.getElementById('product-slider');
+    if (slider) {
+      const scrollAmount = slider.clientWidth;
+      const maxScroll = slider.scrollWidth - slider.clientWidth;
+      const currentScroll = slider.scrollLeft;
+
+      if (direction === 'left') {
+        // Sola kaydırma - başa gelince sona git
+        if (currentScroll <= 0) {
+          slider.scrollTo({
+            left: maxScroll,
+            behavior: 'smooth'
+          });
+        } else {
+          slider.scrollTo({
+            left: currentScroll - scrollAmount,
+            behavior: 'smooth'
+          });
+        }
+      } else {
+        // Sağa kaydırma - sona gelince başa git
+        if (currentScroll >= maxScroll - 20) {
+          slider.scrollTo({
+            left: 0,
+            behavior: 'smooth'
+          });
+        } else {
+          slider.scrollTo({
+            left: currentScroll + scrollAmount,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
   };
 
   useEffect(() => {
@@ -75,39 +120,44 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="flex-1 text-center lg:text-left">
-              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-                Sosyal Medya Hesabınızı <span className="text-primary">Büyütün</span>
+      <section className="relative pt-28 sm:pt-32 pb-24 sm:pb-32 overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
+            <div className="w-full lg:w-1/2 text-center lg:text-left">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+                Sosyal Medya Hesabınızı <br className="hidden sm:block" />
+                <span className="text-primary">Büyütün</span>
               </h1>
-              <p className="text-lg text-gray-600 mb-8 max-w-xl">
+              <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0">
                 Instagram ve TikTok için güvenilir, hızlı ve uygun fiyatlı takipçi, beğeni ve etkileşim hizmetleri.
               </p>
-              <div className="flex gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                 <Link 
                   href="/register" 
-                  className="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl transition-colors font-medium"
+                  className="w-full sm:w-auto inline-flex items-center justify-center bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl transition-all duration-300 font-medium text-base shadow-lg hover:shadow-primary/25"
                 >
                   Hemen Başla
                 </Link>
                 <Link 
                   href="/products" 
-                  className="bg-white text-primary border-2 border-primary px-8 py-4 rounded-xl hover:bg-primary/5 transition-colors font-medium"
+                  className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-primary border-2 border-primary hover:border-primary-dark px-8 py-4 rounded-xl hover:bg-primary/5 transition-all duration-300 font-medium text-base"
                 >
                   Ürünleri İncele
                 </Link>
               </div>
             </div>
-            <div className="flex-1 relative">
-              <Image
-                src="/hero-image.png"
-                alt="Social Media Growth"
-                width={600}
-                height={500}
-                className="rounded-2xl shadow-2xl"
-              />
+            <div className="w-full lg:w-1/2 relative mt-8 lg:mt-0">
+              <div className="relative w-full max-w-xl mx-auto">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-2xl transform rotate-6"></div>
+                <Image
+                  src={heroImage}
+                  alt="Social Media Growth"
+                  width={600}
+                  height={500}
+                  className="relative rounded-2xl shadow-xl w-full h-auto object-cover"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -128,7 +178,7 @@ export default function Home() {
           <div className="relative">
             {/* Navigation Buttons */}
             <button 
-              onClick={() => document.getElementById('product-slider').scrollBy(-300, 0)}
+              onClick={() => scrollSlider('left')}
               className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
             >
               <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +187,7 @@ export default function Home() {
             </button>
             
             <button 
-              onClick={() => document.getElementById('product-slider').scrollBy(300, 0)}
+              onClick={() => scrollSlider('right')}
               className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
             >
               <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +213,10 @@ export default function Home() {
               style={{ 
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
-                WebkitOverflowScrolling: 'touch'
+                WebkitOverflowScrolling: 'touch',
+                scrollSnapType: 'x mandatory',
+                scrollBehavior: 'smooth',
+                transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
               {products.map((product) => (

@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaInstagram, FaTiktok, FaShoppingCart } from "react-icons/fa";
+import { FaInstagram, FaTiktok } from "react-icons/fa";
 import { IoTrendingUp } from "react-icons/io5";
 import toast from "react-hot-toast";
 import { API_URL } from '@/utils/constants';
-import DashboardProductCard from "@/components/DashboardProductCard";
+import ProductCard from "@/components/ProductCard";
 import Footer from '@/components/Footer';
 
 const categories = [
@@ -31,13 +31,97 @@ const categories = [
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth();
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [cartCount, setCartCount] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const sliderRefs = useRef({});
+  const [sliderIntervals, setSliderIntervals] = useState({});
+
+  // Slider'ı başlatma fonksiyonu
+  const startSlider = (categoryId) => {
+    const interval = setInterval(() => {
+      const slider = sliderRefs.current[categoryId];
+      if (slider) {
+        const scrollAmount = slider.clientWidth;
+        const maxScroll = slider.scrollWidth - slider.clientWidth;
+        const currentScroll = slider.scrollLeft;
+
+        // Eğer sona yaklaşıyorsa başa dön ve devam et
+        if (currentScroll >= maxScroll - 20) { // 20px tolerans ekledik
+          slider.scrollTo({
+            left: 0,
+            behavior: 'smooth'
+          });
+        } else {
+          // Bir sonraki karta kaydır
+          slider.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }, 3000);
+
+    setSliderIntervals(prev => ({
+      ...prev,
+      [categoryId]: interval
+    }));
+  };
+
+  // Slider'ı manuel kaydırma fonksiyonu
+  const scrollSlider = (categoryId, direction) => {
+    const slider = sliderRefs.current[categoryId];
+    if (slider) {
+      const scrollAmount = slider.clientWidth;
+      const maxScroll = slider.scrollWidth - slider.clientWidth;
+      const currentScroll = slider.scrollLeft;
+      let newScroll;
+
+      if (direction === 'left') {
+        // Sola kaydırma - başa gelince sona git
+        if (currentScroll <= 0) {
+          newScroll = maxScroll;
+        } else {
+          newScroll = Math.max(0, currentScroll - scrollAmount);
+        }
+      } else {
+        // Sağa kaydırma - sona gelince başa git
+        if (currentScroll >= maxScroll - 20) { // 20px tolerans
+          newScroll = 0;
+        } else {
+          newScroll = Math.min(maxScroll, currentScroll + scrollAmount);
+        }
+      }
+
+      slider.scrollTo({
+        left: newScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Slider'ı durdurma fonksiyonu
+  const stopSlider = (categoryId) => {
+    if (sliderIntervals[categoryId]) {
+      clearInterval(sliderIntervals[categoryId]);
+      setSliderIntervals(prev => {
+        const newIntervals = { ...prev };
+        delete newIntervals[categoryId];
+        return newIntervals;
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Cleanup function
+    return () => {
+      Object.values(sliderIntervals).forEach(interval => {
+        clearInterval(interval);
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -111,14 +195,6 @@ export default function Dashboard() {
     }
   };
 
-  const scrollSlider = (categoryId, direction) => {
-    const slider = sliderRefs.current[categoryId];
-    if (slider) {
-      const scrollAmount = direction === 'left' ? -280 : 280;
-      slider.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
-
   const handleAddToCart = async (e, product) => {
     e.stopPropagation();
     
@@ -158,14 +234,14 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <DashboardNavbar />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-6 sm:py-8">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-3xl p-8 lg:p-12 mb-12">
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12">
           <div className="max-w-3xl">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4"
             >
               Hoş Geldiniz, {user.firstName}! 👋
             </motion.h1>
@@ -173,7 +249,7 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-gray-600 text-base lg:text-lg mb-6"
+              className="text-sm sm:text-base lg:text-lg text-gray-600 mb-4 sm:mb-6"
             >
               Sosyal medya hesaplarınızı büyütmek için en kaliteli hizmetleri sunuyoruz. 
               Hemen alışverişe başlayın ve hesaplarınızı büyütün.
@@ -185,7 +261,7 @@ export default function Dashboard() {
             >
               <button 
                 onClick={() => router.push('/dashboard/products')}
-                className="bg-primary text-white px-6 lg:px-8 py-3 rounded-xl hover:bg-primary-dark transition-all duration-300 shadow-lg hover:shadow-primary/25 text-sm lg:text-base"
+                className="bg-primary text-white px-5 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-xl hover:bg-primary-dark transition-all duration-300 shadow-lg hover:shadow-primary/25 text-sm lg:text-base"
               >
                 Tüm Ürünleri Gör
               </button>
@@ -195,16 +271,16 @@ export default function Dashboard() {
 
         {/* Trending Products */}
         {trendingProducts.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-xl bg-orange-500 text-white">
-                <IoTrendingUp className="text-xl lg:text-2xl" />
+          <section className="mb-8 sm:mb-12">
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-orange-500 text-white">
+                <IoTrendingUp className="text-lg sm:text-xl lg:text-2xl" />
               </div>
-              <h2 className="text-lg lg:text-xl font-bold text-gray-900">Trend Ürünler</h2>
+              <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">Trend Ürünler</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
               {trendingProducts.map((product, index) => (
-                <DashboardProductCard 
+                <ProductCard 
                   key={product._id} 
                   product={product} 
                   index={index}
@@ -220,28 +296,28 @@ export default function Dashboard() {
           const categoryProducts = products.filter(p => p.category === category.id);
           
           return (
-            <section key={category.id} className="mb-12">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl ${category.gradient} text-white`}>
+            <section key={category.id} className="mb-8 sm:mb-12">
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${category.gradient} text-white`}>
                     {category.icon}
                   </div>
-                  <h2 className="text-lg lg:text-xl font-bold text-gray-900">{category.name} Hizmetleri</h2>
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">{category.name} Hizmetleri</h2>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     onClick={() => scrollSlider(category.id, 'left')}
-                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    className="p-2.5 rounded-full bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:scale-105 group"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
                   <button
                     onClick={() => scrollSlider(category.id, 'right')}
-                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    className="p-2.5 rounded-full bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:scale-105 group"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
@@ -249,32 +325,55 @@ export default function Dashboard() {
               </div>
 
               <div 
-                ref={el => sliderRefs.current[category.id] = el}
-                className="flex gap-4 lg:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4"
+                ref={el => {
+                  sliderRefs.current[category.id] = el;
+                  if (el && !sliderIntervals[category.id]) {
+                    startSlider(category.id);
+                  }
+                }}
+                className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4 scroll-smooth"
+                onMouseEnter={() => stopSlider(category.id)}
+                onMouseLeave={() => startSlider(category.id)}
+                style={{ 
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollSnapType: 'x mandatory'
+                }}
               >
                 {loading ? (
                   [...Array(4)].map((_, index) => (
                     <div 
                       key={index}
-                      className="min-w-[250px] lg:min-w-[280px] bg-white rounded-xl p-4 shadow-sm animate-pulse flex-shrink-0"
+                      className="w-[calc(100%-32px)] sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-none snap-start"
                     >
-                      <div className="w-full h-32 bg-gray-200 rounded-lg mb-3"></div>
-                      <div className="h-5 bg-gray-200 rounded w-2/3 mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-full mb-3"></div>
-                      <div className="flex justify-between items-center">
-                        <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                      <div className="bg-white rounded-xl p-4 shadow-sm animate-pulse">
+                        <div className="w-full aspect-square bg-gray-200 rounded-lg mb-3"></div>
+                        <div className="h-4 sm:h-5 bg-gray-200 rounded w-2/3 mb-2"></div>
+                        <div className="h-3 sm:h-4 bg-gray-200 rounded w-full mb-3"></div>
+                        <div className="flex justify-between items-center">
+                          <div className="h-5 sm:h-6 bg-gray-200 rounded w-1/3"></div>
+                          <div className="h-7 sm:h-8 bg-gray-200 rounded w-1/4"></div>
+                        </div>
                       </div>
                     </div>
                   ))
                 ) : (
                   categoryProducts.map((product, index) => (
-                    <DashboardProductCard 
+                    <div 
                       key={product._id} 
-                      product={product} 
-                      index={index}
-                      onCartUpdate={fetchCartCount}
-                    />
+                      className="w-[calc(100%-32px)] sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-none snap-start"
+                      style={{
+                        scrollSnapAlign: 'start',
+                        scrollSnapStop: 'always'
+                      }}
+                    >
+                      <ProductCard 
+                        product={product} 
+                        index={index}
+                        onCartUpdate={fetchCartCount}
+                      />
+                    </div>
                   ))
                 )}
               </div>
@@ -295,10 +394,10 @@ export default function Dashboard() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white rounded-2xl p-6 max-w-md w-full"
+                className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
               >
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Giriş Yapmanız Gerekiyor</h3>
-                <p className="text-gray-600 mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Giriş Yapmanız Gerekiyor</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-5 sm:mb-6">
                   Bu işlemi gerçekleştirmek için lütfen giriş yapın veya hesap oluşturun.
                 </p>
                 <div className="space-y-3">
@@ -307,7 +406,7 @@ export default function Dashboard() {
                       setShowAuthModal(false);
                       router.push('/login');
                     }}
-                    className="w-full bg-primary text-white py-2.5 rounded-xl hover:bg-primary-dark transition-colors"
+                    className="w-full bg-primary text-white py-2.5 rounded-xl hover:bg-primary-dark transition-colors text-sm sm:text-base"
                   >
                     Giriş Yap
                   </button>
@@ -316,13 +415,13 @@ export default function Dashboard() {
                       setShowAuthModal(false);
                       router.push('/register');
                     }}
-                    className="w-full bg-gray-100 text-gray-800 py-2.5 rounded-xl hover:bg-gray-200 transition-colors"
+                    className="w-full bg-gray-100 text-gray-800 py-2.5 rounded-xl hover:bg-gray-200 transition-colors text-sm sm:text-base"
                   >
                     Hesap Oluştur
                   </button>
                   <button
                     onClick={() => setShowAuthModal(false)}
-                    className="w-full text-gray-500 py-2.5 hover:text-gray-700 transition-colors"
+                    className="w-full text-gray-500 py-2.5 hover:text-gray-700 transition-colors text-sm sm:text-base"
                   >
                     Vazgeç
                   </button>

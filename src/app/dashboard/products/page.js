@@ -164,7 +164,7 @@ export default function DashboardProducts() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <DashboardNavbar />
-      <main className="flex-grow ">
+      <main className="flex-grow">
         {/* Modern 3D Hero Section */}
         <div className={`relative overflow-hidden bg-gradient-to-r ${currentCategory.color} py-16`}>
           {/* Animated Background Elements */}
@@ -247,7 +247,7 @@ export default function DashboardProducts() {
                       </span>
                     </h1>
                     <p className="text-white/90 text-sm md:text-base mt-1">
-                      Profesyonel özümlerle hesabınızı büyütün
+                      Profesyonel çözümlerle hesabınızı büyütün
                     </p>
                   </div>
                 </motion.div>
@@ -277,7 +277,7 @@ export default function DashboardProducts() {
             </div>
           </div>
 
-          {/* Simplified Bottom Wave */}
+          {/* Bottom Wave */}
           <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
             <svg
               className="relative block w-full h-8"
@@ -287,53 +287,110 @@ export default function DashboardProducts() {
             >
               <path
                 d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-                className="fill-background"
+                className="fill-gray-50"
               ></path>
             </svg>
           </div>
         </div>
 
         {/* Modern Category Selector */}
-        <div className="sticky top-0 bg-white/80 backdrop-blur-lg shadow-sm z-30">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-center space-x-6 py-4">
-              {categories.map(category => (
-                <motion.button
-                  key={category.id}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setSelectedCategory(category.id);
+        <div className="sticky top-0 z-30">
+          {/* Web Görünümü */}
+          <div className="hidden md:block bg-white/80 backdrop-blur-lg shadow-sm">
+            <div className="container mx-auto px-4">
+              <div className="flex flex-wrap justify-center gap-4 py-4">
+                {categories.map(category => (
+                  <motion.button
+                    key={category.id}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setSelectedCategory(category.id);
+                      setSelectedSubCategory('all');
+                    }}
+                    className={`px-6 py-3 rounded-xl flex items-center space-x-3 transition-all duration-300 ${
+                      selectedCategory === category.id
+                        ? `bg-gradient-to-r ${category.color} text-white shadow-lg shadow-${category.color}/25`
+                        : 'bg-gray-100/80 hover:bg-gray-200/80'
+                    }`}
+                  >
+                    <motion.span 
+                      className="text-2xl"
+                      animate={{ rotate: selectedCategory === category.id ? [0, 15, -15, 0] : 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      {category.icon}
+                    </motion.span>
+                    <span className="font-semibold tracking-wide">{category.name}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobil Görünüm */}
+          <div className="md:hidden bg-white shadow-sm">
+            <div className="container mx-auto px-4">
+              {/* Mobil Kategori Seçici */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{currentCategory.icon}</span>
+                  <span className="font-semibold text-lg">{currentCategory.name}</span>
+                </div>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
                     setSelectedSubCategory('all');
                   }}
-                  className={`px-8 py-3 rounded-2xl flex items-center space-x-3 transition-all duration-300 ${
-                    selectedCategory === category.id
-                      ? `bg-gradient-to-r ${category.color} text-white shadow-lg shadow-${category.color}/25`
-                      : 'bg-gray-100/80 hover:bg-gray-200/80'
-                  }`}
+                  className="appearance-none bg-gray-100 px-4 py-2 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <motion.span 
-                    className="text-2xl"
-                    animate={{ rotate: selectedCategory === category.id ? [0, 15, -15, 0] : 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    {category.icon}
-                  </motion.span>
-                  <span className="font-semibold tracking-wide">{category.name}</span>
-                </motion.button>
-              ))}
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Mobil Alt Kategori Seçici */}
+              <div className="border-b">
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex whitespace-nowrap p-3 gap-2">
+                    <button
+                      onClick={() => setSelectedSubCategory('all')}
+                      className={`inline-flex px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        selectedSubCategory === 'all'
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
+                    >
+                      Tümü
+                    </button>
+                    {currentCategory.subCategories.map(subCat => (
+                      <button
+                        key={subCat.id}
+                        onClick={() => setSelectedSubCategory(subCat.id)}
+                        className={`inline-flex px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          selectedSubCategory === subCat.id
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        }`}
+                      >
+                        {subCat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Modern Sub Categories */}
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/50 backdrop-blur-sm border-t border-gray-100"
-        >
+        {/* Alt Kategoriler - Web Görünümü */}
+        <div className="hidden md:block bg-white/50 backdrop-blur-sm border-t border-gray-100">
           <div className="container mx-auto px-4">
-            <div className="flex justify-center space-x-4 py-4">
+            <div className="flex justify-center gap-4 py-4">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -363,7 +420,7 @@ export default function DashboardProducts() {
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Search Bar */}
         <div className="container mx-auto px-4 py-6">
@@ -385,70 +442,41 @@ export default function DashboardProducts() {
 
         {/* Products Grid */}
         <div className="container mx-auto px-4 py-8">
-          {filteredProducts.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map((product, index) => (
-                  <motion.div
-                    key={product._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                  >
-                    <ProductCard product={product} />
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center py-20"
-            >
-              <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Hizmet Bulunamadı
-              </h3>
-              <p className="text-gray-600">
-                Arama kriterlerinize uygun hizmet bulunamadı. 
-                Farklı bir kategori seçmeyi veya arama terimini değiştirmeyi deneyebilirsiniz.
-              </p>
-            </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map((product, index) => (
+              <motion.div
+                key={product._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <ProductCard
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  showAddToCart={true}
+                  className="h-full"
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-12">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-2xl shadow-sm p-8 max-w-md mx-auto"
+              >
+                <div className="text-4xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Ürün Bulunamadı</h3>
+                <p className="text-gray-600">
+                  Arama kriterlerinize uygun ürün bulunamadı. Lütfen farklı bir arama yapmayı deneyin.
+                </p>
+              </motion.div>
+            </div>
           )}
         </div>
-
-        {/* Features Section */}
-        <div className="bg-white py-16">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { icon: '⚡️', title: 'Hızlı Teslimat', desc: 'Siparişleriniz anında işleme alınır' },
-                { icon: '🔒', title: 'Güvenli Ödeme', desc: 'SSL korumalı ödeme sistemi' },
-                { icon: '💬', title: '7/24 Destek', desc: 'Sorularınız için her zaman yanınızdayız' }
-              ].map((feature, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.2 }}
-                  viewport={{ once: true }}
-                  className="text-center p-6 rounded-2xl bg-gray-50 hover:shadow-lg transition-all"
-                >
-                  <div className="text-4xl mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
       </main>
-
       <Footer />
     </div>
   );
