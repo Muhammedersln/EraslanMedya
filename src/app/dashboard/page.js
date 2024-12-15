@@ -2,13 +2,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import DashboardNavbar from "@/components/Navbar";
+import Navbar from "@/components/navbar/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { API_URL } from '@/utils/constants';
 import ProductCard from "@/components/ProductCard";
 import Footer from '@/components/Footer';
+import HeroSection from "./components/HeroSection";
 
 const categories = [
   {
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [cartCount, setCartCount] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const sliderRefs = useRef({});
   const [sliderIntervals, setSliderIntervals] = useState({});
@@ -134,7 +136,8 @@ export default function Dashboard() {
       setLoading(true);
       await Promise.all([
         fetchProducts(),
-        fetchCartCount()
+        fetchCartCount(),
+        fetchOrderCount()
       ]);
     } catch (error) {
       console.error('Veri yüklenirken hata:', error);
@@ -175,6 +178,24 @@ export default function Dashboard() {
     }
   };
 
+  const fetchOrderCount = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/orders/count`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Sipariş sayısı alınamadı');
+      }
+      const data = await response.json();
+      setOrderCount(data.count);
+    } catch (error) {
+      console.error('Sipariş sayısı alınırken hata:', error);
+      setOrderCount(0);
+    }
+  };
+
   const handleAddToCart = async (e, product) => {
     e.stopPropagation();
     
@@ -212,42 +233,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col mt-16">
-      <DashboardNavbar />
+      <Navbar />
       
       <main className="flex-grow container mx-auto px-4 py-6 sm:py-8">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12">
-          <div className="max-w-3xl">
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4"
-            >
-              Hoş Geldiniz, {user.firstName}! 👋
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-sm sm:text-base lg:text-lg text-gray-600 mb-4 sm:mb-6"
-            >
-              Sosyal medya hesaplarınızı büyütmek için en kaliteli hizmetleri sunuyoruz. 
-              Hemen alışverişe başlayın ve hesaplarınızı büyütün.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <button 
-                onClick={() => router.push('/dashboard/products')}
-                className="bg-primary text-white px-5 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-xl hover:bg-primary-dark transition-all duration-300 shadow-lg hover:shadow-primary/25 text-sm lg:text-base"
-              >
-                Tüm Ürünleri Gör
-              </button>
-            </motion.div>
-          </div>
-        </div>
+        <HeroSection 
+          user={user} 
+          orderCount={orderCount} 
+          cartCount={cartCount}
+        />
 
         {/* Category Sections */}
         {categories.map((category) => {

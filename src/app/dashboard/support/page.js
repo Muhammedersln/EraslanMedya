@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import DashboardNavbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/Footer';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -105,7 +105,7 @@ export default function Support() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
-      <DashboardNavbar />
+      <Navbar />
       
       <main className="flex-grow container mx-auto px-4 py-12 mt-16">
         <div className="max-w-5xl mx-auto">

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/navbar/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import toast from 'react-hot-toast';
 import { FaUserCircle,FaUserPlus  } from 'react-icons/fa';

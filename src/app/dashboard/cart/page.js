@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import DashboardNavbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -244,7 +244,7 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <DashboardNavbar />
+      <Navbar />
       
       <main className="flex-grow py-4 sm:py-8 mb-8">
         <div className="container mx-auto px-4">

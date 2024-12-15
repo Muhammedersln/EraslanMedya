@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa';
 import { MdEmail, MdLocationOn, MdPhone, MdSend } from 'react-icons/md';
-import DashboardNavbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { API_URL } from '@/utils/constants';
@@ -100,7 +100,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      <DashboardNavbar />
+      <Navbar />
       
       <main className="flex-grow mt-16">
         {/* Hero Section */}

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import DashboardNavbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import { API_URL } from '@/utils/constants';
 import toast from 'react-hot-toast';
 import Footer from '@/components/Footer';
@@ -55,7 +55,7 @@ export default function Orders() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <DashboardNavbar />
+        <Navbar />
         <div className="flex justify-center items-center h-[calc(100vh-80px)]">
           <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary"></div>
         </div>
@@ -65,7 +65,7 @@ export default function Orders() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <DashboardNavbar />
+      <Navbar />
       
       <main className="container mx-auto px-4 py-8 sm:py-12 mt-16">
         <div className="mb-8 sm:mb-10 text-center">

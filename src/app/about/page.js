@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/Footer';
 import heroImage from "../../../public/images/herosection.png"; //değişecek
 import Link from 'next/link';

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import toast from 'react-hot-toast';
 import { FaUserCircle,FaUserPlus  } from 'react-icons/fa';
 

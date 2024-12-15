@@ -87,6 +87,32 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+// Count route'unu ID route'undan ÖNCE tanımlayalım
+router.get('/count', authMiddleware, async (req, res) => {
+  try {
+    const count = await Order.countDocuments({ user: req.user._id });
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ message: 'Sipariş sayısı alınırken hata oluştu' });
+  }
+});
+// Son sipariş tarihini getiren endpoint
+router.get('/last-order-date', authMiddleware, async (req, res) => {
+  try {
+    const lastOrder = await Order.findOne({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .select('createdAt');
+
+    if (!lastOrder) {
+      return res.json({ lastOrderDate: null });
+    }
+
+    res.json({ lastOrderDate: lastOrder.createdAt });
+  } catch (error) {
+    res.status(500).json({ message: 'Son sipariş tarihi alınırken hata oluştu' });
+  }
+});
+
 // Sipariş detayını getir
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
@@ -105,5 +131,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Sipariş detayı getirilirken bir hata oluştu' });
   }
 });
+
+
 
 module.exports = router; 

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import DashboardNavbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import { toast } from 'react-hot-toast';
 import Footer from '@/components/Footer';
 
@@ -125,7 +125,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      <DashboardNavbar />
+      <Navbar />
       
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
