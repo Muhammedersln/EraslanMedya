@@ -98,25 +98,20 @@ export default function AdminProducts() {
         }
       });
       
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('API yanıtı JSON formatında değil');
-      }
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Ayarlar yüklenemedi');
       }
       
       const data = await response.json();
-      if (!data || typeof data.taxRate !== 'number') {
-        throw new Error('Geçersiz ayar verisi');
-      }
+      
+      setSettings({
+        taxRate: data.taxRate,
+        updatedAt: data.updatedAt
+      });
 
-      setSettings(data);
     } catch (error) {
       console.error('Ayarlar yüklenirken hata:', error);
-      // Hata durumunda varsayılan değeri kullan
       setSettings({ taxRate: 0.18 });
       toast.error('Ayarlar yüklenirken bir hata oluştu, varsayılan değerler kullanılıyor');
     }

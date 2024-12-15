@@ -2,10 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import DashboardNavbar from "@/components/DashboardNavbar";
+import DashboardNavbar from "@/components/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
-import { IoTrendingUp } from "react-icons/io5";
 import toast from "react-hot-toast";
 import { API_URL } from '@/utils/constants';
 import ProductCard from "@/components/ProductCard";
@@ -33,7 +32,6 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
-  const [trendingProducts, setTrendingProducts] = useState([]);
   const [cartCount, setCartCount] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const sliderRefs = useRef({});
@@ -134,9 +132,8 @@ export default function Dashboard() {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      await fetchProducts();
       await Promise.all([
-        fetchTrendingProducts(),
+        fetchProducts(),
         fetchCartCount()
       ]);
     } catch (error) {
@@ -157,23 +154,6 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Ürünler yüklenirken hata:', error);
       toast.error('Ürünler yüklenirken bir hata oluştu');
-    }
-  };
-
-  const fetchTrendingProducts = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/products/trending`);
-      if (!response.ok) {
-        const trending = products.sort(() => 0.5 - Math.random()).slice(0, 5);
-        setTrendingProducts(trending);
-        return;
-      }
-      const data = await response.json();
-      setTrendingProducts(data);
-    } catch (error) {
-      console.error('Trend ürünler yüklenirken hata:', error);
-      const trending = products.sort(() => 0.5 - Math.random()).slice(0, 5);
-      setTrendingProducts(trending);
     }
   };
 
@@ -231,7 +211,7 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col mt-16">
       <DashboardNavbar />
       
       <main className="flex-grow container mx-auto px-4 py-6 sm:py-8">
@@ -268,28 +248,6 @@ export default function Dashboard() {
             </motion.div>
           </div>
         </div>
-
-        {/* Trending Products */}
-        {trendingProducts.length > 0 && (
-          <section className="mb-8 sm:mb-12">
-            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-orange-500 text-white">
-                <IoTrendingUp className="text-lg sm:text-xl lg:text-2xl" />
-              </div>
-              <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">Trend Ürünler</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
-              {trendingProducts.map((product, index) => (
-                <ProductCard 
-                  key={product._id} 
-                  product={product} 
-                  index={index}
-                  onCartUpdate={fetchCartCount}
-                />
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Category Sections */}
         {categories.map((category) => {

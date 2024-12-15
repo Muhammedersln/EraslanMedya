@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import DashboardNavbar from '@/components/DashboardNavbar';
+import DashboardNavbar from '@/components/Navbar';
 import { toast } from 'react-hot-toast';
 import Footer from '@/components/Footer';
 

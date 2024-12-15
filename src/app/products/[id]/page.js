@@ -6,8 +6,7 @@ import { API_URL } from '@/utils/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
-import DashboardNavbar from '@/components/DashboardNavbar';
+import DashboardNavbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function ProductDetail() {
@@ -176,7 +175,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {user ? <DashboardNavbar /> : <Navbar />}
+      <DashboardNavbar />
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

@@ -9,6 +9,7 @@ const fs = require('fs');
 const Cart = require('../models/Cart');
 const mongoose = require('mongoose');
 const Settings = require('../models/Settings');
+const SupportTicket = require('../models/SupportTicket');
 
 // Dosya yükleme için multer ayarları
 const storage = multer.diskStorage({
@@ -514,6 +515,62 @@ router.post('/settings/tax-rate', adminMiddleware, async (req, res) => {
       success: false,
       message: 'KDV oranı güncellenirken bir hata oluştu',
       error: error.message
+    });
+  }
+});
+
+// Sipariş silme route'u
+router.delete('/orders/:orderId', adminMiddleware, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sipariş bulunamadı'
+      });
+    }
+
+    await Order.findByIdAndDelete(orderId);
+
+    res.json({
+      success: true,
+      message: 'Sipariş başarıyla silindi'
+    });
+  } catch (error) {
+    console.error('Sipariş silme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sipariş silinirken bir hata oluştu'
+    });
+  }
+});
+
+// Destek talebi silme route'u
+router.delete('/support-tickets/:ticketId', adminMiddleware, async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+
+    const ticket = await SupportTicket.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Destek talebi bulunamadı'
+      });
+    }
+
+    await SupportTicket.findByIdAndDelete(ticketId);
+
+    res.json({
+      success: true,
+      message: 'Destek talebi başarıyla silindi'
+    });
+  } catch (error) {
+    console.error('Destek talebi silme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Destek talebi silinirken bir hata oluştu'
     });
   }
 });

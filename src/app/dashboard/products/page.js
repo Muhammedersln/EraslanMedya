@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard';
-import DashboardNavbar from '@/components/DashboardNavbar';
+import DashboardNavbar from '@/components/Navbar';
 import { API_URL } from '@/utils/constants';
 import { motion } from 'framer-motion';
 import { FaInstagram } from 'react-icons/fa';

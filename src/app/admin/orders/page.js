@@ -92,6 +92,39 @@ export default function AdminOrders() {
     }
   };
 
+  const handleDelete = async (orderId) => {
+    if (!window.confirm('Bu siparişi silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Sipariş silinirken bir hata oluştu');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Sipariş başarıyla silindi');
+        fetchOrders(); // Sipariş listesini yenile
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Sipariş silinirken hata:', error);
+      toast.error(error.message || 'Sipariş silinirken bir hata oluştu');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -181,6 +214,12 @@ export default function AdminOrders() {
                     className="text-gray-600 hover:text-gray-900"
                   >
                     Detaylar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(order._id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Sil
                   </button>
                 </td>
               </tr>

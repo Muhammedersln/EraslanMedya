@@ -80,6 +80,39 @@ export default function AdminSupport() {
     }
   };
 
+  const handleDelete = async (ticketId) => {
+    if (!window.confirm('Bu destek talebini silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/support-tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Destek talebi silinirken bir hata oluştu');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Destek talebi başarıyla silindi');
+        fetchTickets();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Destek talebi silinirken hata:', error);
+      toast.error(error.message || 'Destek talebi silinirken bir hata oluştu');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -138,7 +171,7 @@ export default function AdminSupport() {
                 <td className="px-6 py-4 text-sm text-gray-900">
                   {new Date(ticket.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-6 py-4 text-sm space-x-3">
                   <button
                     onClick={() => {
                       setSelectedTicket(ticket);
@@ -147,6 +180,12 @@ export default function AdminSupport() {
                     className="text-primary hover:text-primary-dark"
                   >
                     Görüntüle
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ticket._id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Sil
                   </button>
                 </td>
               </tr>

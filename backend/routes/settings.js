@@ -42,15 +42,18 @@ router.get('/', authMiddleware, async (req, res) => {
       });
     }
     
+    // Daha basit response formatı
     res.json({
       success: true,
-      settings
+      taxRate: settings.taxRate,
+      updatedAt: settings.updatedAt
     });
   } catch (error) {
     console.error('Settings error:', error);
     res.status(500).json({
       success: false,
-      message: 'Ayarlar alınırken bir hata oluştu'
+      message: 'Ayarlar alınırken bir hata oluştu',
+      error: error.message
     });
   }
 });

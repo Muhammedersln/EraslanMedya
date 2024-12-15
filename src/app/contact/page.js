@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa';
 import { MdEmail, MdLocationOn, MdPhone } from 'react-icons/md';
-import Navbar from '@/components/Navbar';
-import DashboardNavbar from '@/components/DashboardNavbar';
+import DashboardNavbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { API_URL } from '@/utils/constants';
@@ -98,7 +97,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {user ? <DashboardNavbar /> : <Navbar />}
+      <DashboardNavbar />
       
       <main className="flex-grow mt-16">
         {/* Hero Section */}
@@ -279,4 +278,4 @@ export default function Contact() {
       <Footer />
     </div>
   );
-} 
+}

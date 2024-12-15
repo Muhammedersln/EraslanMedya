@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import DashboardNavbar from '@/components/DashboardNavbar';
+import DashboardNavbar from '@/components/Navbar';
 import { API_URL } from '@/utils/constants';
 import toast from 'react-hot-toast';
 import Footer from '@/components/Footer';
@@ -67,7 +67,7 @@ export default function Orders() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <DashboardNavbar />
       
-      <main className="container mx-auto px-4 py-8 sm:py-12">
+      <main className="container mx-auto px-4 py-8 sm:py-12 mt-16">
         <div className="mb-8 sm:mb-10 text-center">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-primary mb-2">Siparişlerim</h1>
           <p className="text-gray-600 text-base sm:text-lg">Tüm siparişlerinizi görüntüleyin ve takip edin</p>
