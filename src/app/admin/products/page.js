@@ -436,16 +436,16 @@ export default function AdminProducts() {
   }
 
   return (
-    <div>
-      <div className="mb-8 flex justify-between items-center">
+    <div className="px-4 sm:px-6 lg:px-8">
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text">Ürünler</h1>
           <p className="text-text-light">Ürünleri yönetin</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <button
             onClick={() => setShowTaxModal(true)}
-            className="bg-secondary text-white px-4 py-2 rounded-xl hover:bg-secondary-dark transition-colors"
+            className="w-full sm:w-auto bg-secondary text-white px-4 py-2 rounded-xl hover:bg-secondary-dark transition-colors text-sm"
           >
             KDV Oranını Düzenle ({(settings.taxRate * 100).toFixed(0)}%)
           </button>
@@ -454,88 +454,160 @@ export default function AdminProducts() {
               resetForm();
               setShowModal(true);
             }}
-            className="bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary-dark transition-colors"
+            className="w-full sm:w-auto bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary-dark transition-colors text-sm"
           >
             Yeni Ürün Ekle
           </button>
         </div>
       </div>
 
-      {/* Ürün tablosu */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-background">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ürün</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiyat (KDV'siz)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiyat (KDV'li)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlemler</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-secondary/10">
-            {products.map((product) => (
-              <tr key={product._id}>
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden">
-                        <Image
-                          src={getImageUrl(product.image)}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
+      {/* Masaüstü Tasarım */}
+      <div className="hidden sm:block">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+          <div className="min-w-full">
+            <table className="min-w-full divide-y divide-secondary/10">
+              <thead className="bg-background">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ürün</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiyat (KDV'siz)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiyat (KDV'li)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-secondary/10">
+                {products.map((product) => (
+                  <tr key={product._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0">
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden">
+                            <Image
+                              src={getImageUrl(product.image)}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="font-medium text-gray-900">{product.name}</div>
+                          <div className="text-sm text-gray-500">{product.description}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="font-medium text-gray-900">{product.name}</div>
-                      <div className="text-sm text-gray-500">{product.description}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center">
-                    {product.category === 'instagram' ? <FaInstagram className="mr-2" /> : <FaTiktok className="mr-2" />}
-                    {product.subCategory}
-                  </span>
-                </td>
-                <td className="px-6 py-4">{formatPrice(product.price)}</td>
-                <td className="px-6 py-4">{formatPrice(product.price, true)}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    product.active 
-                      ? 'bg-green-50 text-green-600' 
-                      : 'bg-red-50 text-red-600'
-                  }`}>
-                    {product.active ? 'Aktif' : 'Pasif'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 space-x-3">
-                  <button 
-                    onClick={() => handleEdit(product)}
-                    className="text-primary hover:text-primary-dark"
-                  >
-                    Düzenle
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(product._id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    Sil
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center">
+                        {product.category === 'instagram' ? <FaInstagram className="mr-2" /> : <FaTiktok className="mr-2" />}
+                        {product.subCategory}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">{formatPrice(product.price)}</td>
+                    <td className="px-6 py-4">{formatPrice(product.price, true)}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        product.active 
+                          ? 'bg-green-50 text-green-600' 
+                          : 'bg-red-50 text-red-600'
+                      }`}>
+                        {product.active ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => handleEdit(product)}
+                          className="text-primary hover:text-primary-dark"
+                        >
+                          Düzenle
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(product._id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Sil
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobil Tasarım */}
+      <div className="sm:hidden space-y-4">
+        {products.map((product) => (
+          <div key={product._id} className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                  <Image
+                    src={getImageUrl(product.image)}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">{product.name}</h3>
+                  <p className="text-sm text-gray-500 line-clamp-1">{product.description}</p>
+                </div>
+              </div>
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                product.active 
+                  ? 'bg-green-50 text-green-600' 
+                  : 'bg-red-50 text-red-600'
+              }`}>
+                {product.active ? 'Aktif' : 'Pasif'}
+              </span>
+            </div>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Kategori:</span>
+                <span className="inline-flex items-center">
+                  {product.category === 'instagram' ? <FaInstagram className="mr-1" /> : <FaTiktok className="mr-1" />}
+                  {product.subCategory}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">KDV'siz Fiyat:</span>
+                <span>{formatPrice(product.price)}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">KDV'li Fiyat:</span>
+                <span>{formatPrice(product.price, true)}</span>
+              </div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <button 
+                onClick={() => handleEdit(product)}
+                className="text-primary hover:text-primary-dark text-sm font-medium"
+              >
+                Düzenle
+              </button>
+              <button 
+                onClick={() => handleDelete(product._id)}
+                className="text-red-600 hover:text-red-700 text-sm font-medium"
+              >
+                Sil
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* KDV Oranı Modal */}
       {showTaxModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">KDV Oranını Güncelle</h2>
             
             <div className="space-y-4">
@@ -563,16 +635,16 @@ export default function AdminProducts() {
                 </p>
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button
                   onClick={() => setShowTaxModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors order-2 sm:order-1"
                 >
                   İptal
                 </button>
                 <button
                   onClick={updateTaxRate}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors order-1 sm:order-2"
                 >
                   Güncelle
                 </button>
@@ -584,8 +656,8 @@ export default function AdminProducts() {
 
       {/* Ürün Ekleme/Düzenleme Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4">
               {editingProduct ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}
             </h2>
@@ -634,7 +706,7 @@ export default function AdminProducts() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Kategori
@@ -670,7 +742,7 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-1">
                     Min. Miktar
@@ -728,21 +800,21 @@ export default function AdminProducts() {
                 </label>
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 text-text-light hover:text-text transition-colors"
+                  className="px-4 py-2 text-text-light hover:text-text transition-colors order-2 sm:order-1"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 order-1 sm:order-2"
                 >
                   {submitting ? 'Kaydediliyor...' : (editingProduct ? 'Güncelle' : 'Ekle')}
                 </button>

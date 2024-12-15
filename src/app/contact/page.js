@@ -1,8 +1,8 @@
 "use client";
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa';
-import { MdEmail, MdLocationOn, MdPhone } from 'react-icons/md';
+import { MdEmail, MdLocationOn, MdPhone, MdSend } from 'react-icons/md';
 import DashboardNavbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
@@ -55,221 +55,225 @@ export default function Contact() {
 
   const contactInfo = [
     {
-      icon: <MdPhone className="w-6 h-6" />,
+      icon: <MdPhone className="w-8 h-8" />,
       title: "Telefon",
-      details: "+90 555 123 4567",
-      link: "tel:+905551234567"
+      details: "+90 543 930 23 95",
+      link: "tel:+905439302395",
+      color: "bg-blue-50 text-blue-600"
     },
     {
-      icon: <MdEmail className="w-6 h-6" />,
+      icon: <MdEmail className="w-8 h-8" />,
       title: "E-posta",
-      details: "info@example.com",
-      link: "mailto:info@example.com"
+      details: "eraslanmedya@gmail.com",
+      link: "mailto:eraslanmedya@gmail.com",
+      color: "bg-purple-50 text-purple-600"
     },
     {
-      icon: <MdLocationOn className="w-6 h-6" />,
+      icon: <MdLocationOn className="w-8 h-8" />,
       title: "Adres",
       details: "İstanbul, Türkiye",
-      link: "https://maps.google.com"
+      link: "https://maps.google.com",
+      color: "bg-red-50 text-red-600"
     }
   ];
 
   const socialLinks = [
     {
-      icon: <FaInstagram className="w-6 h-6" />,
+      icon: <FaInstagram className="w-7 h-7" />,
       name: "Instagram",
-      url: "https://instagram.com",
-      color: "hover:text-pink-600"
+      url: "https://instagram.com/muhammeder.0",
+      color: "bg-gradient-to-br from-purple-600 to-pink-500 text-white"
     },
     {
-      icon: <FaTiktok className="w-6 h-6" />,
-      name: "TikTok",
+      icon: <FaTiktok className="w-7 h-7" />,
+      name: "TikTok", 
       url: "https://tiktok.com",
-      color: "hover:text-black"
+      color: "bg-black text-white"
     },
     {
-      icon: <FaWhatsapp className="w-6 h-6" />,
+      icon: <FaWhatsapp className="w-7 h-7" />,
       name: "WhatsApp",
-      url: "https://wa.me/905551234567",
-      color: "hover:text-green-600"
+      url: "https://wa.me/905439302395",
+      color: "bg-green-500 text-white"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
       <DashboardNavbar />
       
       <main className="flex-grow mt-16">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary to-primary-dark text-white py-20 ">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center">
+        <div className="relative bg-gradient-to-r from-primary via-primary-dark to-primary overflow-hidden py-24">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.1 }}
+            className="absolute inset-0 bg-[url('/pattern.svg')] bg-repeat opacity-10"
+          />
+          <div className="container mx-auto px-4 relative">
+            <div className="max-w-4xl mx-auto text-center">
               <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-4xl md:text-5xl font-bold mb-4"
+                transition={{ duration: 0.6 }}
+                className="text-5xl md:text-6xl font-bold mb-6 text-white"
               >
                 Bizimle İletişime Geçin
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-lg text-white/90"
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-xl text-white/90 leading-relaxed"
               >
-                Sorularınız için buradayız. Size yardımcı olmaktan mutluluk duyarız.
+                Sorularınız ve önerileriniz için 7/24 hizmetinizdeyiz. Size yardımcı olmaktan mutluluk duyarız.
               </motion.p>
             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-            {/* Contact Information */}
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">İletişim Bilgileri</h2>
-                <div className="space-y-4">
-                  {contactInfo.map((item, index) => (
-                    <motion.a
-                      key={index}
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-white hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="text-primary">{item.icon}</div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{item.title}</h3>
-                        <p className="text-gray-600">{item.details}</p>
-                      </div>
-                    </motion.a>
-                  ))}
-                </div>
-              </div>
+        <div className="container mx-auto px-4 -mt-16 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Contact Information Cards */}
+            {contactInfo.map((item, index) => (
+              <motion.a
+                key={index}
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                className={`${item.color} p-8 rounded-2xl shadow-lg backdrop-blur-lg flex flex-col items-center text-center`}
+              >
+                <div className="mb-4">{item.icon}</div>
+                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                <p className="opacity-90">{item.details}</p>
+              </motion.a>
+            ))}
+          </div>
 
-              {/* Social Links */}
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Sosyal Medya</h2>
-                <div className="flex gap-4">
-                  {socialLinks.map((social, index) => (
-                    <motion.a
-                      key={index}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`p-4 rounded-xl bg-white ${social.color} transition-colors`}
-                      whileHover={{ y: -5 }}
-                    >
-                      {social.icon}
-                    </motion.a>
-                  ))}
-                </div>
-              </div>
-            </div>
-
+          <div className="mt-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-start max-w-7xl mx-auto">
             {/* Contact Form */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white rounded-2xl p-6 md:p-8 shadow-sm"
+              className="bg-white rounded-3xl p-8 shadow-xl"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Mesaj Gönderin</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">Mesaj Gönderin</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Adınız
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors"
-                    placeholder="Adınızı girin"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <motion.div whileHover={{ scale: 1.02 }}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Adınız
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="Adınızı girin"
+                    />
+                  </motion.div>
+
+                  <motion.div whileHover={{ scale: 1.02 }}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      E-posta
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="E-posta adresiniz"
+                    />
+                  </motion.div>
                 </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    E-posta Adresiniz
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors"
-                    placeholder="E-posta adresinizi girin"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                <motion.div whileHover={{ scale: 1.02 }}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Konu
                   </label>
                   <input
                     type="text"
-                    id="subject"
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors"
-                    placeholder="Mesajınızın konusunu girin"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all"
+                    placeholder="Mesaj konusu"
                   />
-                </div>
+                </motion.div>
 
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                <motion.div whileHover={{ scale: 1.02 }}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mesajınız
                   </label>
                   <textarea
-                    id="message"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
                     required
-                    rows="4"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors resize-none"
-                    placeholder="Mesajınızı yazın"
+                    rows="5"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all resize-none"
+                    placeholder="Mesajınızı yazın..."
                   />
-                </div>
+                </motion.div>
 
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={loading}
-                  className={`w-full bg-primary hover:bg-primary-dark text-white py-4 px-6 rounded-xl font-medium transition-colors duration-300 flex items-center justify-center gap-2 ${
+                  className={`w-full bg-primary hover:bg-primary-dark text-white py-4 px-8 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-3 ${
                     loading ? 'opacity-70 cursor-not-allowed' : ''
                   }`}
                 >
                   {loading ? (
                     <>
-                      <div className="w-5 h-5 border-t-2 border-b-2 border-white rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Gönderiliyor...</span>
                     </>
                   ) : (
                     <>
+                      <MdSend className="w-6 h-6" />
                       <span>Mesaj Gönder</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
                     </>
                   )}
                 </motion.button>
               </form>
+            </motion.div>
+
+            {/* Social Media Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-white rounded-3xl p-8 shadow-xl"
+            >
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">Sosyal Medya</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {socialLinks.map((social, index) => (
+                  <motion.a
+                    key={index}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.05, rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`${social.color} p-6 rounded-2xl flex items-center justify-center transition-transform duration-200 shadow-lg hover:shadow-xl`}
+                  >
+                    {social.icon}
+                  </motion.a>
+                ))}
+              </div>
+              <p className="text-gray-600 text-center mt-8">
+                Sosyal medya hesaplarımızdan bizi takip edebilir ve güncel kalabilirsiniz.
+              </p>
             </motion.div>
           </div>
         </div>

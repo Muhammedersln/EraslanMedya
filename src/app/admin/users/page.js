@@ -76,46 +76,85 @@ export default function AdminUsers() {
   }
 
   return (
-    <div>
+    <div className="p-4">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-text">Kullanıcılar</h1>
         <p className="text-text-light">Kayıtlı kullanıcıları yönetin</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-background">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Ad Soyad</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Email</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kullanıcı Adı</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kayıt Tarihi</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-light">İşlemler</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-secondary/10">
-            {users.map((user) => (
-              <tr key={user._id}>
-                <td className="px-6 py-4 text-sm text-text">
-                  {user.firstName} {user.lastName}
-                </td>
-                <td className="px-6 py-4 text-sm text-text">{user.email}</td>
-                <td className="px-6 py-4 text-sm text-text">{user.username}</td>
-                <td className="px-6 py-4 text-sm text-text">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-sm">
+        <div className="hidden md:block">
+          <table className="w-full">
+            <thead className="bg-background">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Ad Soyad</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Email</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kullanıcı Adı</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kayıt Tarihi</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-secondary/10">
+              {users.map((user) => (
+                <tr key={user._id}>
+                  <td className="px-6 py-4 text-sm text-text">
+                    {user.firstName} {user.lastName}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-text">{user.email}</td>
+                  <td className="px-6 py-4 text-sm text-text">{user.username}</td>
+                  <td className="px-6 py-4 text-sm text-text">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <button 
+                      onClick={() => handleDelete(user._id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Sil
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="md:hidden space-y-4 p-4">
+          {users.map((user) => (
+            <div key={user._id} className="bg-white rounded-lg border p-4 space-y-3">
+              <div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium text-text">
+                      {user.firstName} {user.lastName}
+                    </div>
+                    <div className="text-sm text-gray-500">@{user.username}</div>
+                  </div>
                   <button 
                     onClick={() => handleDelete(user._id)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 text-sm font-medium"
                   >
                     Sil
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm">
+                  <span className="text-gray-500">Email:</span>
+                  <span className="ml-1 text-text">{user.email}</span>
+                </div>
+                
+                <div className="text-sm">
+                  <span className="text-gray-500">Kayıt Tarihi:</span>
+                  <span className="ml-1 text-text">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

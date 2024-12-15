@@ -125,122 +125,84 @@ export default function Products() {
       
       <main className="flex-grow">
         {/* Modern 3D Hero Section */}
-        <div className={`relative overflow-hidden bg-gradient-to-r ${currentCategory.color} py-16 mt-16`}>
-          {/* Animated Background Elements */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 py-12 mt-16">
+          {/* Subtle Background Pattern */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: 0.03 }}
             className="absolute inset-0"
           >
-            {/* Animated Grid Pattern */}
             <div 
               className="absolute inset-0" 
               style={{
                 backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)',
-                backgroundSize: '30px 30px',
+                backgroundSize: '20px 20px',
               }}
             />
-            
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/10 to-primary/20" />
-
-            {/* Simplified Floating Elements */}
-            {[...Array(3)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                initial={{
-                  x: Math.random() * window.innerWidth,
-                  y: Math.random() * 200,
-                  scale: 0.5,
-                  opacity: 0.3
-                }}
-                animate={{
-                  y: [0, -10, 0],
-                  rotate: [0, 360],
-                  scale: [0.5, 0.7, 0.5],
-                  opacity: [0.3, 0.5, 0.3]
-                }}
-                transition={{
-                  duration: 4 + i,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut",
-                  delay: i * 0.5
-                }}
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  background: `rgba(37, 99, 235, ${0.1 + i * 0.05})`,
-                  filter: 'blur(20px)'
-                }}
-              />
-            ))}
           </motion.div>
+
+          {/* Elegant Gradient Orb */}
+          <motion.div
+            className="absolute rounded-full blur-3xl"
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0.05, 0.1, 0.05],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+            }}
+            style={{
+              width: '250px',
+              height: '250px',
+              left: '65%',
+              top: '25%',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)'
+            }}
+          />
 
           {/* Main Content */}
           <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex items-center justify-center gap-8 flex-wrap">
-                {/* Left Side - Icon and Title */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="flex items-center gap-4"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="filter drop-shadow-xl"
-                  >
-                    <span className="text-white">
-                      {currentCategory.icon}
-                    </span>
-                  </motion.div>
-                  <div className="text-left">
-                    <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-                      {currentCategory.name}{" "}
-                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                        Hizmetleri
-                      </span>
-                    </h1>
-                    <p className="text-white/90 text-sm md:text-base mt-1">
-                      Profesyonel çözümlerle hesabınızı büyütün
-                    </p>
-                  </div>
-                </motion.div>
-
-                {/* Right Side - Stats */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
-                  className="flex gap-4"
-                >
-                  {[
-                    { value: '24/7', label: 'Destek' },
-                    { value: '100%', label: 'Memnuniyet' }
-                  ].map((stat, index) => (
-                    <motion.div
-                      key={index}
-                      className="text-center px-4 py-2 rounded-xl bg-primary-dark/20 backdrop-blur-lg hover:bg-primary-dark/30 transition-colors"
-                      whileHover={{ scale: 1.05, y: -2 }}
-                    >
-                      <div className="text-xl font-bold text-white">{stat.value}</div>
-                      <div className="text-xs text-white/80">{stat.label}</div>
-                    </motion.div>
-                  ))}
-                </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-2xl mx-auto text-center"
+            >
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <span className="text-2xl text-white/90">{currentCategory.icon}</span>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">
+                  {currentCategory.name} Hizmetleri
+                </h1>
               </div>
-            </div>
+              
+              <p className="text-gray-300 text-sm mb-6">
+                Profesyonel çözümlerle hesabınızı büyütün
+              </p>
+
+              <div className="flex justify-center gap-4">
+                {[
+                  { value: '24/7', label: 'Destek' },
+                  { value: '100%', label: 'Memnuniyet' }
+                ].map((stat, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ y: -2 }}
+                    className="bg-white/5 backdrop-blur rounded-lg px-4 py-2"
+                  >
+                    <div className="text-lg font-bold text-white">{stat.value}</div>
+                    <div className="text-xs text-gray-300">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
           </div>
 
-          {/* Bottom Wave */}
-          <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
+          {/* Minimal Wave Divider */}
+          <div className="absolute bottom-0 left-0 w-full overflow-hidden">
             <svg
-              className="relative block w-full h-8"
-              xmlns="http://www.w3.org/2000/svg"
+              className="relative block w-full h-6"
               viewBox="0 0 1200 120"
               preserveAspectRatio="none"
             >
@@ -288,55 +250,70 @@ export default function Products() {
           </div>
 
           {/* Mobil Görünüm */}
-          <div className="block sm:hidden bg-white shadow-sm">
-            <div className="container mx-auto px-2">
+          <div className="block sm:hidden bg-white shadow-lg">
+            <div className="container mx-auto">
               {/* Ana Kategori Seçici */}
-              <div className="flex items-center justify-between p-3 border-b">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{currentCategory.icon}</span>
-                  <span className="font-semibold">{currentCategory.name}</span>
+              <div className="relative p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center">
+                      <span className="text-2xl ">{currentCategory.icon}</span>
+                    </div>
+                    <span className="font-bold text-lg text-gray-800">{currentCategory.name}</span>
+                  </div>
+                  <div className="relative">
+                    <select 
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        setSelectedSubCategory('all');
+                      }}
+                      className="appearance-none pl-4 pr-10 py-2 rounded-xl bg-white border-2   font-medium focus:ring-2 shadow-md"
+                    >
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-                <select 
-                  value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    setSelectedSubCategory('all');
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-gray-100 border-none focus:ring-2 focus:ring-primary/20"
-                >
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
               </div>
               
-              {/* Alt Kategori Seçici - Yatay Kaydırmalı */}
-              <div className="overflow-x-auto scrollbar-hide py-2">
-                <div className="flex gap-2 px-2 min-w-max">
-                  <button
+              {/* Alt Kategori Seçici */}
+              <div className="overflow-x-auto scrollbar-hide py-6 px-4 bg-gradient-to-r from-white to-gray-50">
+                <div className="flex gap-4 min-w-max">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.05 }}
                     onClick={() => setSelectedSubCategory('all')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                    className={`px-6 py-3 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
                       selectedSubCategory === 'all'
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100'
+                        ? 'bg-gradient-to-br from-primary via-primary-dark to-primary text-white shadow-xl shadow-primary/30 border border-white/20 backdrop-blur-sm'
+                        : 'bg-white/80 text-gray-700 hover:bg-white hover:shadow-lg border border-gray-100 backdrop-blur-sm'
                     }`}
                   >
                     Tümü
-                  </button>
+                  </motion.button>
                   {currentCategory.subCategories.map(subCat => (
-                    <button
+                    <motion.button
                       key={subCat.id}
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }}
                       onClick={() => setSelectedSubCategory(subCat.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                      className={`px-6 py-3 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
                         selectedSubCategory === subCat.id
-                          ? 'bg-gray-900 text-white'
-                          : 'bg-gray-100'
+                          ? 'bg-gradient-to-br from-primary via-primary-dark to-primary text-white shadow-xl shadow-primary/30 border border-white/20 backdrop-blur-sm'
+                          : 'bg-white/80 text-gray-700 hover:bg-white hover:shadow-lg border border-gray-100 backdrop-blur-sm'
                       }`}
                     >
                       {subCat.name}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
@@ -348,18 +325,18 @@ export default function Products() {
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="hidden sm:block bg-white/50 backdrop-blur-sm border-t border-gray-100"
+          className="hidden sm:block bg-gradient-to-b from-white/80 to-white/40 backdrop-blur-md border-t border-white/20"
         >
           <div className="container mx-auto px-4">
-            <div className="flex justify-center gap-4 py-4">
+            <div className="flex justify-center gap-4 py-6">
               <motion.button
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedSubCategory('all')}
-                className={`px-6 py-2.5 rounded-xl transition-all duration-300 font-medium ${
+                className={`px-8 py-3 rounded-2xl transition-all duration-300 font-medium ${
                   selectedSubCategory === 'all'
-                    ? 'bg-gray-900 text-white shadow-lg'
-                    : 'bg-gray-100/80 hover:bg-gray-200/80'
+                    ? 'bg-gradient-to-br from-primary via-primary-dark to-primary text-white shadow-xl shadow-primary/30 border border-white/20'
+                    : 'bg-white/80 text-gray-700 hover:bg-white hover:shadow-lg border border-gray-100'
                 }`}
               >
                 Tümü
@@ -367,13 +344,13 @@ export default function Products() {
               {currentCategory.subCategories.map(subCat => (
                 <motion.button
                   key={subCat.id}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedSubCategory(subCat.id)}
-                  className={`px-6 py-2.5 rounded-xl transition-all duration-300 font-medium ${
+                  className={`px-8 py-3 rounded-2xl transition-all duration-300 font-medium ${
                     selectedSubCategory === subCat.id
-                      ? 'bg-gray-900 text-white shadow-lg'
-                      : 'bg-gray-100/80 hover:bg-gray-200/80'
+                      ? 'bg-gradient-to-br from-primary via-primary-dark to-primary text-white shadow-xl shadow-primary/30 border border-white/20'
+                      : 'bg-white/80 text-gray-700 hover:bg-white hover:shadow-lg border border-gray-100'
                   }`}
                 >
                   {subCat.name}
@@ -384,60 +361,95 @@ export default function Products() {
         </motion.div>
 
         {/* Search Bar */}
-        <div className="container mx-auto px-4 py-6">
-          <div className="max-w-md mx-auto">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Hizmet ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-5 py-3 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-primary/20 outline-none pl-12"
-              />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                🔍
-              </span>
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary-light/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300 opacity-70"></div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Aradığınız hizmeti yazın..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-6 py-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-white/30 shadow-lg focus:shadow-xl focus:border-primary/30 outline-none pl-14 text-lg transition-all duration-300 placeholder:text-gray-400"
+                />
+                <span className="absolute left-5 top-1/2 -translate-y-1/2">
+                  <svg 
+                    className="w-6 h-6 text-primary/60 group-hover:text-primary transition-colors duration-300"
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                    />
+                  </svg>
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Products Grid */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product, index) => (
-              <motion.div
-                key={product._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <ProductCard
-                  key={product._id} 
-                  product={{
-                    ...product,
-                    priceWithTax: product.price * (1 + settings.taxRate)
-                  }} 
-                  showAddToCart={false}
-                  className="h-full"
-                />
-              </motion.div>
-            ))}
-          </div>
-
-          {filteredProducts.length === 0 && (
-            <div className="text-center py-12">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-2xl shadow-sm p-8 max-w-md mx-auto"
-              >
-                <div className="text-4xl mb-4">🔍</div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Ürün Bulunamadı</h3>
-                <p className="text-gray-600">
+        <div className="container mx-auto px-4 py-12">
+          {filteredProducts.length > 0 ? (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8"
+            >
+              {filteredProducts.map((product, index) => (
+                <motion.div
+                  key={product._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.6,
+                    delay: index * 0.1,
+                    ease: "easeOut"
+                  }}
+                  className="group"
+                >
+                  <div className="h-full transform transition-all duration-300 hover:-translate-y-2">
+                    <ProductCard
+                      product={{
+                        ...product,
+                        priceWithTax: product.price * (1 + settings.taxRate)
+                      }}
+                      showAddToCart={false}
+                      className="h-full bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300"
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col items-center justify-center py-16"
+            >
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-10 max-w-lg w-full mx-auto text-center">
+                <motion.div
+                  initial={{ scale: 0.5 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="text-6xl mb-6"
+                >
+                  🔍
+                </motion.div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                  Ürün Bulunamadı
+                </h3>
+                <p className="text-gray-600 text-lg leading-relaxed">
                   Arama kriterlerinize uygun ürün bulunamadı. Lütfen farklı bir arama yapmayı deneyin.
                 </p>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
           )}
         </div>
 

@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from 'react';
-import { MdEmail, MdDashboard, MdShoppingBag, MdShoppingCart, MdMenu, MdClose, MdLogin, MdPersonAdd, MdHeadsetMic, MdReceipt, MdExpandMore } from 'react-icons/md';
-import { FaUserCircle } from 'react-icons/fa';
+import { MdEmail, MdDashboard, MdShoppingBag, MdInfo, MdShoppingCart, MdMenu, MdClose, MdLogin, MdPersonAdd, MdHeadsetMic, MdReceipt, MdExpandMore } from 'react-icons/md';
+import { FaUserCircle,FaUserPlus  } from 'react-icons/fa';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -29,6 +29,12 @@ export default function DashboardNavbar() {
       icon: <MdShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />,
       current: pathname === '/products'
     },
+    !user && {
+      name: 'Hakkımızda',
+      href: '/about',
+      icon: <MdInfo className="w-5 h-5 sm:w-6 sm:h-6" />,
+      current: pathname === '/about'
+    },
     {
       name: 'Siparişlerim',
       href: '/dashboard/orders',
@@ -49,7 +55,7 @@ export default function DashboardNavbar() {
       icon: user ? <MdHeadsetMic className="w-5 h-5 sm:w-6 sm:h-6" /> : <MdEmail className="w-5 h-5 sm:w-6 sm:h-6" />,
       current: user ? pathname === '/dashboard/support' : pathname === '/contact'
     }
-  ];
+  ].filter(Boolean);
 
   useEffect(() => {
     const fetchCartCount = async () => {
@@ -236,7 +242,7 @@ export default function DashboardNavbar() {
                     href="/register"
                     className="flex items-center space-x-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors text-sm sm:text-base"
                   >
-                    <MdPersonAdd className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <FaUserPlus className="w-5 h-5 sm:w-6 sm:h-6" />
                     <span>Kayıt Ol</span>
                   </Link>
                 </div>

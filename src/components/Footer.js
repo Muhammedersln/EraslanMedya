@@ -8,12 +8,10 @@ export default function Footer() {
     company: [
       { name: 'Hakkımızda', href: '/about' },
       { name: 'İletişim', href: '/contact' },
-      { name: 'Blog', href: '/blog' },
     ],
     services: [
       { name: 'Instagram Hizmetleri', href: '/products?category=instagram' },
       { name: 'TikTok Hizmetleri', href: '/products?category=tiktok' },
-      { name: 'Destek', href: '/support' },
     ],
     legal: [
       { name: 'Gizlilik Politikası', href: '/privacy' },
@@ -25,7 +23,7 @@ export default function Footer() {
   const socialLinks = [
     {
       name: 'Instagram',
-      href: 'https://instagram.com',
+      href: 'https://instagram.com/muhammeder.0',
       icon: <FaInstagram className="w-5 h-5" />,
       color: 'hover:text-pink-600'
     },
@@ -37,7 +35,7 @@ export default function Footer() {
     },
     {
       name: 'WhatsApp',
-      href: 'https://wa.me/905551234567',
+      href: 'https://wa.me/905439302395',
       icon: <FaWhatsapp className="w-5 h-5" />,
       color: 'hover:text-green-600'
     },

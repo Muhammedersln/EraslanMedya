@@ -162,7 +162,7 @@ export default function DashboardProducts() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-black flex flex-col">
       <DashboardNavbar />
       <main className="flex-grow">
         {/* Modern 3D Hero Section */}

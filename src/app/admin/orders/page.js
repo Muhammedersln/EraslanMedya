@@ -83,7 +83,7 @@ export default function AdminOrders() {
       }
 
       const updatedOrder = await response.json();
-      await fetchOrders(); // Siparişleri yeniden yükle
+      await fetchOrders();
       setShowModal(false);
       toast.success('Sipariş durumu güncellendi!');
     } catch (error) {
@@ -115,7 +115,7 @@ export default function AdminOrders() {
       
       if (result.success) {
         toast.success('Sipariş başarıyla silindi');
-        fetchOrders(); // Sipariş listesini yenile
+        fetchOrders();
       } else {
         throw new Error(result.message);
       }
@@ -134,105 +134,123 @@ export default function AdminOrders() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text">Siparişler</h1>
-        <p className="text-text-light">Tüm siparişleri yönetin</p>
+    <div className="p-4 md:p-6">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-text">Siparişler</h1>
+        <p className="text-sm md:text-base text-text-light">Tüm siparişleri yönetin</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-background">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Sipariş ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kullanıcı
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ürün
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Miktar
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Toplam
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Durum
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tarih
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                İşlemler
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-secondary/10">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <div className="min-w-full">
+          {/* Masaüstü Görünüm */}
+          <table className="w-full hidden md:table">
+            <thead className="bg-background">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kullanıcı</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ürün</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miktar</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Toplam</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-secondary/10">
+              {Array.isArray(orders) && orders.map((order) => (
+                <tr key={order._id}>
+                  <td className="px-4 py-3 text-sm text-text">{order._id.slice(-6).toUpperCase()}</td>
+                  <td className="px-4 py-3 text-sm text-text">{order.user?.username || 'Kullanıcı Silinmiş'}</td>
+                  <td className="px-4 py-3 text-sm text-text">{order.product?.name || 'Ürün Silinmiş'}</td>
+                  <td className="px-4 py-3 text-sm text-text">{order.quantity}</td>
+                  <td className="px-4 py-3 text-sm text-text">₺{order.totalPrice}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className={`px-2 py-1 rounded-full text-xs ${STATUS_COLORS[order.status].bg} ${STATUS_COLORS[order.status].text}`}>
+                      {STATUS_COLORS[order.status].label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-text">{new Date(order.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-sm space-x-2">
+                    <button onClick={() => { setSelectedOrder(order); setShowModal(true); }} 
+                            className="text-primary hover:text-primary-dark">
+                      Düzenle
+                    </button>
+                    <button onClick={() => { setSelectedOrder(order); setShowDetailsModal(true); }}
+                            className="text-gray-600 hover:text-gray-900">
+                      Detaylar
+                    </button>
+                    <button onClick={() => handleDelete(order._id)}
+                            className="text-red-600 hover:text-red-700">
+                      Sil
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Mobil Görünüm */}
+          <div className="md:hidden space-y-4">
             {Array.isArray(orders) && orders.map((order) => (
-              <tr key={order._id}>
-                <td className="px-6 py-4 text-sm text-text">
-                  {order._id.slice(-6).toUpperCase()}
-                </td>
-                <td className="px-6 py-4 text-sm text-text">
-                  {order.user?.username || 'Kullanıcı Silinmiş'}
-                </td>
-                <td className="px-6 py-4 text-sm text-text">
-                  {order.product?.name || 'Ürün Silinmiş'}
-                </td>
-                <td className="px-6 py-4 text-sm text-text">
-                  {order.quantity}
-                </td>
-                <td className="px-6 py-4 text-sm text-text">
-                  ₺{order.totalPrice}
-                </td>
-                <td className="px-6 py-4 text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs ${STATUS_COLORS[order.status].bg} ${STATUS_COLORS[order.status].text}`}>
-                    {STATUS_COLORS[order.status].label}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-text">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-sm space-x-3">
-                  <button
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setShowModal(true);
-                    }}
-                    className="text-primary hover:text-primary-dark"
-                  >
+              <div key={order._id} className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">ID: {order._id.slice(-6).toUpperCase()}</span>
+                    <div className="mt-1">
+                      <span className={`px-2 py-1 rounded-full text-xs ${STATUS_COLORS[order.status].bg} ${STATUS_COLORS[order.status].text}`}>
+                        {STATUS_COLORS[order.status].label}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mb-4">
+                  <div>
+                    <span className="text-sm text-gray-500">Kullanıcı:</span>
+                    <span className="ml-2 text-sm">{order.user?.username || 'Kullanıcı Silinmiş'}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Ürün:</span>
+                    <span className="ml-2 text-sm">{order.product?.name || 'Ürün Silinmiş'}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Miktar:</span>
+                    <span className="ml-2 text-sm">{order.quantity}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Toplam:</span>
+                    <span className="ml-2 text-sm">₺{order.totalPrice}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 border-t pt-3">
+                  <button onClick={() => { setSelectedOrder(order); setShowModal(true); }}
+                          className="text-sm text-primary hover:text-primary-dark">
                     Düzenle
                   </button>
-                  <button
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setShowDetailsModal(true);
-                    }}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
+                  <button onClick={() => { setSelectedOrder(order); setShowDetailsModal(true); }}
+                          className="text-sm text-gray-600 hover:text-gray-900">
                     Detaylar
                   </button>
-                  <button
-                    onClick={() => handleDelete(order._id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
+                  <button onClick={() => handleDelete(order._id)}
+                          className="text-sm text-red-600 hover:text-red-700">
                     Sil
                   </button>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        </div>
       </div>
 
-      {/* Sipariş Düzenleme Modal */}
+      {/* Modaller aynı kalacak şekilde devam ediyor... */}
       {showModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-semibold mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-4 md:p-6 w-full max-w-md mx-auto">
+            <h2 className="text-lg md:text-xl font-semibold mb-4">
               Sipariş Durumunu Güncelle
             </h2>
             
@@ -299,11 +317,10 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* Sipariş Detay Modal */}
       {showDetailsModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-semibold mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-4 md:p-6 w-full max-w-md mx-auto overflow-y-auto max-h-[90vh]">
+            <h2 className="text-lg md:text-xl font-semibold mb-4">
               Sipariş Detayları
             </h2>
             
@@ -392,4 +409,4 @@ export default function AdminOrders() {
       )}
     </div>
   );
-} 
+}
