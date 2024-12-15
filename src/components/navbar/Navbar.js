@@ -26,9 +26,9 @@ export default function Navbar() {
     },
     {
       name: 'Ürünler',
-      href: '/products',
+      href: '/dashboard/products',
       icon: <MdShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />,
-      current: pathname === '/products'
+      current: pathname === '/dashboard/products'
     },
     !user && {
       name: 'Hakkımızda',
@@ -180,7 +180,7 @@ export default function Navbar() {
                   {showProfileMenu && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl py-2 z-50 border border-gray-100">
                       <Link
-                        href="/profile"
+                        href="/dashboard/profile"
                         className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <FaUserCircle className="w-4 h-4 mr-3 text-primary" />
@@ -255,7 +255,7 @@ export default function Navbar() {
                 {showProfileMenu && !isMobile && (
                   <div className="absolute right-4 top-14 w-48 bg-white rounded-xl shadow-lg py-2 z-50 border border-gray-100">
                     <Link
-                      href="/profile"
+                      href="/dashboard/profile"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setShowProfileMenu(false)}
                     >
@@ -423,35 +423,55 @@ export default function Navbar() {
 
               {/* Mobile Profile Dropdown */}
               {showProfileMenu && (
-                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100">
+                <div className="absolute bottom-full right-0 mb-2 w-56 bg-white rounded-2xl shadow-xl py-3 border border-gray-100 transform transition-all duration-200 ease-in-out">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-xs font-medium text-gray-400">Hesap</p>
+                  </div>
+                  
                   <Link
-                    href="/profile"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    href="/dashboard/profile"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 group"
                     onClick={() => setShowProfileMenu(false)}
                   >
-                    <FaUserCircle className="w-4 h-4 mr-3 text-primary" />
-                    <span>Profil</span>
+                    <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-150">
+                      <FaUserCircle className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="ml-3">
+                      <span className="font-medium">Profil</span>
+                      <p className="text-xs text-gray-400">Hesap bilgilerinizi yönetin</p>
+                    </div>
                   </Link>
+
                   <Link
                     href="/dashboard/support"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 group"
                     onClick={() => setShowProfileMenu(false)}
                   >
-                    <MdHeadsetMic className="w-4 h-4 mr-3 text-primary" />
-                    <span>Destek</span>
+                    <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-150">
+                      <MdHeadsetMic className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="ml-3">
+                      <span className="font-medium">Destek</span>
+                      <p className="text-xs text-gray-400">Yardım ve destek alın</p>
+                    </div>
                   </Link>
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setShowProfileMenu(false);
-                    }}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span>Çıkış</span>
-                  </button>
+
+                  <div className="px-4 pt-2 border-t border-gray-100 mt-1">
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setShowProfileMenu(false);
+                      }}
+                      className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
+                    >
+                      <div className="p-2 rounded-lg bg-red-100/50 group-hover:bg-red-100 transition-colors duration-150">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                      </div>
+                      <span className="ml-3 font-medium">Çıkış Yap</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
