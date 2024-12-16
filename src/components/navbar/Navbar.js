@@ -50,11 +50,11 @@ export default function Navbar() {
       requiresAuth: true,
       current: pathname === '/dashboard/cart'
     },
-    {
-      name: user ? 'Destek' : 'İletişim',
-      href: user ? '/dashboard/support' : '/contact',
-      icon: user ? <MdHeadsetMic className="w-5 h-5 sm:w-6 sm:h-6" /> : <MdEmail className="w-5 h-5 sm:w-6 sm:h-6" />,
-      current: user ? pathname === '/dashboard/support' : pathname === '/contact'
+    !user && {
+      name: 'İletişim',
+      href: '/contact',
+      icon: <MdEmail className="w-5 h-5 sm:w-6 sm:h-6" />,
+      current: pathname === '/contact'
     }
   ].filter(Boolean);
 
