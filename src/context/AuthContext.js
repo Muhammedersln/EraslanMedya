@@ -63,7 +63,6 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log('Login attempt:', { username });
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -73,7 +72,6 @@ export function AuthProvider({ children }) {
       });
 
       const data = await response.json();
-      console.log('Login response:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Giriş yapılırken bir hata oluştu');
@@ -81,12 +79,12 @@ export function AuthProvider({ children }) {
 
       const { token, user: userData } = data;
 
+      // Kullanıcı bilgilerini ve token'ı kaydet
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
-      return data;
+      return { ...data, status: response.status };
     } catch (err) {
-      console.error('Login error:', err);
       setError(err.message);
       throw err;
     } finally {
@@ -112,11 +110,6 @@ export function AuthProvider({ children }) {
         throw new Error(data.message || 'Kayıt olurken bir hata oluştu');
       }
 
-      const { token, user } = data;
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
       return data;
     } catch (err) {
       setError(err.message);

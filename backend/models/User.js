@@ -24,6 +24,14 @@ const userSchema = new mongoose.Schema({
     trim: true,
     validate: [validator.isEmail, 'Geçerli bir email adresi giriniz']
   },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
   phone: {
     type: String,
     required: [true, 'Telefon numarası zorunludur'],

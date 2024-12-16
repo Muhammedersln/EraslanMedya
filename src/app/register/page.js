@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import toast from 'react-hot-toast';
 import { FaUserCircle,FaUserPlus  } from 'react-icons/fa';
 import Link from "next/link";
+import { generateVerificationToken } from '@/utils/token';
+import { sendVerificationEmail } from '@/utils/mailer';
 
 export default function Register() {
   const router = useRouter();
@@ -76,13 +78,26 @@ export default function Register() {
         email: formData.email,
         phone: formData.phone,
         username: formData.username,
-        password: formData.password
+        password: formData.password,
+        isEmailVerified: false
       };
 
+      // Önce kullanıcıyı kaydet
       const response = await register(userData);
-      console.log('Register Success:', response);
-      toast.success('Kayıt başarılı! Yönlendiriliyorsunuz...');
-      router.push('/dashboard');
+      
+      // Doğrulama token'ı oluştur
+      const verificationToken = generateVerificationToken(formData.email);
+      
+      // E-posta gönder
+      const emailSent = await sendVerificationEmail(formData.email, verificationToken);
+      
+      if (emailSent) {
+        console.log('Register Success:', response);
+        toast.success('Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.');
+        router.push('/verification-pending');
+      } else {
+        toast.error('Doğrulama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.');
+      }
     } catch (err) {
       console.log('Register Page Error:', {
         name: err.name,
@@ -90,7 +105,6 @@ export default function Register() {
         stack: err.stack
       });
       
-      // Hata mesajını göster
       toast.error(err.message || 'Kayıt olurken bir hata oluştu!');
     }
   };
@@ -99,7 +113,7 @@ export default function Register() {
     <div className="min-h-screen bg-gradient-to-b from-background to-background-dark">
       <Navbar />
       
-      <div className="min-h-screen flex items-center justify-center relative px-4 py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center relative px-4 py-12 sm:px-6 lg:px-8 mt-12">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
