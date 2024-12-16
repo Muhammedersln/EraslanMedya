@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
 import { API_URL } from '@/utils/constants';
+import Link from 'next/link';
 
 export default function AdminUsers() {
   const router = useRouter();
@@ -106,6 +107,12 @@ export default function AdminUsers() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-sm">
+                    <Link 
+                      href={`/admin/users/${user._id}`}
+                      className="text-primary hover:text-primary-dark mr-3"
+                    >
+                      Detay
+                    </Link>
                     <button 
                       onClick={() => handleDelete(user._id)}
                       className="text-red-600 hover:text-red-700"

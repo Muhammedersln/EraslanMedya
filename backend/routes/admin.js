@@ -575,4 +575,54 @@ router.delete('/support-tickets/:ticketId', adminMiddleware, async (req, res) =>
   }
 });
 
+// Tek bir kullanıcının detaylarını getir
+router.get('/users/:id', adminMiddleware, async (req, res) => {
+  try {
+    // ID'nin geçerli bir MongoDB ID'si olup olmadığını kontrol et
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Geçersiz kullanıcı ID' });
+    }
+
+    // Kullanıcıyı bul ve şifre hariç tüm bilgileri getir
+    const user = await User.findById(req.params.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+    }
+
+    // Kullanıcının siparişlerini getir
+    const orders = await Order.find({ user: user._id })
+      .populate('product', 'name price category subCategory')  // Sadece gerekli ürün bilgilerini al
+      .sort({ createdAt: -1 });
+
+    // Kullanıcının destek biletlerini getir
+    const supportTickets = await SupportTicket.find({ user: user._id })
+      .sort({ createdAt: -1 });
+
+    // İstatistikleri hesapla
+    const stats = {
+      totalOrders: orders.length,
+      totalSpent: orders.reduce((acc, order) => acc + order.totalPrice, 0),
+      openTickets: supportTickets.filter(ticket => ticket.status === 'open').length,
+      completedOrders: orders.filter(order => order.status === 'completed').length,
+      lastOrderDate: orders.length > 0 ? orders[0].createdAt : null
+    };
+
+    res.json({
+      success: true,
+      user,
+      orders,
+      supportTickets,
+      stats
+    });
+  } catch (error) {
+    console.error('Kullanıcı detayları getirme hatası:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Sunucu hatası',
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router; 

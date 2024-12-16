@@ -127,7 +127,7 @@ export default function Navbar() {
               )}
               
               {/* Logo */}
-              <Link href={user ? "/dashboard" : "/"} className="text-lg sm:text-xl font-bold text-primary hover:text-primary-dark transition-colors">
+              <Link href={user ? "/dashboard" : "/"} className="text-lg sm:text-xl font-bold mb-2 text-primary hover:text-primary-dark transition-colors">
                 Medya Eraslan
               </Link>
             </div>
@@ -365,9 +365,9 @@ export default function Navbar() {
 
             {/* Products Button */}
             <Link
-              href="/products"
+              href="/dashboard/products"
               className={`flex flex-col items-center space-y-1 ${
-                pathname === '/products' ? 'text-primary' : 'text-gray-600'
+                pathname === '/dashboard/products' ? 'text-primary' : 'text-gray-600'
               }`}
             >
               <MdShoppingBag className="w-6 h-6" />
