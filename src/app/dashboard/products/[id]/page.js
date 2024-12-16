@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { API_URL } from '@/utils/constants';
@@ -25,9 +25,29 @@ export default function ProductDetail() {
     links: ['']
   });
 
+  const fetchProduct = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/products/${id}`);
+      
+      if (!response.ok) {
+        throw new Error('Ürün bulunamadı');
+      }
+      
+      const data = await response.json();
+      setProduct(data);
+      setQuantity(data.minQuantity || 1);
+    } catch (error) {
+      console.error('Ürün yüklenirken hata:', error);
+      toast.error('Ürün yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchProduct();
-  }, [id]);
+  }, [fetchProduct]);
 
   useEffect(() => {
     if (product) {
@@ -56,26 +76,6 @@ export default function ProductDetail() {
         links: newLinks
       };
     });
-  };
-
-  const fetchProduct = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_URL}/api/products/${id}`);
-      
-      if (!response.ok) {
-        throw new Error('Ürün bulunamadı');
-      }
-      
-      const data = await response.json();
-      setProduct(data);
-      setQuantity(data.minQuantity || 1);
-    } catch (error) {
-      console.error('Ürün yüklenirken hata:', error);
-      toast.error('Ürün yüklenirken bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleAddToCart = async () => {

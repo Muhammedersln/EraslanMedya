@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import { API_URL } from '@/utils/constants';
 
 export default function ProductsGridSection() {
   const [products, setProducts] = useState([]);
-  const [sliderInterval, setSliderInterval] = useState(null);
+  const intervalRef = useRef(null);
 
   const startSlider = () => {
     const interval = setInterval(() => {
@@ -30,7 +30,7 @@ export default function ProductsGridSection() {
       }
     }, 5000);
 
-    setSliderInterval(interval);
+    intervalRef.current = interval;
   };
 
   const scrollSlider = (direction) => {
@@ -81,11 +81,13 @@ export default function ProductsGridSection() {
     };
 
     fetchProducts();
-    startSlider();
+  }, []);
 
+  useEffect(() => {
+    startSlider();
     return () => {
-      if (sliderInterval) {
-        clearInterval(sliderInterval);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
   }, []);
@@ -125,13 +127,13 @@ export default function ProductsGridSection() {
             id="product-slider"
             className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth px-2 py-4"
             onMouseEnter={() => {
-              if (sliderInterval) {
-                clearInterval(sliderInterval);
-                setSliderInterval(null);
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
               }
             }}
             onMouseLeave={() => {
-              if (!sliderInterval) {
+              if (!intervalRef.current) {
                 startSlider();
               }
             }}
