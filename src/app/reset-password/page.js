@@ -2,85 +2,110 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { FaLock } from 'react-icons/fa';
 import Navbar from '@/components/navbar/Navbar';
 
-export default function ResetPassword() {
+export default function ResetPasswordPage() {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTokenValid, setIsTokenValid] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: ''
-  });
+  const token = searchParams.get('token');
 
   useEffect(() => {
-    // URL'den token ve email parametrelerini kontrol et
-    const token = searchParams.get('token');
-    const email = searchParams.get('email');
-
-    if (!token || !email) {
-      toast.error('Geçersiz şifre sıfırlama bağlantısı.');
+    if (!token) {
+      toast.error('Geçersiz şifre sıfırlama bağlantısı');
       router.push('/login');
+      return;
     }
-  }, [searchParams, router]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+    const verifyToken = async () => {
+      try {
+        const response = await fetch('/api/forgot-password/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı');
+        }
+
+        setIsTokenValid(true);
+      } catch (error) {
+        toast.error(error.message);
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+      }
+    };
+
+    verifyToken();
+  }, [token, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (password !== confirmPassword) {
+      toast.error('Şifreler eşleşmiyor');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Şifre en az 6 karakter olmalıdır');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      // Şifre kontrolü
-      if (formData.password !== formData.confirmPassword) {
-        throw new Error('Şifreler eşleşmiyor!');
-      }
-
-      if (formData.password.length < 6) {
-        throw new Error('Şifre en az 6 karakter olmalıdır!');
-      }
-
-      const token = searchParams.get('token');
-      const email = searchParams.get('email');
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`, {
-        method: 'POST',
+      const response = await fetch('/api/forgot-password', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          token,
-          email,
-          password: formData.password
-        }),
+        body: JSON.stringify({ token, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Şifre sıfırlama işlemi başarısız oldu.');
+        throw new Error(data.message || 'Şifre güncelleme işlemi başarısız oldu');
       }
 
-      toast.success('Şifreniz başarıyla güncellendi!');
-      router.push('/login');
+      toast.success('Şifreniz başarıyla güncellendi');
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
     } catch (error) {
-      toast.error(error.message || 'Şifre sıfırlama işlemi başarısız oldu.');
+      toast.error(error.message);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  if (!isTokenValid) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-600 font-medium">Token doğrulanıyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background-dark">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <Navbar />
       
       <div className="min-h-screen flex items-center justify-center relative px-4 py-12 sm:px-6 lg:px-8">
@@ -104,42 +129,46 @@ export default function ResetPassword() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Yeni Şifre
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Yeni Şifre
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Yeni Şifre (Tekrar)
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
-                  placeholder="••••••••"
-                  required
-                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Yeni Şifre (Tekrar)
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-xl transition-all duration-300 transform hover:scale-[0.99] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {loading ? (
+                {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
                     <span>İşleniyor...</span>

@@ -6,7 +6,6 @@ import Navbar from "@/components/navbar/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
 import toast from "react-hot-toast";
-import { API_URL } from '@/utils/constants';
 import ProductCard from "@/components/ProductCard";
 import Footer from '@/components/Footer';
 import HeroSection from "./components/HeroSection";
@@ -148,7 +147,7 @@ export default function Dashboard() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/products`);
+      const response = await fetch('/api/products');
       if (!response.ok) {
         throw new Error('Ürünler yüklenemedi');
       }
@@ -162,7 +161,7 @@ export default function Dashboard() {
 
   const fetchCartCount = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/cart/count`, {
+      const response = await fetch('/api/cart/count', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -180,7 +179,7 @@ export default function Dashboard() {
 
   const fetchOrderCount = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/orders/count`, {
+      const response = await fetch('/api/orders/count', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -205,7 +204,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/cart`, {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

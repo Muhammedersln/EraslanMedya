@@ -1,7 +1,6 @@
-import { verifyToken } from '@/utils/token';
 import { NextResponse } from 'next/server';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import dbConnect from '@/lib/db';
+import User from '@/lib/models/User';
 
 export async function GET(request) {
   try {
@@ -16,51 +15,35 @@ export async function GET(request) {
       );
     }
 
-    // Frontend'de token'ı doğrula
-    const { valid, email: tokenEmail } = verifyToken(token);
+    await dbConnect();
 
-    if (!valid || tokenEmail !== email) {
+    // Find user with matching token and email
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      verificationToken: token
+    });
+
+    if (!user) {
       return NextResponse.json(
         { message: 'Geçersiz veya süresi dolmuş doğrulama bağlantısı.' },
         { status: 400 }
       );
     }
 
-    try {
-      // Backend API'ye istek at
-      const response = await fetch(`${API_URL}/auth/verify-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          email,
-          token: token // Send the base64 token to backend
-        }),
-      });
+    // Update user verification status
+    user.isEmailVerified = true;
+    user.verificationToken = undefined;
+    await user.save();
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Doğrulama işlemi başarısız oldu.');
-      }
-
-      const data = await response.json();
-      return NextResponse.json(
-        { message: 'E-posta başarıyla doğrulandı.' },
-        { status: 200 }
-      );
-    } catch (apiError) {
-      return NextResponse.json(
-        { message: apiError.message || 'Doğrulama işlemi sırasında bir hata oluştu.' },
-        { status: 500 }
-      );
-    }
-  } catch (error) {
     return NextResponse.json(
-      { message: error.message || 'Bir hata oluştu.' },
+      { message: 'E-posta adresiniz başarıyla doğrulandı.' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Email verification error:', error);
+    return NextResponse.json(
+      { message: 'Doğrulama işlemi sırasında bir hata oluştu.' },
       { status: 500 }
     );
   }
 }
-
-// POST metodunu kaldırıyoruz çünkü kullanılmıyor 

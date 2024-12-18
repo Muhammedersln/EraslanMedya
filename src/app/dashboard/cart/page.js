@@ -38,7 +38,7 @@ export default function Cart() {
 
   const fetchCartItems = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/cart`, {
+      const response = await fetch(`/api/cart`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -60,30 +60,15 @@ export default function Cart() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/settings/tax-rate`, {
+      const response = await fetch('/api/settings', {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
+        cache: 'no-store'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'KDV oranı alınamadı');
-      }
-
       const data = await response.json();
-      if (!data || typeof data.taxRate !== 'number') {
-        throw new Error('Geçersiz KDV oranı');
-      }
-
-      setSettings({ taxRate: data.taxRate });
+      setSettings({ taxRate: data.taxRate || 0.18 });
     } catch (error) {
       console.error('KDV oranı alınırken hata:', error);
-      if (error.response) {
-        console.error('Response:', await error.response.text());
-      }
       // Varsayılan değeri kullan
       setSettings({ taxRate: 0.18 });
     }
@@ -118,7 +103,7 @@ export default function Cart() {
     if (newQuantity < 1) return;
     
     try {
-      const response = await fetch(`${API_URL}/api/cart/${itemId}`, {
+      const response = await fetch(`/api/cart/${itemId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +131,7 @@ export default function Cart() {
       const item = cartItems.find(item => item._id === itemId);
       if (!item) return;
 
-      const response = await fetch(`${API_URL}/api/cart/${itemId}`, {
+      const response = await fetch(`/api/cart/${itemId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -176,7 +161,7 @@ export default function Cart() {
 
   const removeItem = async (itemId) => {
     try {
-      const response = await fetch(`${API_URL}/api/cart/${itemId}`, {
+      const response = await fetch(`/api/cart/${itemId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -199,7 +184,7 @@ export default function Cart() {
 
   const handleCheckout = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/orders`, {
+      const response = await fetch(`/api/orders`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -231,7 +216,7 @@ export default function Cart() {
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder-image.png';
-    return imagePath.startsWith('http') ? imagePath : `${API_URL}/uploads/${imagePath}`;
+    return imagePath.startsWith('http') ? imagePath : `/uploads/${imagePath}`;
   };
 
   if (loading) {

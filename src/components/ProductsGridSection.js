@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
-import { API_URL } from '@/utils/constants';
 
 export default function ProductsGridSection() {
   const [products, setProducts] = useState([]);
@@ -71,7 +70,7 @@ export default function ProductsGridSection() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/products`);
+        const response = await fetch(`/api/products`);
         if (!response.ok) throw new Error('Ürünler yüklenemedi');
         const data = await response.json();
         setProducts(data);

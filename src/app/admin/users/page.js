@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
-import { API_URL } from '@/utils/constants';
 import Link from 'next/link';
 
 export default function AdminUsers() {
@@ -22,10 +21,8 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/users`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await fetch('/api/admin/users', {
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -49,64 +46,77 @@ export default function AdminUsers() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/admin/users?id=${userId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
 
       if (response.ok) {
         toast.success('Kullanıcı başarıyla silindi');
         fetchUsers();
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        throw new Error(data.message || 'Kullanıcı silinemedi');
       }
     } catch (error) {
       console.error('Kullanıcı silinirken hata:', error);
-      toast.error('Kullanıcı silinirken bir hata oluştu');
+      toast.error(error.message || 'Kullanıcı silinirken bir hata oluştu');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text">Kullanıcılar</h1>
-        <p className="text-text-light">Kayıtlı kullanıcıları yönetin</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Kullanıcılar</h1>
+        <p className="mt-2 text-sm text-gray-600">Kayıtlı kullanıcıları yönetin</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         <div className="hidden md:block">
           <table className="w-full">
-            <thead className="bg-background">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Ad Soyad</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kullanıcı Adı</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">Kayıt Tarihi</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-light">İşlemler</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ad Soyad
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Kullanıcı Adı
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Kayıt Tarihi
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  İşlemler
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-secondary/10">
+            <tbody className="divide-y divide-gray-200">
               {users.map((user) => (
-                <tr key={user._id}>
-                  <td className="px-6 py-4 text-sm text-text">
+                <tr key={user._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {user.firstName} {user.lastName}
                   </td>
-                  <td className="px-6 py-4 text-sm text-text">{user.email}</td>
-                  <td className="px-6 py-4 text-sm text-text">{user.username}</td>
-                  <td className="px-6 py-4 text-sm text-text">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {user.email}
                   </td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {user.username}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {new Date(user.createdAt).toLocaleDateString('tr-TR')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <Link 
                       href={`/admin/users/${user._id}`}
                       className="text-primary hover:text-primary-dark mr-3"
@@ -132,30 +142,38 @@ export default function AdminUsers() {
               <div>
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="font-medium text-text">
+                    <div className="font-medium text-gray-900">
                       {user.firstName} {user.lastName}
                     </div>
                     <div className="text-sm text-gray-500">@{user.username}</div>
                   </div>
-                  <button 
-                    onClick={() => handleDelete(user._id)}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                  >
-                    Sil
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    <Link 
+                      href={`/admin/users/${user._id}`}
+                      className="text-primary hover:text-primary-dark text-sm font-medium"
+                    >
+                      Detay
+                    </Link>
+                    <button 
+                      onClick={() => handleDelete(user._id)}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    >
+                      Sil
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="text-sm">
                   <span className="text-gray-500">Email:</span>
-                  <span className="ml-1 text-text">{user.email}</span>
+                  <span className="ml-2 text-gray-900">{user.email}</span>
                 </div>
                 
                 <div className="text-sm">
                   <span className="text-gray-500">Kayıt Tarihi:</span>
-                  <span className="ml-1 text-text">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                  <span className="ml-2 text-gray-900">
+                    {new Date(user.createdAt).toLocaleDateString('tr-TR')}
                   </span>
                 </div>
               </div>

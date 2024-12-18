@@ -1,36 +1,65 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
-import { API_URL } from '@/utils/constants';
 
 const STATUS_COLORS = {
-  open: { bg: 'bg-yellow-50', text: 'text-yellow-600', label: 'Açık' },
-  in_progress: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'İşleniyor' },
-  resolved: { bg: 'bg-green-50', text: 'text-green-600', label: 'Çözüldü' },
-  closed: { bg: 'bg-gray-50', text: 'text-gray-600', label: 'Kapatıldı' }
+  open: {
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    label: 'Açık'
+  },
+  in_progress: {
+    bg: 'bg-blue-100',
+    text: 'text-blue-800',
+    label: 'İşleniyor'
+  },
+  resolved: {
+    bg: 'bg-green-100',
+    text: 'text-green-800',
+    label: 'Çözüldü'
+  },
+  closed: {
+    bg: 'bg-gray-100',
+    text: 'text-gray-800',
+    label: 'Kapatıldı'
+  }
+};
+
+const PRIORITY_COLORS = {
+  high: {
+    bg: 'bg-red-100',
+    text: 'text-red-800',
+    label: 'Yüksek'
+  },
+  normal: {
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    label: 'Normal'
+  },
+  low: {
+    bg: 'bg-green-100',
+    text: 'text-green-800',
+    label: 'Düşük'
+  }
 };
 
 export default function AdminSupport() {
-  const router = useRouter();
   const { user } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [responseMessage, setResponseMessage] = useState('');
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      router.push('/');
-      return;
-    }
     fetchTickets();
-  }, [user, router]);
+  }, []);
 
   const fetchTickets = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/support-tickets`, {
+      const response = await fetch('/api/admin/support', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -45,15 +74,21 @@ export default function AdminSupport() {
       setTickets(data);
     } catch (error) {
       console.error('Destek talepleri yüklenirken hata:', error);
-      toast.error(error.message || 'Destek talepleri yüklenirken bir hata oluştu');
+      toast.error('Destek talepleri yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
   const handleStatusUpdate = async (ticketId, newStatus) => {
+    if (!responseMessage.trim()) {
+      toast.error('Lütfen bir yanıt yazın');
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_URL}/api/admin/support-tickets/${ticketId}`, {
+      setUpdatingStatus(true);
+      const response = await fetch(`/api/admin/support/${ticketId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -61,22 +96,34 @@ export default function AdminSupport() {
         },
         body: JSON.stringify({
           status: newStatus,
-          adminNotes: selectedTicket.adminNotes,
-          adminResponse: selectedTicket.adminResponse
+          message: responseMessage
         })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Durum güncellenemedi');
+        throw new Error(data.message || 'Destek talebi güncellenemedi');
       }
 
-      await fetchTickets();
+      setTickets(prevTickets => 
+        prevTickets.map(ticket => 
+          ticket._id === ticketId ? data : ticket
+        )
+      );
+
+      if (selectedTicket && selectedTicket._id === ticketId) {
+        setSelectedTicket(data);
+      }
+
+      toast.success('Yanıtınız gönderildi');
+      setResponseMessage('');
       setShowModal(false);
-      toast.success('Destek talebi güncellendi');
     } catch (error) {
       console.error('Güncelleme hatası:', error);
-      toast.error(error.message || 'Güncelleme sırasında bir hata oluştu');
+      toast.error(error.message || 'Destek talebi güncellenirken bir hata oluştu');
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -86,272 +133,238 @@ export default function AdminSupport() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/admin/support-tickets/${ticketId}`, {
+      const response = await fetch(`/api/admin/support/${ticketId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Destek talebi silinirken bir hata oluştu');
+        throw new Error(error.message || 'Destek talebi silinemedi');
       }
 
-      const result = await response.json();
+      await response.json();
       
-      if (result.success) {
-        toast.success('Destek talebi başarıyla silindi');
-        fetchTickets();
-      } else {
-        throw new Error(result.message);
-      }
+      setTickets(prevTickets => 
+        prevTickets.filter(ticket => ticket._id !== ticketId)
+      );
+
+      toast.success('Destek talebi silindi');
+      setShowModal(false);
     } catch (error) {
-      console.error('Destek talebi silinirken hata:', error);
+      console.error('Silme hatası:', error);
       toast.error(error.message || 'Destek talebi silinirken bir hata oluştu');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="flex justify-center items-center h-[calc(100vh-80px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text">Destek Talepleri</h1>
-        <p className="text-text-light">Müşteri destek taleplerini yönetin</p>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="hidden md:block">
-          <table className="w-full">
-            <thead className="bg-background">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kullanıcı</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Öncelik</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tarih</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {tickets.map((ticket) => (
-                <tr key={ticket._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">{ticket.user.username}</div>
-                    <div className="text-sm text-gray-500">{ticket.user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {ticket.category === 'order_issue' && 'Sipariş Sorunu'}
-                    {ticket.category === 'technical_issue' && 'Teknik Sorun'}
-                    {ticket.category === 'payment_issue' && 'Ödeme Sorunu'}
-                    {ticket.category === 'other' && 'Diğer'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      ticket.priority === 'high' ? 'bg-red-50 text-red-600' :
-                      ticket.priority === 'normal' ? 'bg-yellow-50 text-yellow-600' :
-                      'bg-green-50 text-green-600'
-                    }`}>
-                      {ticket.priority === 'high' ? 'Yüksek' :
-                       ticket.priority === 'normal' ? 'Normal' : 'Düşük'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${STATUS_COLORS[ticket.status].bg} ${STATUS_COLORS[ticket.status].text}`}>
-                      {STATUS_COLORS[ticket.status].label}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {new Date(ticket.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-sm space-x-3">
-                    <button
-                      onClick={() => {
-                        setSelectedTicket(ticket);
-                        setShowModal(true);
-                      }}
-                      className="text-primary hover:text-primary-dark"
-                    >
-                      Görüntüle
-                    </button>
-                    <button
-                      onClick={() => handleDelete(ticket._id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Sil
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="md:hidden space-y-4 p-4">
-          {tickets.map((ticket) => (
-            <div key={ticket._id} className="bg-white rounded-lg border p-4 space-y-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="font-medium">{ticket.user.username}</div>
-                  <div className="text-sm text-gray-500">{ticket.user.email}</div>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${STATUS_COLORS[ticket.status].bg} ${STATUS_COLORS[ticket.status].text}`}>
-                  {STATUS_COLORS[ticket.status].label}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-gray-500">Kategori:</span>
-                  <span className="ml-1">
-                    {ticket.category === 'order_issue' && 'Sipariş Sorunu'}
-                    {ticket.category === 'technical_issue' && 'Teknik Sorun'}
-                    {ticket.category === 'payment_issue' && 'Ödeme Sorunu'}
-                    {ticket.category === 'other' && 'Diğer'}
-                  </span>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Öncelik:</span>
-                  <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-                    ticket.priority === 'high' ? 'bg-red-50 text-red-600' :
-                    ticket.priority === 'normal' ? 'bg-yellow-50 text-yellow-600' :
-                    'bg-green-50 text-green-600'
-                  }`}>
-                    {ticket.priority === 'high' ? 'Yüksek' :
-                     ticket.priority === 'normal' ? 'Normal' : 'Düşük'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-sm">
-                <span className="text-gray-500">Tarih:</span>
-                <span className="ml-1">{new Date(ticket.createdAt).toLocaleDateString()}</span>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-2">
-                <button
-                  onClick={() => {
-                    setSelectedTicket(ticket);
-                    setShowModal(true);
-                  }}
-                  className="text-primary hover:text-primary-dark text-sm font-medium"
-                >
-                  Görüntüle
-                </button>
-                <button
-                  onClick={() => handleDelete(ticket._id)}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium"
-                >
-                  Sil
-                </button>
-              </div>
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Destek Talepleri</h1>
+              <p className="text-gray-500 mt-1">Toplam {tickets.length} destek talebi</p>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
 
-      {showModal && selectedTicket && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-4 md:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">Destek Talebi Detayı</h2>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Kullanıcı</p>
-                  <p className="font-medium">{selectedTicket.user.username}</p>
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kullanıcı</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Konu</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Öncelik</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {tickets.map((ticket) => (
+                  <tr key={ticket._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-900">{ticket.user?.username || 'Silinmiş Kullanıcı'}</div>
+                        <div className="text-gray-500">{ticket.user?.email}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{ticket.subject}</div>
+                      <div className="text-sm text-gray-500 truncate max-w-xs">{ticket.message}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full ${PRIORITY_COLORS[ticket.priority]?.bg} ${PRIORITY_COLORS[ticket.priority]?.text}`}>
+                        {PRIORITY_COLORS[ticket.priority]?.label || 'Normal'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full ${STATUS_COLORS[ticket.status]?.bg} ${STATUS_COLORS[ticket.status]?.text}`}>
+                        {STATUS_COLORS[ticket.status]?.label || 'Beklemede'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(ticket.createdAt).toLocaleDateString('tr-TR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+                      <button
+                        onClick={() => {
+                          setSelectedTicket(ticket);
+                          setShowModal(true);
+                        }}
+                        className="text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Görüntüle
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ticket._id)}
+                        className="text-red-600 hover:text-red-500 transition-colors"
+                      >
+                        Sil
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Empty State */}
+        {tickets.length === 0 && (
+          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+            <div className="text-gray-500">
+              Henüz hiç destek talebi bulunmuyor.
+            </div>
+          </div>
+        )}
+
+        {/* Ticket Modal */}
+        {showModal && selectedTicket && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-2xl">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Destek Talebi Detayları
+                </h2>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-500">Kullanıcı</p>
+                    <p className="font-medium text-gray-900">{selectedTicket.user?.username || 'Silinmiş Kullanıcı'}</p>
+                    {selectedTicket.user?.email && (
+                      <p className="text-sm text-gray-500">{selectedTicket.user.email}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Tarih</p>
+                    <p className="font-medium text-gray-900">
+                      {new Date(selectedTicket.createdAt).toLocaleDateString('tr-TR')}
+                    </p>
+                  </div>
                 </div>
+
                 <div>
-                  <p className="text-sm text-gray-500">E-posta</p>
-                  <p className="font-medium">{selectedTicket.user.email}</p>
+                  <p className="text-sm text-gray-500">Konu</p>
+                  <p className="font-medium text-gray-900">{selectedTicket.subject}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Mesaj</p>
+                  <p className="mt-1 text-gray-900 bg-gray-50 rounded-xl p-4">{selectedTicket.message}</p>
+                </div>
+
+                {selectedTicket.responses?.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Yanıtlar</p>
+                    <div className="space-y-4">
+                      {selectedTicket.responses.map((response, index) => (
+                        <div
+                          key={index}
+                          className={`p-4 rounded-xl ${
+                            response.isAdmin
+                              ? 'bg-blue-50 ml-6'
+                              : 'bg-gray-50 mr-6'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-medium text-gray-900">
+                              {response.isAdmin ? 'Destek Ekibi' : 'Kullanıcı'}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(response.createdAt).toLocaleString('tr-TR')}
+                            </p>
+                          </div>
+                          <p className="text-gray-900">{response.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Yanıt</label>
+                  <textarea
+                    value={responseMessage}
+                    onChange={(e) => setResponseMessage(e.target.value)}
+                    rows="4"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
+                    placeholder="Kullanıcıya yanıt yazın..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Durum</label>
+                  <select
+                    value={selectedTicket.status}
+                    onChange={(e) => handleStatusUpdate(selectedTicket._id, e.target.value)}
+                    disabled={updatingStatus}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors disabled:opacity-50"
+                  >
+                    <option value="open">Açık</option>
+                    <option value="in_progress">İşleniyor</option>
+                    <option value="resolved">Çözüldü</option>
+                    <option value="closed">Kapatıldı</option>
+                  </select>
                 </div>
               </div>
 
-              <div>
-                <p className="text-sm text-gray-500">Mesaj</p>
-                <p className="mt-1 p-3 bg-gray-50 rounded-lg">{selectedTicket.message}</p>
-              </div>
-
-              {selectedTicket.orderId && (
-                <div>
-                  <p className="text-sm text-gray-500">Sipariş ID</p>
-                  <p className="font-medium">#{selectedTicket.orderId}</p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Durum
-                </label>
-                <select
-                  value={selectedTicket.status}
-                  onChange={(e) => handleStatusUpdate(selectedTicket._id, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="open">Açık</option>
-                  <option value="in_progress">İşleniyor</option>
-                  <option value="resolved">Çözüldü</option>
-                  <option value="closed">Kapatıldı</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Admin Notları
-                </label>
-                <textarea
-                  value={selectedTicket.adminNotes || ''}
-                  onChange={(e) => setSelectedTicket({
-                    ...selectedTicket,
-                    adminNotes: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  rows="3"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Müşteriye Yanıt
-                </label>
-                <textarea
-                  value={selectedTicket.adminResponse || ''}
-                  onChange={(e) => setSelectedTicket({
-                    ...selectedTicket,
-                    adminResponse: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  rows="3"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  disabled={updatingStatus}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500 transition-colors disabled:opacity-50"
                 >
                   Kapat
                 </button>
                 <button
                   onClick={() => handleStatusUpdate(selectedTicket._id, selectedTicket.status)}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
+                  disabled={updatingStatus || !responseMessage.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  Kaydet
+                  {updatingStatus ? 'Gönderiliyor...' : 'Yanıt Gönder'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 } 

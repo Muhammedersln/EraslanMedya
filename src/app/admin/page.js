@@ -1,9 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
-import { API_URL } from '@/utils/constants';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -14,18 +12,17 @@ export default function AdminDashboard() {
     totalRevenue: 0
   });
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/stats`, {
+      const response = await fetch('/api/admin', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('İstatistikler yüklenemedi');
       }
       
       const data = await response.json();
@@ -50,7 +47,7 @@ export default function AdminDashboard() {
     }
 
     fetchStats();
-  }, [user, router]);
+  }, []);
 
   if (loading) {
     return (
@@ -70,17 +67,17 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Kullanıcı</h3>
-          <p className="text-2xl font-bold text-primary">{stats.userCount}</p>
+          <p className="text-2xl font-bold text-primary">{stats.totalUsers}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Ürün</h3>
-          <p className="text-2xl font-bold text-primary">{stats.productCount}</p>
+          <p className="text-2xl font-bold text-primary">{stats.totalProducts}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Sipariş</h3>
-          <p className="text-2xl font-bold text-primary">{stats.orderCount}</p>
+          <p className="text-2xl font-bold text-primary">{stats.totalOrders}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
@@ -93,6 +90,62 @@ export default function AdminDashboard() {
           </p>
         </div>
       </div>
+
+      {/* Recent Orders Section */}
+      {stats.recentOrders && stats.recentOrders.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-text mb-4">Son Siparişler</h2>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sipariş ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kullanıcı</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ürünler</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Toplam</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {stats.recentOrders.map((order) => (
+                    <tr key={order._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        #{order._id.slice(-6)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {order.user.username}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {order.items.map(item => item.product.name).join(', ')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ₺{order.totalAmount.toLocaleString('tr-TR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {order.status === 'completed' ? 'Tamamlandı' :
+                           order.status === 'processing' ? 'İşleniyor' :
+                           order.status === 'cancelled' ? 'İptal Edildi' :
+                           'Beklemede'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

@@ -4,10 +4,8 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/navbar/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import toast from 'react-hot-toast';
-import { FaUserCircle,FaUserPlus  } from 'react-icons/fa';
+import { FaUserPlus } from 'react-icons/fa';
 import Link from "next/link";
-import { generateVerificationToken } from '@/utils/token';
-import { sendVerificationEmail } from '@/utils/mailer';
 
 export default function Register() {
   const router = useRouter();
@@ -78,33 +76,17 @@ export default function Register() {
         email: formData.email,
         phone: formData.phone,
         username: formData.username,
-        password: formData.password,
-        isEmailVerified: false
+        password: formData.password
       };
 
-      // Önce kullanıcıyı kaydet
       const response = await register(userData);
       
-      // Doğrulama token'ı oluştur
-      const verificationToken = generateVerificationToken(formData.email);
-      
-      // E-posta gönder
-      const emailSent = await sendVerificationEmail(formData.email, verificationToken);
-      
-      if (emailSent) {
-        console.log('Register Success:', response);
+      if (response.success) {
         toast.success('Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.');
         router.push('/verification-pending');
-      } else {
-        toast.error('Doğrulama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.');
       }
     } catch (err) {
-      console.log('Register Page Error:', {
-        name: err.name,
-        message: err.message,
-        stack: err.stack
-      });
-      
+      console.error('Register Error:', err);
       toast.error(err.message || 'Kayıt olurken bir hata oluştu!');
     }
   };

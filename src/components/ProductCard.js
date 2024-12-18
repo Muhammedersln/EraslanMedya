@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_URL } from '@/utils/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { FaInstagram, FaTiktok } from 'react-icons/fa';
@@ -92,7 +91,7 @@ export default function ProductCard({ product }) {
             }
       };
 
-      const response = await fetch(`${API_URL}/api/cart`, {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,8 +119,10 @@ export default function ProductCard({ product }) {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-image.png';
-    return imagePath.startsWith('http') ? imagePath : `${API_URL}/uploads/${imagePath}`;
+    if (!imagePath) return '/images/placeholder.svg';
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('/')) return imagePath;
+    return `/uploads/${imagePath}`;
   };
 
   const formatPrice = (price) => {

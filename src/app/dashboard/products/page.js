@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard';
 import Navbar from '@/components/navbar/Navbar';
-import { API_URL } from '@/utils/constants';
 import { motion } from 'framer-motion';
 import { FaInstagram } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa';
@@ -51,7 +50,7 @@ export default function Products() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/products`);
+      const response = await fetch('/api/products');
       if (!response.ok) {
         throw new Error('Ürünler yüklenirken bir hata oluştu');
       }
@@ -67,7 +66,7 @@ export default function Products() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/settings/tax-rate`, {
+      const response = await fetch('/api/settings', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

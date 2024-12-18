@@ -1,14 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { API_URL } from '@/utils/constants';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
+import toast from 'react-hot-toast';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/Footer';
-import instagramPrivacy from '../../../../../public/images/instaFollowInfo.png'
+import instagramPrivacy from '../../../../../public/images/instaFollowInfo.png';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -32,10 +31,14 @@ export default function ProductDetail() {
   const fetchProduct = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/products/${id}`);
+      const response = await fetch(`/api/products/${id}`, {
+        method: 'GET',
+        cache: 'no-store'
+      });
       
       if (!response.ok) {
-        throw new Error('Ürün bulunamadı');
+        const error = await response.json();
+        throw new Error(error.message || 'Ürün bulunamadı');
       }
       
       const data = await response.json();
@@ -43,11 +46,12 @@ export default function ProductDetail() {
       setQuantity(data.minQuantity || 1);
     } catch (error) {
       console.error('Ürün yüklenirken hata:', error);
-      toast.error('Ürün yüklenirken bir hata oluştu');
+      toast.error(error.message || 'Ürün yüklenirken bir hata oluştu');
+      router.push('/dashboard/products');
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, router]);
 
   useEffect(() => {
     fetchProduct();
@@ -93,16 +97,18 @@ export default function ProductDetail() {
       return;
     }
 
-    if (product.subCategory === 'followers' && !productData.username?.trim()) {
-      toast.error('Lütfen kullanıcı adını girin');
-      return;
-    }
-
-    if (product.subCategory !== 'followers') {
-      if (!productData.postCount || productData.postCount < 1 || productData.postCount > 10) {
-        toast.error('Gönderi sayısı 1 ile 10 arasında olmalıdır');
+    try {
+      // Validation checks
+      if (product.subCategory === 'followers' && !productData.username?.trim()) {
+        toast.error('Lütfen kullanıcı adını girin');
         return;
       }
+
+      if (product.subCategory !== 'followers') {
+        if (!productData.postCount || productData.postCount < 1 || productData.postCount > 10) {
+          toast.error('Gönderi sayısı 1 ile 10 arasında olmalıdır');
+          return;
+        }
 
       // Boş link kontrolü
       if (!productData.links || productData.links.some(link => !link || !link.trim())) {
@@ -111,9 +117,7 @@ export default function ProductDetail() {
       }
     }
 
-    try {
-      setAddingToCart(true);
-      const response = await fetch(`${API_URL}/api/cart`, {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +137,7 @@ export default function ProductDetail() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Ürün sepete eklenemedi');
+        throw new Error(error.message || 'Sepete eklenirken bir hata oluştu');
       }
 
       toast.success('Ürün sepete eklendi');
@@ -143,15 +147,17 @@ export default function ProductDetail() {
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Sepete ekleme hatası:', error);
-      toast.error(error.message || 'Ürün sepete eklenirken bir hata oluştu');
+      toast.error(error.message);
     } finally {
       setAddingToCart(false);
     }
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-image.png';
-    return imagePath.startsWith('http') ? imagePath : `${API_URL}/uploads/${imagePath}`;
+    if (!imagePath) return '/images/placeholder.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('/')) return imagePath;
+    return `/uploads/${imagePath}`;
   };
 
   if (loading) {
@@ -707,7 +713,7 @@ export default function ProductDetail() {
 
                   {/* Açıklama */}
                   <div className="mt-8">
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">Ürün Açıklaması</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Ürün Aç��klaması</h3>
                     <div className="prose prose-sm max-w-none">
                       <p className="text-gray-600">{product.description}</p>
                     </div>

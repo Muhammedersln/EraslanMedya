@@ -3,8 +3,6 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -20,7 +18,7 @@ export function AuthProvider({ children }) {
   // Token ile kullanıcı bilgilerini kontrol et
   const checkAuth = async (token) => {
     try {
-      const response = await fetch(`${API_URL}/auth/me`, {
+      const response = await fetch('/api/auth', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -39,31 +37,42 @@ export function AuthProvider({ children }) {
 
   // Sayfa yüklendiğinde token kontrolü yap
   useEffect(() => {
-    const verifyToken = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const userData = await checkAuth(token);
-        if (userData) {
-          setUser(userData);
-          localStorage.setItem('user', JSON.stringify(userData));
-        } else {
-          // Token geçersizse veya süresi dolmuşsa çıkış yap
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        
+        if (token && storedUser) {
+          // Önce localStorage'dan kullanıcı bilgilerini yükle
+          setUser(JSON.parse(storedUser));
+          
+          // Sonra sunucudan doğrula
+          const userData = await checkAuth(token);
+          if (userData) {
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+          } else {
+            // Token geçersizse çıkış yap
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+          }
         }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    verifyToken();
+    initializeAuth();
   }, []);
 
   const login = async (username, password) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +92,8 @@ export function AuthProvider({ children }) {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
-      return { ...data, status: response.status };
+
+      return { success: true, user: userData };
     } catch (err) {
       setError(err.message);
       throw err;
@@ -96,8 +106,8 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
+      const response = await fetch('/api/auth', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -110,7 +120,7 @@ export function AuthProvider({ children }) {
         throw new Error(data.message || 'Kayıt olurken bir hata oluştu');
       }
 
-      return data;
+      return { success: true, message: data.message };
     } catch (err) {
       setError(err.message);
       throw err;
@@ -128,12 +138,22 @@ export function AuthProvider({ children }) {
 
   const updateUser = (userData) => {
     setUser(userData);
-    // Eğer localStorage'da user bilgisi tutuyorsanız onu da güncelleyin
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    updateUser,
+    isAuthenticated: !!user,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

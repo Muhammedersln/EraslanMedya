@@ -6,8 +6,6 @@ import Footer from '@/components/Footer';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 const SUPPORT_CATEGORIES = [
   { id: 'order_issue', name: 'Sipariş Sorunu' },
   { id: 'technical_issue', name: 'Teknik Sorun' },
@@ -16,18 +14,33 @@ const SUPPORT_CATEGORIES = [
 ];
 
 const STATUS_COLORS = {
-  open: { bg: 'bg-yellow-50', text: 'text-yellow-600', label: 'Açık' },
-  in_progress: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'İşleniyor' },
-  resolved: { bg: 'bg-green-50', text: 'text-green-600', label: 'Çözüldü' },
-  closed: { bg: 'bg-gray-50', text: 'text-gray-600', label: 'Kapatıldı' }
+  open: {
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    label: 'Açık'
+  },
+  in_progress: {
+    bg: 'bg-blue-100',
+    text: 'text-blue-800',
+    label: 'İşleniyor'
+  },
+  resolved: {
+    bg: 'bg-green-100',
+    text: 'text-green-800',
+    label: 'Çözüldü'
+  },
+  closed: {
+    bg: 'bg-gray-100',
+    text: 'text-gray-800',
+    label: 'Kapatıldı'
+  }
 };
 
 export default function Support() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    category: '',
-    orderId: '',
+    subject: '',
     message: '',
     priority: 'normal'
   });
@@ -43,10 +56,8 @@ export default function Support() {
 
   const fetchMyTickets = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/support-tickets/my`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await fetch('/api/support', {
+        credentials: 'include'
       });
 
       if (!response.ok) throw new Error('Destek talepleri yüklenemedi');
@@ -64,13 +75,17 @@ export default function Support() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/support-tickets`, {
+      const response = await fetch('/api/support', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        credentials: 'include',
+        body: JSON.stringify({
+          subject: formData.subject,
+          message: formData.message,
+          priority: formData.priority
+        })
       });
 
       const data = await response.json();
@@ -81,8 +96,7 @@ export default function Support() {
 
       toast.success('Destek talebiniz başarıyla gönderildi');
       setFormData({
-        category: '',
-        orderId: '',
+        subject: '',
         message: '',
         priority: 'normal'
       });
@@ -132,7 +146,7 @@ export default function Support() {
                       <thead className="bg-gray-50/50">
                         <tr>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tarih</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Kategori</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Konu</th>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Durum</th>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600"></th>
                         </tr>
@@ -144,11 +158,11 @@ export default function Support() {
                               {new Date(ticket.createdAt).toLocaleDateString('tr-TR')}
                             </td>
                             <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                              {SUPPORT_CATEGORIES.find(cat => cat.id === ticket.category)?.name}
+                              {ticket.subject}
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[ticket.status].bg} ${STATUS_COLORS[ticket.status].text}`}>
-                                {STATUS_COLORS[ticket.status].label}
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[ticket.status]?.bg || 'bg-gray-50'} ${STATUS_COLORS[ticket.status]?.text || 'text-gray-600'}`}>
+                                {STATUS_COLORS[ticket.status]?.label || 'Bekliyor'}
                               </span>
                             </td>
                             <td className="px-6 py-4">
@@ -190,31 +204,14 @@ export default function Support() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <label className="block">
-                    <span className="text-sm font-medium text-gray-700">Sorun Kategorisi</span>
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      required
-                      className="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    >
-                      <option value="">Kategori Seçin</option>
-                      {SUPPORT_CATEGORIES.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-sm font-medium text-gray-700">Sipariş ID (Opsiyonel)</span>
+                    <span className="text-sm font-medium text-gray-700">Konu</span>
                     <input
                       type="text"
-                      name="orderId"
-                      value={formData.orderId}
+                      name="subject"
+                      value={formData.subject}
                       onChange={handleInputChange}
-                      placeholder="Örn: #123ABC"
+                      required
+                      placeholder="Destek talebinizin konusu"
                       className="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     />
                   </label>
@@ -250,17 +247,13 @@ export default function Support() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-primary text-white py-4 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-50 font-medium shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30"
+                  className={`w-full py-3 px-6 text-white font-medium rounded-xl transition-all ${
+                    isLoading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-primary hover:bg-primary-dark'
+                  }`}
                 >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Gönderiliyor...
-                    </span>
-                  ) : 'Destek Talebi Gönder'}
+                  {isLoading ? 'Gönderiliyor...' : 'Destek Talebi Gönder'}
                 </button>
               </form>
             </div>
@@ -268,70 +261,96 @@ export default function Support() {
         </div>
       </main>
 
-      {/* Destek Talebi Detay Modal */}
+      {/* Ticket Detail Modal */}
       <AnimatePresence>
         {showTicketModal && selectedTicket && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl mx-auto"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Destek Talebi Detayı</h2>
+              <div className="flex justify-between items-start mb-6">
+                <h3 className="text-xl font-bold text-gray-900">Destek Talebi Detayları</h3>
                 <button
                   onClick={() => setShowTicketModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-500"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Kategori</p>
-                    <p className="text-lg font-medium text-gray-900">
-                      {SUPPORT_CATEGORIES.find(cat => cat.id === selectedTicket.category)?.name}
-                    </p>
-                  </div>
 
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Durum</p>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[selectedTicket.status].bg} ${STATUS_COLORS[selectedTicket.status].text}`}>
-                      {STATUS_COLORS[selectedTicket.status].label}
-                    </span>
-                  </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-500">Konu</p>
+                  <p className="font-medium text-gray-900">{selectedTicket.subject}</p>
                 </div>
-
-                {selectedTicket.orderId && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Sipariş ID</p>
-                    <p className="text-lg font-medium text-gray-900">#{selectedTicket.orderId}</p>
-                  </div>
-                )}
 
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-2">Mesajınız</p>
-                  <div className="bg-gray-50 p-4 rounded-xl text-gray-700">
-                    {selectedTicket.message}
-                  </div>
+                  <p className="text-sm text-gray-500">Durum</p>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[selectedTicket.status]?.bg || 'bg-gray-50'} ${STATUS_COLORS[selectedTicket.status]?.text || 'text-gray-600'}`}>
+                    {STATUS_COLORS[selectedTicket.status]?.label || 'Bekliyor'}
+                  </span>
                 </div>
 
-                {selectedTicket.adminResponse && (
+                <div>
+                  <p className="text-sm text-gray-500">Öncelik</p>
+                  <p className="font-medium text-gray-900 capitalize">
+                    {selectedTicket.priority === 'high' ? 'Yüksek' :
+                     selectedTicket.priority === 'normal' ? 'Normal' : 'Düşük'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Mesaj</p>
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedTicket.message}</p>
+                </div>
+
+                {selectedTicket.responses && selectedTicket.responses.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">Yanıt</p>
-                    <div className="bg-blue-50 p-4 rounded-xl text-blue-900">
-                      {selectedTicket.adminResponse}
+                    <p className="text-sm text-gray-500 mb-2">Yanıtlar</p>
+                    <div className="space-y-3">
+                      {selectedTicket.responses.map((response, index) => (
+                        <div
+                          key={index}
+                          className={`p-3 rounded-lg ${
+                            response.isAdmin
+                              ? 'bg-blue-50 ml-4'
+                              : 'bg-gray-50 mr-4'
+                          }`}
+                        >
+                          <p className="text-sm font-medium mb-1">
+                            {response.isAdmin ? 'Destek Ekibi' : 'Siz'}
+                          </p>
+                          <p className="text-gray-700 text-sm">{response.message}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(response.createdAt).toLocaleString('tr-TR')}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
               </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowTicketModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+                >
+                  Kapat
+                </button>
+              </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

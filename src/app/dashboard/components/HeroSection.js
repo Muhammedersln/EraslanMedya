@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { FaShoppingBag, FaChartLine, FaRegClock } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import { API_URL } from '@/utils/constants';
 
 export default function HeroSection({ user, orderCount, cartCount }) {
     const router = useRouter();
@@ -39,7 +38,7 @@ export default function HeroSection({ user, orderCount, cartCount }) {
     // Son sipariş tarihini al
     const fetchLastOrderDate = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/orders/last-order-date`, {
+            const response = await fetch('/api/orders/last-order-date', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }

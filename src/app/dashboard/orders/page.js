@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/navbar/Navbar';
-import { API_URL } from '@/utils/constants';
 import toast from 'react-hot-toast';
 import Footer from '@/components/Footer';
 
@@ -32,10 +31,8 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/orders`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await fetch('/api/orders', {
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -43,7 +40,9 @@ export default function Orders() {
       }
 
       const data = await response.json();
-      setOrders(data);
+      // Ürün bilgisi olmayan siparişleri filtrele
+      const validOrders = data.filter(order => order.items?.length > 0 && order.items[0]?.product);
+      setOrders(validOrders);
     } catch (error) {
       console.error('Siparişler yüklenirken hata:', error);
       toast.error('Siparişler yüklenirken bir hata oluştu');
@@ -109,17 +108,17 @@ export default function Orders() {
                         #{order._id.slice(-6).toUpperCase()}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {order.product.name}
+                        {order.items[0]?.product?.name || 'Ürün bulunamadı'}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {order.quantity}
+                        {order.items[0]?.quantity || 0}
                       </td>
                       <td className="px-6 py-4 text-sm font-bold text-primary">
-                        ₺{order.totalPrice}
+                        ₺{order.totalAmount?.toFixed(2) || '0.00'}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[order.status].bg} ${STATUS_COLORS[order.status].text}`}>
-                          {STATUS_COLORS[order.status].label}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[order.status]?.bg || 'bg-gray-100'} ${STATUS_COLORS[order.status]?.text || 'text-gray-700'}`}>
+                          {STATUS_COLORS[order.status]?.label || 'Bilinmiyor'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-text">
@@ -158,25 +157,25 @@ export default function Orders() {
                           {new Date(order.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[order.status].bg} ${STATUS_COLORS[order.status].text}`}>
-                        {STATUS_COLORS[order.status].label}
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[order.status]?.bg || 'bg-gray-100'} ${STATUS_COLORS[order.status]?.text || 'text-gray-700'}`}>
+                        {STATUS_COLORS[order.status]?.label || 'Bilinmiyor'}
                       </span>
                     </div>
 
                     <div className="space-y-2">
                       <div className="pb-3 border-b border-gray-100">
                         <p className="text-sm text-gray-500">Ürün</p>
-                        <p className="font-medium text-gray-900 mt-0.5">{order.product.name}</p>
+                        <p className="font-medium text-gray-900 mt-0.5">{order.items[0]?.product?.name || 'Ürün bulunamadı'}</p>
                       </div>
 
                       <div className="flex justify-between py-2">
                         <div>
                           <p className="text-sm text-gray-500">Miktar</p>
-                          <p className="font-medium text-gray-900 mt-0.5">{order.quantity}</p>
+                          <p className="font-medium text-gray-900 mt-0.5">{order.items[0]?.quantity || 0}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-500">Toplam</p>
-                          <p className="font-bold text-primary mt-0.5">₺{order.totalPrice}</p>
+                          <p className="font-bold text-primary mt-0.5">₺{order.totalAmount?.toFixed(2) || '0.00'}</p>
                         </div>
                       </div>
                     </div>
@@ -214,7 +213,7 @@ export default function Orders() {
         )}
       </main>
 
-      {/* Responsive Modal */}
+      {/* Sipariş Detay Modal */}
       {showDetailsModal && selectedOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -230,73 +229,64 @@ export default function Orders() {
 
               <div>
                 <p className="text-sm text-gray-500">Ürün</p>
-                <p className="font-medium">{selectedOrder.product?.name || '-'}</p>
+                <p className="font-medium">{selectedOrder.items[0]?.product?.name || 'Ürün bulunamadı'}</p>
               </div>
 
-              {selectedOrder.product?.subCategory === 'followers' ? (
-                <div>
-                  <p className="text-sm text-gray-500">Kullanıcı Adı</p>
-                  <p className="font-medium break-all">
-                    {selectedOrder.productData?.username || '-'}
-                  </p>
-                </div>
-              ) : (
+              {selectedOrder.items[0]?.productData && (
                 <>
-                  <div>
-                    <p className="text-sm text-gray-500">Gönderi Sayısı</p>
-                    <p className="font-medium">
-                      {selectedOrder.productData?.postCount || '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Gönderiler</p>
-                    <div className="mt-1 space-y-1">
-                      {selectedOrder.productData?.links?.map((link, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <span className="text-gray-500 text-sm">{index + 1}.</span>
-                          <a 
-                            href={link} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-primary hover:text-primary-dark text-sm break-all"
-                          >
-                            {link}
-                          </a>
-                        </div>
-                      ))}
+                  {selectedOrder.items[0]?.product?.subCategory === 'followers' ? (
+                    <div>
+                      <p className="text-sm text-gray-500">Kullanıcı Adı</p>
+                      <p className="font-medium break-all">
+                        {selectedOrder.items[0]?.productData?.username || '-'}
+                      </p>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-sm text-gray-500">Gönderi Sayısı</p>
+                        <p className="font-medium">
+                          {selectedOrder.items[0]?.productData?.postCount || '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Gönderiler</p>
+                        <div className="mt-1 space-y-1">
+                          {selectedOrder.items[0]?.productData?.links?.map((link, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <span className="text-gray-500">{index + 1}.</span>
+                              <a 
+                                href={link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary-dark break-all"
+                              >
+                                {link}
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
               <div>
-                <p className="text-sm text-gray-500">Durum</p>
-                <p className={`font-medium ${STATUS_COLORS[selectedOrder.status].text}`}>
-                  {STATUS_COLORS[selectedOrder.status].label}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">İlerleme</p>
-                <div className="mt-1">
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-primary h-2.5 rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${Math.min(100, (selectedOrder.currentCount / selectedOrder.targetCount) * 100)}%` 
-                      }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>{selectedOrder.currentCount}</span>
-                    <span>{selectedOrder.targetCount}</span>
-                  </div>
-                </div>
+                <p className="text-sm text-gray-500">Miktar</p>
+                <p className="font-medium">{selectedOrder.items[0]?.quantity || 0}</p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Toplam Tutar</p>
-                <p className="font-medium">₺{selectedOrder.totalPrice}</p>
+                <p className="font-bold text-primary">₺{selectedOrder.totalAmount?.toFixed(2) || '0.00'}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Durum</p>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[selectedOrder.status]?.bg || 'bg-gray-100'} ${STATUS_COLORS[selectedOrder.status]?.text || 'text-gray-700'}`}>
+                  {STATUS_COLORS[selectedOrder.status]?.label || 'Bilinmiyor'}
+                </span>
               </div>
 
               <div>
@@ -307,10 +297,10 @@ export default function Orders() {
               </div>
             </div>
 
-            <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
+            <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
               >
                 Kapat
               </button>

@@ -6,8 +6,6 @@ import { useEffect, useState } from 'react';
 import { MdEmail, MdDashboard, MdShoppingBag, MdInfo, MdShoppingCart, MdMenu, MdClose, MdLogin, MdPersonAdd, MdHeadsetMic, MdReceipt, MdExpandMore } from 'react-icons/md';
 import { FaUserCircle,FaUserPlus  } from 'react-icons/fa';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -76,7 +74,7 @@ export default function Navbar() {
       if (!user) return;
       
       try {
-        const response = await fetch(`${API_URL}/api/cart/count`, {
+        const response = await fetch('/api/cart/count', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

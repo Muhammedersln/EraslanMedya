@@ -1,120 +1,86 @@
 "use client";
-import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/navbar/Navbar';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import Footer from '@/components/Footer';
+import { useAuth } from '@/context/AuthContext';
+import { FaUser, FaLock, FaEnvelope, FaPhone, FaCamera, FaShieldAlt, FaHistory, FaCalendarAlt } from 'react-icons/fa';
+import Navbar from '@/components/navbar/Navbar';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-export default function Profile() {
-  const { user, updateUser } = useAuth();
+export default function ProfilePage() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    username: user?.username || '',
-  });
-
-  const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: '',
+    confirmPassword: ''
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const [profileData, setProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    username: ''
+  });
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      console.log('Gönderilen veri:', formData); // Debug için log ekleyelim
-
-      const response = await fetch(`${API_URL}/api/users/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(formData)
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        username: user.username || ''
       });
-
-      // Response'u kontrol et
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Sunucudan geçersiz yanıt alındı');
-      }
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Profil güncellenemedi');
-      }
-
-      updateUser(data);
-      toast.success('Profil başarıyla güncellendi');
-    } catch (error) {
-      console.error('Profil güncelleme hatası:', error);
-      toast.error(error.message || 'Profil güncellenirken bir hata oluştu');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  const handlePasswordUpdate = async (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
     
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
+    if (formData.newPassword !== formData.confirmPassword) {
       toast.error('Yeni şifreler eşleşmiyor');
+      return;
+    }
+
+    if (formData.newPassword.length < 6) {
+      toast.error('Yeni şifre en az 6 karakter olmalıdır');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/users/password`, {
-        method: 'PUT',
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        })
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
+        }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Şifre güncellenemedi');
+        throw new Error(data.message || 'Şifre değiştirme işlemi başarısız oldu');
       }
 
-      setPasswordData({
+      setFormData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
-      setShowPasswordForm(false);
-      toast.success('Şifre başarıyla güncellendi');
+
+      toast.success('Şifreniz başarıyla güncellendi');
+      
+      setTimeout(() => {
+        logout();
+        router.push('/login');
+      }, 2000);
     } catch (error) {
       console.error('Şifre güncelleme hatası:', error);
       toast.error(error.message || 'Şifre güncellenirken bir hata oluştu');
@@ -123,246 +89,317 @@ export default function Profile() {
     }
   };
 
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Profil güncelleme işlemi başarısız oldu');
+      }
+
+      toast.success('Profiliniz başarıyla güncellendi');
+    } catch (error) {
+      console.error('Profil güncelleme hatası:', error);
+      toast.error(error.message || 'Profil güncellenirken bir hata oluştu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <Navbar />
       
-      <main className="flex-grow container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <span className="bg-primary/10 p-2 rounded-lg mr-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </span>
-              Profil Ayarları
-            </h1>
-
-            {/* Profil Tamamlama Yüzdesi */}
-            <div className="bg-white p-4 rounded-xl shadow-md">
-              <div className="text-sm text-gray-600 mb-2">Profil Tamamlama</div>
-              <div className="flex items-center">
-                <div className="w-32 h-2 bg-gray-200 rounded-full mr-3">
-                  <div className="w-3/4 h-full bg-primary rounded-full"></div>
+      <div className="container mx-auto px-4 py-8 mt-16">
+        <div className="max-w-7xl mx-auto">
+          {/* Üst Bilgi Kartları */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <FaHistory className="w-5 h-5 text-primary" />
                 </div>
-                <span className="text-primary font-semibold">75%</span>
+                <div>
+                  <p className="text-sm text-gray-600">Son Giriş</p>
+                  <p className="font-semibold">12 Mart 2024</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <FaShieldAlt className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Güvenlik Durumu</p>
+                  <p className="font-semibold text-green-500">Güvende</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <FaCalendarAlt className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Üyelik Tarihi</p>
+                  <p className="font-semibold">Ocak 2024</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <FaUser className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Profil Durumu</p>
+                  <div className="flex items-center">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
+                      <div className="w-20 h-full bg-primary rounded-full"></div>
+                    </div>
+                    <span className="text-sm font-medium">80%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Hızlı İstatistikler */}
-          <div className="grid grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-all">
-              <div className="text-gray-600 mb-2">Son Giriş</div>
-              <div className="font-semibold">12 Mart 2024, 15:30</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Sol Kolon - Profil Kartı */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                <div className="relative h-32 bg-gradient-to-r from-primary to-primary-dark">
+                  <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2">
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-full bg-white p-1">
+                        <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                          <img
+                            src={user.avatar || '/images/placeholder.svg'}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                      <button className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white hover:bg-primary-dark transition-colors">
+                        <FaCamera className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-12 p-6 text-center">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {user.firstName} {user.lastName}
+                  </h3>
+                  <p className="text-gray-500 text-sm">{user.email}</p>
+                  
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+                      <span className="text-sm text-gray-600">Üyelik</span>
+                      <span className="text-sm font-medium text-primary">Premium</span>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+                      <span className="text-sm text-gray-600">Sipariş</span>
+                      <span className="text-sm font-medium text-primary">24 Adet</span>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+                      <span className="text-sm text-gray-600">Son Giriş</span>
+                      <span className="text-sm font-medium text-primary">2 saat önce</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-all">
-              <div className="text-gray-600 mb-2">Toplam Sipariş</div>
-              <div className="font-semibold">24 Sipariş</div>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-all">
-              <div className="text-gray-600 mb-2">Üyelik Tarihi</div>
-              <div className="font-semibold">Ocak 2024</div>
+
+            {/* Sağ Kolon - Formlar */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Profil Bilgileri Formu */}
+              <div className="bg-white rounded-3xl shadow-lg p-8">
+                <div className="flex items-center space-x-4 mb-8">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary to-primary-dark flex items-center justify-center">
+                    <FaUser className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
+                      Profil Bilgileri
+                    </h2>
+                    <p className="text-sm text-gray-500">Kişisel bilgilerinizi güncelleyin</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Ad</label>
+                      <input
+                        type="text"
+                        value={profileData.firstName}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Soyad</label>
+                      <input
+                        type="text"
+                        value={profileData.lastName}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">E-posta</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FaEnvelope className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full pl-10 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Telefon</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FaPhone className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="tel"
+                          value={profileData.phone}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full pl-10 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-xl transition-all duration-300 transform hover:scale-[0.99] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+                        <span>Güncelleniyor...</span>
+                      </div>
+                    ) : 'Profili Güncelle'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Şifre Değiştirme Formu */}
+              <div className="bg-white rounded-3xl shadow-lg p-8">
+                <div className="flex items-center space-x-4 mb-8">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary to-primary-dark flex items-center justify-center">
+                    <FaLock className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
+                      Şifre Değiştir
+                    </h2>
+                    <p className="text-sm text-gray-500">Hesap güvenliğinizi artırın</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handlePasswordChange} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Mevcut Şifre
+                      </label>
+                      <input
+                        type="password"
+                        value={formData.currentPassword}
+                        onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Yeni Şifre
+                        </label>
+                        <input
+                          type="password"
+                          value={formData.newPassword}
+                          onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Yeni Şifre (Tekrar)
+                        </label>
+                        <input
+                          type="password"
+                          value={formData.confirmPassword}
+                          onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all duration-200"
+                          required
+                          minLength={6}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-xl transition-all duration-300 transform hover:scale-[0.99] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+                        <span>Güncelleniyor...</span>
+                      </div>
+                    ) : 'Şifreyi Güncelle'}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
-
-          {/* Profil Formu */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 transition-all hover:shadow-xl">
-            <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-              </svg>
-              Kişisel Bilgiler
-            </h2>
-
-            {/* Profil Fotoğrafı Yükleme */}
-            <div className="mb-8 flex items-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full overflow-hidden mr-6">
-                <img src="/default-avatar.png" alt="Profil" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <button className="bg-primary/10 text-primary px-4 py-2 rounded-lg hover:bg-primary/20 transition-all mb-2 w-full">
-                  Fotoğraf Yükle
-                </button>
-                <p className="text-sm text-gray-500">PNG, JPG veya GIF (max. 2MB)</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleProfileUpdate} className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ad</label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="Adınız"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Soyad</label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="Soyadınız"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="ornek@email.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="+90 555 123 4567"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Kullanıcı Adı</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  placeholder="kullanici_adi"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-primary text-white py-3 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-50 font-medium text-lg shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Güncelleniyor...
-                  </span>
-                ) : 'Bilgileri Güncelle'}
-              </button>
-            </form>
-          </div>
-
-          {/* Şifre Değiştirme */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 transition-all hover:shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold flex items-center text-gray-800">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-                Şifre Değiştirme
-              </h2>
-              <button
-                onClick={() => setShowPasswordForm(!showPasswordForm)}
-                className="px-4 py-2 text-primary hover:text-white hover:bg-primary rounded-lg transition-all text-sm font-medium border-2 border-primary hover:shadow-lg"
-              >
-                {showPasswordForm ? 'İptal' : 'Şifre Değiştir'}
-              </button>
-            </div>
-
-            {showPasswordForm && (
-              <form onSubmit={handlePasswordUpdate} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mevcut Şifre</label>
-                  <input
-                    type="password"
-                    name="currentPassword"
-                    value={passwordData.currentPassword}
-                    onChange={handlePasswordChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Yeni Şifre</label>
-                  <input
-                    type="password"
-                    name="newPassword"
-                    value={passwordData.newPassword}
-                    onChange={handlePasswordChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Yeni Şifre Tekrar</label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-primary text-white py-3 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-50 font-medium text-lg shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Güncelleniyor...
-                    </span>
-                  ) : 'Şifreyi Güncelle'}
-                </button>
-              </form>
-            )}
-          </div>
-
-          {/* İki Faktörlü Doğrulama */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 transition-all hover:shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">İki Faktörlü Doğrulama</h2>
-                <p className="text-gray-600">Hesabınızı daha güvenli hale getirin</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-              </label>
-            </div>
-            <p className="text-sm text-gray-500">
-              İki faktörlü doğrulama etkinleştirildiğinde, her oturum açtığınızda telefonunuza bir doğrulama kodu gönderilecektir.
-            </p>
-          </div>
-
         </div>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   );
 } 
