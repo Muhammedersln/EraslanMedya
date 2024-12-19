@@ -17,7 +17,7 @@ export async function GET(request) {
     await dbConnect();
     const orders = await Order.find()
       .populate('user', 'username email')
-      .populate('items.product', 'name price')
+      .populate('items.product', 'name price subCategory')
       .sort('-createdAt');
 
     return NextResponse.json(orders);

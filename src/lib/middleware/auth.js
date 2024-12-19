@@ -11,11 +11,13 @@ export async function auth(request) {
 
     const headers = request.headers;
     const authHeader = await headers.get('authorization');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;
     }
 
     const token = authHeader.split(' ')[1];
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     await dbConnect();
@@ -27,7 +29,6 @@ export async function auth(request) {
 
     return user;
   } catch (error) {
-    console.error('Auth middleware error:', error);
     return null;
   }
 }

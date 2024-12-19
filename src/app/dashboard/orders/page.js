@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/navbar/Navbar';
@@ -21,35 +21,36 @@ export default function Orders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+  const fetchOrders = useCallback(async () => {
+    try {
+      const response = await fetch('/api/orders', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Siparişler getirilemedi');
+      }
+
+      const data = await response.json();
+      const validOrders = data.filter(order => order.items?.length > 0 && order.items[0]?.product);
+      setOrders(validOrders);
+    } catch (error) {
+      toast.error('Siparişler yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) {
       router.push('/login');
       return;
     }
     fetchOrders();
-  }, [user]);
-
-  const fetchOrders = async () => {
-    try {
-      const response = await fetch('/api/orders', {
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Siparişler getirilemedi');
-      }
-
-      const data = await response.json();
-      // Ürün bilgisi olmayan siparişleri filtrele
-      const validOrders = data.filter(order => order.items?.length > 0 && order.items[0]?.product);
-      setOrders(validOrders);
-    } catch (error) {
-      console.error('Siparişler yüklenirken hata:', error);
-      toast.error('Siparişler yüklenirken bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, router, fetchOrders]);
 
   if (loading) {
     return (

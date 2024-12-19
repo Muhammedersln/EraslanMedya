@@ -38,7 +38,7 @@ export async function PATCH(request, context) {
 
     await order.save();
     await order.populate('user', 'username email');
-    await order.populate('items.product', 'name price');
+    await order.populate('items.product', 'name price subCategory');
 
     return NextResponse.json(order);
   } catch (error) {

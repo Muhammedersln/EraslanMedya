@@ -2,11 +2,17 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
+import { motion } from 'framer-motion';
 
 export default function ProductsGridSection() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const sliderRef = useRef(null);
   const intervalRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [startDragTime, setStartDragTime] = useState(0);
 
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
@@ -28,57 +34,55 @@ export default function ProductsGridSection() {
 
   const startSlider = () => {
     const interval = setInterval(() => {
-      const slider = document.getElementById('product-slider');
-      if (slider) {
-        const scrollAmount = slider.clientWidth;
-        const maxScroll = slider.scrollWidth - slider.clientWidth;
-        const currentScroll = slider.scrollLeft;
+      if (sliderRef.current) {
+        const scrollAmount = sliderRef.current.children[0]?.offsetWidth || 0;
+        const maxScroll = sliderRef.current.scrollWidth - sliderRef.current.clientWidth;
+        const currentScroll = sliderRef.current.scrollLeft;
 
         if (currentScroll >= maxScroll - 20) {
-          slider.scrollTo({
+          sliderRef.current.scrollTo({
             left: 0,
             behavior: 'smooth'
           });
         } else {
-          slider.scrollTo({
-            left: currentScroll + scrollAmount,
+          sliderRef.current.scrollBy({
+            left: scrollAmount + 16,
             behavior: 'smooth'
           });
         }
       }
-    }, 5000);
+    }, 4000);
 
     intervalRef.current = interval;
   };
 
   const scrollSlider = (direction) => {
-    const slider = document.getElementById('product-slider');
-    if (slider) {
-      const scrollAmount = slider.clientWidth;
-      const maxScroll = slider.scrollWidth - slider.clientWidth;
-      const currentScroll = slider.scrollLeft;
+    if (sliderRef.current) {
+      const scrollAmount = sliderRef.current.children[0]?.offsetWidth || 0;
+      const maxScroll = sliderRef.current.scrollWidth - sliderRef.current.clientWidth;
+      const currentScroll = sliderRef.current.scrollLeft;
 
       if (direction === 'left') {
         if (currentScroll <= 0) {
-          slider.scrollTo({
+          sliderRef.current.scrollTo({
             left: maxScroll,
             behavior: 'smooth'
           });
         } else {
-          slider.scrollTo({
-            left: currentScroll - scrollAmount,
+          sliderRef.current.scrollBy({
+            left: -(scrollAmount + 16),
             behavior: 'smooth'
           });
         }
       } else {
         if (currentScroll >= maxScroll - 20) {
-          slider.scrollTo({
+          sliderRef.current.scrollTo({
             left: 0,
             behavior: 'smooth'
           });
         } else {
-          slider.scrollTo({
-            left: currentScroll + scrollAmount,
+          sliderRef.current.scrollBy({
+            left: scrollAmount + 16,
             behavior: 'smooth'
           });
         }
@@ -87,24 +91,74 @@ export default function ProductsGridSection() {
   };
 
   useEffect(() => {
-    startSlider();
+    const currentInterval = intervalRef.current;
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (currentInterval) {
+        clearInterval(currentInterval);
       }
     };
   }, []);
 
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - sliderRef.current.offsetLeft);
+    setScrollLeft(sliderRef.current.scrollLeft);
+    setStartDragTime(Date.now());
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    const x = e.pageX - sliderRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // Scroll hızı çarpanı
+    sliderRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUp = (e) => {
+    const dragTime = Date.now() - startDragTime;
+    const dragDistance = Math.abs(e.pageX - (startX + sliderRef.current.offsetLeft));
+    
+    // Eğer sürükleme süresi kısa ve mesafe azsa, bunu tıklama olarak kabul et
+    if (dragTime < 200 && dragDistance < 10) {
+      setIsDragging(false);
+      return; // Normal tıklama eventi devam etsin
+    }
+    
+    setIsDragging(false);
+    document.body.style.userSelect = 'text';
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      document.body.style.userSelect = 'text';
+    }
+    // Mevcut mouseLeave fonksiyonunu da çalıştır
+    if (!intervalRef.current) {
+      startSlider();
+    }
+  };
+
   if (loading) {
     return (
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="flex gap-6 overflow-x-hidden">
             {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="animate-pulse">
-                <div className="bg-gray-200 rounded-lg h-64 mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div 
+                key={item}
+                className="w-[300px] flex-none"
+              >
+                <div className="bg-white rounded-xl p-4 shadow-sm animate-pulse">
+                  <div className="w-full aspect-square bg-gray-200 rounded-lg mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full mb-3"></div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-5 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-7 bg-gray-200 rounded w-1/4"></div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -114,80 +168,95 @@ export default function ProductsGridSection() {
   }
 
   return (
-    <section className="py-20 bg-white overflow-hidden">
+    <section className="py-20 bg-gradient-to-b from-white to-gray-50 overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-dark to-primary">
             Popüler Hizmetlerimiz
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Her kategoriden öne çıkan hizmetlerimizi keşfedin
+          <p className="text-gray-600 text-lg">
+            En çok tercih edilen hizmetlerimiz
           </p>
-        </div>
+        </motion.div>
 
-        <div className="relative">
-          <button 
-            onClick={() => scrollSlider('left')}
-            className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-          >
-            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          
-          <button 
-            onClick={() => scrollSlider('right')}
-            className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-          >
-            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
+        <div className="relative group">
           <div 
-            id="product-slider"
-            className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth px-2 py-4"
+            ref={sliderRef}
+            className={`flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth px-12 ${
+              isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
             onMouseEnter={() => {
               if (intervalRef.current) {
                 clearInterval(intervalRef.current);
                 intervalRef.current = null;
               }
             }}
-            onMouseLeave={() => {
-              if (!intervalRef.current) {
-                startSlider();
-              }
-            }}
             style={{ 
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               WebkitOverflowScrolling: 'touch',
-              scrollSnapType: 'x mandatory',
-              scrollBehavior: 'smooth',
-              transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)'
+              scrollBehavior: isDragging ? 'auto' : 'smooth'
             }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <div key={product._id} className="h-full">
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
+            {products.map((product, index) => (
+              <motion.div
+                key={product._id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+                className="w-[300px] flex-none"
+              >
+                <ProductCard product={product} />
+              </motion.div>
+            ))}
           </div>
+
+          {/* Sol Ok */}
+          <button
+            onClick={() => scrollSlider('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-r-xl bg-white/90 shadow-lg hover:bg-primary hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Sağ Ok */}
+          <button
+            onClick={() => scrollSlider('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-l-xl bg-white/90 shadow-lg hover:bg-primary hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
 
-        <div className="text-center mt-8">
+        <motion.div 
+          className="text-center mt-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
           <Link 
             href="/products" 
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl transition-colors"
+            className="inline-flex items-center gap-3 bg-gradient-to-r from-primary to-primary-dark text-white px-8 py-4 rounded-xl font-medium 
+              transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:scale-105"
           >
-            <span>Tüm Ürünleri Gör</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span className="text-lg">Tüm Ürünleri Gör</span>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

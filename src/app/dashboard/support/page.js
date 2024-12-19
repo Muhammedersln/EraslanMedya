@@ -57,7 +57,9 @@ export default function Support() {
   const fetchMyTickets = async () => {
     try {
       const response = await fetch('/api/support', {
-        credentials: 'include'
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       if (!response.ok) throw new Error('Destek talepleri yüklenemedi');
@@ -78,9 +80,9 @@ export default function Support() {
       const response = await fetch('/api/support', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        credentials: 'include',
         body: JSON.stringify({
           subject: formData.subject,
           message: formData.message,

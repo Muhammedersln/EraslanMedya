@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/navbar/Navbar';
@@ -8,8 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { FaTrash, FaShoppingCart, FaArrowRight, FaInstagram, FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Cart() {
   const router = useRouter();
@@ -21,60 +19,7 @@ export default function Cart() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [settings, setSettings] = useState({ taxRate: 0.18 });
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    fetchCartItems();
-    fetchSettings();
-  }, [user, router]);
-
-  useEffect(() => {
-    if (cartItems.length > 0) {
-      calculateTotal(cartItems);
-    }
-  }, [settings]);
-
-  const fetchCartItems = async () => {
-    try {
-      const response = await fetch(`/api/cart`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Sepet yüklenemedi');
-      
-      const data = await response.json();
-      const validItems = data.filter(item => item.product);
-      setCartItems(validItems);
-      calculateTotal(validItems);
-    } catch (error) {
-      console.error('Sepet yüklenirken hata:', error);
-      toast.error('Sepet yüklenirken bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'GET',
-        cache: 'no-store'
-      });
-
-      const data = await response.json();
-      setSettings({ taxRate: data.taxRate || 0.18 });
-    } catch (error) {
-      console.error('KDV oranı alınırken hata:', error);
-      // Varsayılan değeri kullan
-      setSettings({ taxRate: 0.18 });
-    }
-  };
-
-  const calculateTotal = (items) => {
+  const calculateTotal = useCallback((items) => {
     const validItems = items.filter(item => item.product);
     
     const subtotal = validItems.reduce((sum, item) => 
@@ -97,13 +42,66 @@ export default function Cart() {
         taxAmount: roundedTax
       }]
     });
-  };
+  }, [settings.taxRate]);
+
+  const fetchCartItems = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/cart`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Sepet yüklenemedi');
+      }
+      
+      const data = await response.json();
+      const validItems = data.filter(item => item.product);
+      setCartItems(validItems);
+      calculateTotal(validItems);
+    } catch (error) {
+      toast.error('Sepet yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  }, [calculateTotal]);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'GET',
+        cache: 'no-store'
+      });
+
+      const data = await response.json();
+      setSettings({ taxRate: data.taxRate || 0.18 });
+    } catch (error) {
+      setSettings({ taxRate: 0.18 });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    fetchCartItems();
+    fetchSettings();
+  }, [user, router, fetchCartItems, fetchSettings]);
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      calculateTotal(cartItems);
+    }
+  }, [settings, calculateTotal, cartItems]);
 
   const updateQuantity = async (itemId, newQuantity) => {
     if (newQuantity < 1) return;
     
     try {
-      const response = await fetch(`/api/cart/${itemId}`, {
+      const response = await fetch(`/api/cart?id=${itemId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -112,17 +110,21 @@ export default function Cart() {
         body: JSON.stringify({ quantity: newQuantity })
       });
 
-      if (!response.ok) throw new Error('Miktar güncellenemedi');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Miktar güncellenemedi');
+      }
 
+      const updatedItem = await response.json();
       const updatedItems = cartItems.map(item => 
-        item._id === itemId ? { ...item, quantity: newQuantity } : item
+        item._id === itemId ? updatedItem : item
       );
       
       setCartItems(updatedItems);
       calculateTotal(updatedItems);
+      toast.success('Miktar güncellendi');
     } catch (error) {
-      console.error('Miktar güncellenirken hata:', error);
-      toast.error('Miktar güncellenirken bir hata oluştu');
+      toast.error(error.message || 'Miktar güncellenirken bir hata oluştu');
     }
   };
 
@@ -131,7 +133,7 @@ export default function Cart() {
       const item = cartItems.find(item => item._id === itemId);
       if (!item) return;
 
-      const response = await fetch(`/api/cart/${itemId}`, {
+      const response = await fetch(`/api/cart?id=${itemId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -154,14 +156,13 @@ export default function Cart() {
       setEditingItem(null);
       toast.success('Bilgiler güncellendi');
     } catch (error) {
-      console.error('Bilgiler güncellenirken hata:', error);
       toast.error(error.message || 'Bilgiler güncellenirken bir hata oluştu');
     }
   };
 
   const removeItem = async (itemId) => {
     try {
-      const response = await fetch(`/api/cart/${itemId}`, {
+      const response = await fetch(`/api/cart?id=${itemId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -177,7 +178,6 @@ export default function Cart() {
       
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
-      console.error('Ürün silinirken hata:', error);
       toast.error('Ürün silinirken bir hata oluştu');
     }
   };

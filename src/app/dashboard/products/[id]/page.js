@@ -35,12 +35,12 @@ export default function ProductDetail() {
         method: 'GET',
         cache: 'no-store'
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Ürün bulunamadı');
       }
-      
+
       const data = await response.json();
       setProduct(data);
       setQuantity(data.minQuantity || 1);
@@ -67,7 +67,7 @@ export default function ProductDetail() {
   const handlePostCountChange = (e) => {
     const count = parseInt(e.target.value) || 1;
     const validCount = Math.min(10, Math.max(1, count));
-    
+
     setProductData(prev => ({
       ...prev,
       postCount: validCount,
@@ -110,12 +110,12 @@ export default function ProductDetail() {
           return;
         }
 
-      // Boş link kontrolü
-      if (!productData.links || productData.links.some(link => !link || !link.trim())) {
-        toast.error('Lütfen tüm gönderi linklerini girin');
-        return;
+        // Boş link kontrolü
+        if (!productData.links || productData.links.some(link => !link || !link.trim())) {
+          toast.error('Lütfen tüm gönderi linklerini girin');
+          return;
+        }
       }
-    }
 
       const response = await fetch('/api/cart', {
         method: 'POST',
@@ -126,12 +126,12 @@ export default function ProductDetail() {
         body: JSON.stringify({
           productId: product._id,
           quantity: quantity,
-          productData: product.subCategory === 'followers' 
+          productData: product.subCategory === 'followers'
             ? { username: productData.username?.trim() }
             : {
-                postCount: productData.postCount,
-                links: productData.links.filter(link => link && link.trim())
-              }
+              postCount: productData.postCount,
+              links: productData.links.filter(link => link && link.trim())
+            }
         })
       });
 
@@ -143,7 +143,7 @@ export default function ProductDetail() {
       toast.success('Ürün sepete eklendi');
       setProductData({ username: '', postCount: 1, links: [''] });
       setCurrentStep(1); // Reset to first step after successful addition
-      
+
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Sepete ekleme hatası:', error);
@@ -187,11 +187,11 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 sm:px-6 py-4 lg:py-8">
         <div className="max-w-5xl mx-auto">
           <nav className="mb-4 lg:mb-6">
-            <button 
+            <button
               onClick={() => router.push('/products')}
               className="inline-flex items-center text-sm text-gray-500 hover:text-primary transition-colors gap-1.5 group"
             >
@@ -224,20 +224,20 @@ export default function ProductDetail() {
                     <ul className="space-y-2 text-sm">
                       <li className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                         <span className="text-gray-600">Min. Sipariş: <span className="font-medium">{product.minQuantity}</span></span>
                       </li>
                       <li className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                         <span className="text-gray-600">Max. Sipariş: <span className="font-medium">{product.maxQuantity}</span></span>
                       </li>
                       <li className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
                         <span className="text-gray-600">Hızlı Teslimat</span>
                       </li>
                     </ul>
@@ -294,19 +294,30 @@ export default function ProductDetail() {
               <div className="lg:col-span-2 p-4">
                 <div className="max-w-xl mx-auto lg:mx-0">
                   <h1 className="text-xl lg:text-2xl font-semibold text-gray-900 mb-4">{product.name}</h1>
-                  
+
                   {!user ? (
                     // Giriş yapmamış kullanıcı için görünüm
-                        <div className="space-y-6">
+                    <div className="space-y-6">
                       <div className="bg-white rounded-lg border border-gray-100 p-4">
                         <h3 className="text-sm font-medium text-gray-900 mb-4">Sipariş Gereksinimleri</h3>
+                        {/* Ürün Detayları */}
+                        <div className="mt-8 bg-white rounded-lg border border-gray-100 p-4">
+                          <h3 className="text-base font-medium text-gray-900 mb-4">Ürün Detayları</h3>
+                          <div className="prose prose-sm max-w-none">
+                            <div className="bg-gray-50 rounded-lg p-4">
+                              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                {product.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-600 mb-2">
                               Miktar
                             </label>
                             <div className="flex items-center gap-3">
-                              <button 
+                              <button
                                 onClick={() => setQuantity(Math.max(product.minQuantity, quantity - 1))}
                                 className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 hover:border-primary hover:bg-primary/5 transition-colors"
                               >
@@ -315,7 +326,7 @@ export default function ProductDetail() {
                                 </svg>
                               </button>
                               <span className="w-16 text-center text-sm font-medium">{quantity}</span>
-                              <button 
+                              <button
                                 onClick={() => setQuantity(Math.min(product.maxQuantity, quantity + 1))}
                                 className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 hover:border-primary hover:bg-primary/5 transition-colors"
                               >
@@ -347,92 +358,140 @@ export default function ProductDetail() {
                     // Giriş yapmış kullanıcı için aşamalı görünüm
                     <div className="space-y-6">
                       {currentStep === 1 && (
-                        <div className="space-y-6">
-                          {/* Gereksinimler */}
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <h3 className="font-medium text-gray-900 mb-3">Sipariş Gereksinimleri</h3>
-                            <div className="space-y-4">
-                              {product.subCategory === 'followers' ? (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    {product.category === 'instagram' ? 'Instagram' : 'TikTok'} Kullanıcı Adı
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={productData.username}
-                                    onChange={(e) => setProductData(prev => ({ ...prev, username: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                    placeholder="@kullaniciadi"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="space-y-4">
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Gönderi Sayısı (Maksimum 10)
-                                    </label>
-                                    <input
-                                      type="number"
-                                      min="1"
-                                      max="10"
-                                      value={productData.postCount}
-                                      onChange={handlePostCountChange}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                      placeholder="Gönderi sayısı girin"
-                                    />
-                                    <p className="mt-1 text-sm text-gray-500">
-                                      Her gönderiye {Math.floor(quantity / productData.postCount)} adet {
-                                        product.subCategory === 'likes' ? 'beğeni' : 
-                                        product.subCategory === 'views' ? 'izlenme' : 'yorum'
-                                      } eklenecek
-                                    </p>
-                                  </div>
+                        <div className="space-y-6 max-w-2xl mx-auto">
+                          {/* Ürün Bilgileri Kartı */}
+                          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-4 sm:p-6">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-4">Ürün Detayı</h3>
+                              <div className="prose prose-sm max-w-none bg-gray-50 rounded-lg p-4">
+                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                  {product.description}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
 
-                                  {productData.links.map((link, index) => (
-                                    <div key={index}>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {index + 1}. Gönderi Linki
-                                      </label>
+                          {/* Sipariş Formu */}
+                          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-4 sm:p-6">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-6">Sipariş Detayı</h3>
+                              
+                              <div className="space-y-6">
+                                {product.subCategory === 'followers' ? (
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      {product.category === 'instagram' ? 'Instagram' : 'TikTok'} Kullanıcı Adı
+                                    </label>
+                                    <div className="relative">
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">@</span>
                                       <input
-                                        type="url"
-                                        value={link}
-                                        onChange={(e) => handleLinkChange(index, e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                        placeholder={`${index + 1}. gönderi linkini girin`}
+                                        type="text"
+                                        value={productData.username}
+                                        onChange={(e) => setProductData(prev => ({ ...prev, username: e.target.value }))}
+                                        className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                        placeholder="kullaniciadi"
                                       />
                                     </div>
-                                  ))}
-                                </div>
-                              )}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-6">
+                                    {/* Gönderi Sayısı Seçici */}
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                                        Gönderi Sayısı
+                                      </label>
+                                      <div className="relative">
+                                        <select
+                                          value={productData.postCount}
+                                          onChange={(e) => {
+                                            const num = parseInt(e.target.value);
+                                            setProductData(prev => ({
+                                              ...prev,
+                                              postCount: num,
+                                              links: Array(num).fill('')
+                                            }));
+                                          }}
+                                          className="w-full p-3 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                        >
+                                          {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                                            <option key={num} value={num}>
+                                              {num} Gönderi
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                          </svg>
+                                        </div>
+                                      </div>
+                                      <div className="mt-3 text-sm text-gray-600 flex items-center gap-2 bg-white p-3 rounded-lg border border-gray-100">
+                                        <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p className="leading-snug">
+                                          Seçtiğiniz gönderi sayısına göre toplam beğeni miktarı eşit olarak dağıtılacaktır
+                                        </p>
+                                      </div>
+                                    </div>
 
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  Miktar
-                                </label>
-                                <div className="flex items-center gap-3">
-                                  <button 
-                                    onClick={() => setQuantity(Math.max(product.minQuantity, quantity - 1))}
-                                    className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-50"
-                                  >
-                                    -
-                                  </button>
-                                  <span className="w-16 text-center">{quantity}</span>
-                                  <button 
-                                    onClick={() => setQuantity(Math.min(product.maxQuantity, quantity + 1))}
-                                    className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-50"
-                                  >
-                                    +
-                                  </button>
+                                    {/* Gönderi Linkleri */}
+                                    <div className="space-y-4">
+                                      {productData.links.map((link, index) => (
+                                        <div key={index} className="bg-gray-50 rounded-xl p-4">
+                                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            {index + 1}. Gönderi Linki
+                                          </label>
+                                          <div className="relative">
+                                            <input
+                                              type="url"
+                                              value={link}
+                                              onChange={(e) => handleLinkChange(index, e.target.value)}
+                                              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                              placeholder="https://instagram.com/p/..."
+                                            />
+                                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Miktar Seçici */}
+                                <div className="bg-gray-50 rounded-xl p-4">
+                                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                                    Sipariş Miktarı
+                                  </label>
+                                  <div className="flex items-center justify-center gap-4 bg-white p-3 rounded-lg">
+                                    <button
+                                      onClick={() => setQuantity(Math.max(product.minQuantity, quantity - 1))}
+                                      className="w-12 h-12 flex items-center justify-center rounded-lg border border-gray-200 hover:border-primary hover:text-primary text-xl font-medium"
+                                    >
+                                      -
+                                    </button>
+                                    <div className="w-32 text-center">
+                                      <span className="text-2xl font-semibold text-gray-900">{quantity}</span>
+                                      <p className="text-sm text-gray-500 mt-1">sipariş adedi</p>
+                                    </div>
+                                    <button
+                                      onClick={() => setQuantity(Math.min(product.maxQuantity, quantity + 1))}
+                                      className="w-12 h-12 flex items-center justify-center rounded-lg border border-gray-200 hover:border-primary hover:text-primary text-xl font-medium"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
 
                           {/* İleri Butonu */}
-                          <div className="flex justify-end">
+                          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4 mt-6">
                             <button
                               onClick={() => {
-                                // Validation checks
                                 if (product.subCategory === 'followers' && !productData.username?.trim()) {
                                   toast.error('Lütfen kullanıcı adını girin');
                                   return;
@@ -452,9 +511,12 @@ export default function ProductDetail() {
 
                                 setCurrentStep(2);
                               }}
-                              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                              className="w-full sm:w-auto px-8 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transform hover:scale-102 active:scale-98 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                             >
-                              İleri
+                              <span>Devam Et</span>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
                             </button>
                           </div>
                         </div>
@@ -467,7 +529,7 @@ export default function ProductDetail() {
                             <div className="space-y-6">
                               <div className="p-6 bg-gray-50 rounded-lg space-y-6">
                                 <h3 className="text-lg font-medium text-gray-900">Önemli Ayarlar</h3>
-                                
+
                                 <div className="space-y-6">
                                   {/* 1. Gizlilik Ayarı */}
                                   <div className="space-y-3">
@@ -508,7 +570,7 @@ export default function ProductDetail() {
                                       <span className="flex items-center justify-center w-6 h-6 bg-primary text-white rounded-full text-sm">2</span>
                                       Değerlendirme Ayarı
                                     </h4>
-                                    
+
                                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                       <div className="flex items-start gap-4">
                                         <div className="flex-shrink-0">
@@ -518,7 +580,7 @@ export default function ProductDetail() {
                                             </svg>
                                           </div>
                                         </div>
-                                        
+
                                         <div className="space-y-4">
                                           <div className="space-y-2">
                                             <p className="text-gray-700 font-medium">
@@ -585,13 +647,13 @@ export default function ProductDetail() {
                             <div className="space-y-6">
                               <div className="p-6 bg-gray-50 rounded-lg space-y-4">
                                 <h3 className="text-lg font-medium text-gray-900">Sipariş Özeti</h3>
-                                
+
                                 <div className="space-y-3">
                                   <div className="flex justify-between items-center py-2 border-b border-gray-200">
                                     <span className="text-gray-600">Ürün</span>
                                     <span className="font-medium">{product.name}</span>
                                   </div>
-                                  
+
                                   <div className="flex justify-between items-center py-2 border-b border-gray-200">
                                     <span className="text-gray-600">Miktar</span>
                                     <span className="font-medium">{quantity}</span>
@@ -632,9 +694,8 @@ export default function ProductDetail() {
                                   <button
                                     onClick={handleAddToCart}
                                     disabled={addingToCart}
-                                    className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-                                      addingToCart ? 'bg-gray-400' : 'bg-primary hover:bg-primary-dark'
-                                    }`}
+                                    className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${addingToCart ? 'bg-gray-400' : 'bg-primary hover:bg-primary-dark'
+                                      }`}
                                   >
                                     {addingToCart ? 'Ekleniyor...' : 'Sepete Ekle'}
                                   </button>
@@ -649,7 +710,7 @@ export default function ProductDetail() {
                         <div className="space-y-6">
                           <div className="p-6 bg-gray-50 rounded-lg space-y-4">
                             <h3 className="text-lg font-medium text-gray-900">Sipariş Özeti</h3>
-                            
+
                             <div className="space-y-3">
                               <div className="flex justify-between items-center py-2 border-b border-gray-200">
                                 <span className="text-gray-600">Kullanıcı Adı</span>
@@ -698,9 +759,8 @@ export default function ProductDetail() {
                               <button
                                 onClick={handleAddToCart}
                                 disabled={addingToCart}
-                                className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-                                  addingToCart ? 'bg-gray-400' : 'bg-primary hover:bg-primary-dark'
-                                }`}
+                                className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${addingToCart ? 'bg-gray-400' : 'bg-primary hover:bg-primary-dark'
+                                  }`}
                               >
                                 {addingToCart ? 'Ekleniyor...' : 'Sepete Ekle'}
                               </button>
@@ -711,13 +771,7 @@ export default function ProductDetail() {
                     </div>
                   )}
 
-                  {/* Açıklama */}
-                  <div className="mt-8">
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">Ürün Aç��klaması</h3>
-                    <div className="prose prose-sm max-w-none">
-                      <p className="text-gray-600">{product.description}</p>
-                    </div>
-                  </div>
+
                 </div>
               </div>
             </div>
@@ -728,13 +782,13 @@ export default function ProductDetail() {
       {/* Auth Modal */}
       <AnimatePresence>
         {showAuthModal && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}

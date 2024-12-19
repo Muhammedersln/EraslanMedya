@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Cart from '@/lib/models/Cart';
 import { auth } from '@/lib/middleware/auth';
+import Product from '@/lib/models/Product';
 
 // Get cart items
 export async function GET(request) {
@@ -15,6 +16,8 @@ export async function GET(request) {
     }
 
     await dbConnect();
+    await Product.init();
+    
     const cartItems = await Cart.find({ user: user.id })
       .populate('product')
       .sort('-createdAt');
@@ -86,8 +89,18 @@ export async function PATCH(request) {
     }
 
     await dbConnect();
+    await Product.init();
+    
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get('id');
+
+    if (!itemId) {
+      return NextResponse.json(
+        { message: 'Item ID is required' },
+        { status: 400 }
+      );
+    }
+
     const { quantity, productData } = await request.json();
 
     const cartItem = await Cart.findOne({
