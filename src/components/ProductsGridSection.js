@@ -109,7 +109,7 @@ export default function ProductsGridSection() {
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
-    
+
     const x = e.pageX - sliderRef.current.offsetLeft;
     const walk = (x - startX) * 2; // Scroll hızı çarpanı
     sliderRef.current.scrollLeft = scrollLeft - walk;
@@ -118,13 +118,13 @@ export default function ProductsGridSection() {
   const handleMouseUp = (e) => {
     const dragTime = Date.now() - startDragTime;
     const dragDistance = Math.abs(e.pageX - (startX + sliderRef.current.offsetLeft));
-    
+
     // Eğer sürükleme süresi kısa ve mesafe azsa, bunu tıklama olarak kabul et
     if (dragTime < 200 && dragDistance < 10) {
       setIsDragging(false);
       return; // Normal tıklama eventi devam etsin
     }
-    
+
     setIsDragging(false);
     document.body.style.userSelect = 'text';
   };
@@ -146,7 +146,7 @@ export default function ProductsGridSection() {
         <div className="container mx-auto px-4">
           <div className="flex gap-6 overflow-x-hidden">
             {[1, 2, 3, 4].map((item) => (
-              <div 
+              <div
                 key={item}
                 className="w-[300px] flex-none"
               >
@@ -169,8 +169,8 @@ export default function ProductsGridSection() {
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-gray-50 overflow-hidden">
-      <div className="container mx-auto px-4">
-        <motion.div 
+      <div className="container mx-auto px-4 ">
+        <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -184,11 +184,10 @@ export default function ProductsGridSection() {
         </motion.div>
 
         <div className="relative group">
-          <div 
+          <div
             ref={sliderRef}
-            className={`flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth px-12 ${
-              isDragging ? 'cursor-grabbing' : 'cursor-grab'
-            }`}
+            className={`flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth px-12 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -199,7 +198,7 @@ export default function ProductsGridSection() {
                 intervalRef.current = null;
               }
             }}
-            style={{ 
+            style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               WebkitOverflowScrolling: 'touch',
@@ -240,22 +239,40 @@ export default function ProductsGridSection() {
           </button>
         </div>
 
-        <motion.div 
-          className="text-center mt-12"
+        <motion.div
+          className="text-center mt-12 "
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <Link 
-            href="/products" 
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-primary to-primary-dark text-white px-8 py-4 rounded-xl font-medium 
-              transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:scale-105"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <span className="text-lg">Tüm Ürünleri Gör</span>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
+            <Link
+              href="/dashboard/products"
+              className="group relative inline-flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dark overflow-hidden px-8 py-4 rounded-xl"
+            >
+              <span className="relative z-10 text-lg font-medium text-white transition-transform duration-300 group-hover:translate-x-[-4px]">
+                Tüm Ürünleri Keşfet
+              </span>
+              <motion.span
+                className="relative z-10 transition-transform duration-300 group-hover:translate-x-[4px]"
+                initial={{ x: 0 }}
+                animate={{ x: [0, 4, 0] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </motion.span>
+              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
     </section>

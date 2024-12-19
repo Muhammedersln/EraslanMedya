@@ -170,13 +170,17 @@ export default function Navbar() {
                     </div>
                     <div className="text-sm sm:text-base">
                       <p className="font-medium text-gray-800">{user?.username}</p>
-                      <p className="text-gray-500 text-xs sm:text-sm">{user?.email}</p>
                     </div>
+                    <MdExpandMore className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''}`} />
                   </button>
 
                   {/* Desktop Profile Dropdown */}
                   {showProfileMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl py-2 z-50 border border-gray-100">
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl py-2 z-50 border border-gray-100">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="font-medium text-gray-800">{user?.firstName} {user?.lastName}</p>
+                        <p className="text-sm text-gray-500">{user?.email}</p>
+                      </div>
                       <Link
                         href="/dashboard/profile"
                         className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -193,7 +197,7 @@ export default function Navbar() {
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
                       >
                         <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

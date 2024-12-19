@@ -9,8 +9,8 @@ export async function auth(request) {
       return null;
     }
 
-    const headers = request.headers;
-    const authHeader = await headers.get('authorization');
+    const headersList = await request.headers;
+    const authHeader = headersList.get('authorization');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;

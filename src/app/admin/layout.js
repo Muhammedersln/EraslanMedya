@@ -7,7 +7,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 
 async function getAdminUser() {
   try {
-    const headersList = headers();
+    const headersList = await headers();
     const response = await adminAuth({ headers: headersList });
     
     if (response instanceof Response && response.status === 403) {
@@ -26,11 +26,11 @@ export default async function AdminLayout({ children }) {
 
   return (
     <Suspense fallback={<Loading />}>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50/50">
         <AdminSidebar />
-        <main className="flex-1">
+        <main className="flex-1 w-full">
           <div className="min-h-screen pt-16 lg:pt-0">
-            <div className="h-full p-4 lg:p-8">
+            <div className="h-full p-3 sm:p-4 lg:p-8">
               {children}
             </div>
           </div>

@@ -93,13 +93,13 @@ export default function AdminSidebar() {
       />
 
       {/* Sidebar */}
-      <div 
+      <aside 
         className={`
-          fixed lg:static inset-y-0 left-0 z-40
+          fixed lg:sticky top-0 inset-y-0 left-0 z-40
           w-[280px] bg-white 
-          min-h-screen
+          h-screen
           lg:border-r lg:border-gray-200
-          lg:shadow-none lg:block
+          lg:shadow-none
           transform transition-transform duration-300 lg:transform-none
           ${isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full lg:translate-x-0'}
         `}
@@ -114,7 +114,7 @@ export default function AdminSidebar() {
         </button>
 
         {/* Sidebar İçeriği */}
-        <div className="h-full flex flex-col p-6">
+        <div className="h-full flex flex-col p-4 sm:p-6">
           {/* Header */}
           <div className="mb-8 mt-4 lg:mt-0">
             <Link 
@@ -129,14 +129,14 @@ export default function AdminSidebar() {
             </Link>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1">
+          {/* Navigation - Scrollable Area */}
+          <nav className="flex-1 space-y-1 mt-4 overflow-y-auto">
             {menuItems.map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
                 className={`
-                  flex items-center space-x-3 px-4 py-3 rounded-xl transition-all
+                  flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all
                   hover:bg-primary/5 active:scale-[0.99]
                   ${pathname === item.path 
                     ? 'bg-primary/10 text-primary font-medium' 
@@ -150,8 +150,8 @@ export default function AdminSidebar() {
             ))}
           </nav>
 
-          {/* Footer - Çıkış Butonu */}
-          <div className="pt-4 mt-auto border-t border-gray-100">
+          {/* Footer - Çıkış Butonu - Always visible at bottom */}
+          <div className="pt-4 mt-auto border-t border-gray-100 bg-white">
             <button
               onClick={handleLogout}
               className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl
@@ -162,7 +162,7 @@ export default function AdminSidebar() {
             </button>
           </div>
         </div>
-      </div>
+      </aside>
 
       {/* Mobil padding için spacer */}
       <div className="lg:hidden h-16" />

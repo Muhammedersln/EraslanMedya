@@ -152,7 +152,8 @@ export default function AdminOrders() {
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            {/* Desktop Table - Hidden on Mobile */}
+            <table className="w-full hidden lg:table">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
@@ -230,6 +231,82 @@ export default function AdminOrders() {
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile and Tablet View */}
+            <div className="lg:hidden divide-y divide-gray-200">
+              {orders.map((order) => (
+                <div key={order._id} className="p-4 sm:p-6 hover:bg-gray-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <span className="text-sm text-gray-500">Sipariş ID:</span>
+                      <span className="ml-2 text-sm font-medium text-gray-900">#{order._id.slice(-6)}</span>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
+                      {getStatusText(order.status)}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{order.user?.username || 'Silinmiş Kullanıcı'}</div>
+                      {order.user?.email && (
+                        <div className="text-sm text-gray-500">{order.user.email}</div>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-sm text-gray-500 mb-2">Ürünler:</div>
+                      {order.items?.map((item, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span className="text-gray-900">{item.product?.name || 'Silinmiş Ürün'}</span>
+                          <span className="text-gray-600">x {item.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-500">
+                        {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                      </div>
+                      <div className="font-medium text-gray-900">
+                        ₺{order.totalAmount?.toLocaleString('tr-TR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowModal(true);
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowDetailsModal(true);
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                      >
+                        Detay
+                      </button>
+                      <button
+                        onClick={() => handleDelete(order._id)}
+                        disabled={deleting}
+                        className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

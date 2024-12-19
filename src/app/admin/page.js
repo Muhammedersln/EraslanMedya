@@ -64,25 +64,25 @@ export default function AdminDashboard() {
         <p className="text-text-light">Hoş geldiniz, {user?.firstName}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Kullanıcı</h3>
-          <p className="text-2xl font-bold text-primary">{stats.totalUsers}</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{stats.totalUsers}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Ürün</h3>
-          <p className="text-2xl font-bold text-primary">{stats.totalProducts}</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{stats.totalProducts}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Sipariş</h3>
-          <p className="text-2xl font-bold text-primary">{stats.totalOrders}</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{stats.totalOrders}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <h3 className="text-sm font-medium text-text-light mb-1">Toplam Gelir</h3>
-          <p className="text-2xl font-bold text-primary">
+          <p className="text-xl sm:text-2xl font-bold text-primary">
             ₺{stats.totalRevenue.toLocaleString('tr-TR', { 
               minimumFractionDigits: 2, 
               maximumFractionDigits: 2 
@@ -100,33 +100,33 @@ export default function AdminDashboard() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sipariş ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kullanıcı</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ürünler</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Toplam</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sipariş ID</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kullanıcı</th>
+                    <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ürünler</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Toplam</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {stats.recentOrders.map((order) => (
-                    <tr key={order._id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <tr key={order._id} className="hover:bg-gray-50">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         #{order._id.slice(-6)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {order.user?.username || 'Silinmiş Kullanıcı'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="hidden sm:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900">
                         {order.items.map(item => item.product?.name || 'Silinmiş Ürün').join(', ')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         ₺{order.totalAmount.toLocaleString('tr-TR', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
                         })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                           order.status === 'completed' ? 'bg-green-100 text-green-800' :
                           order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
                           order.status === 'cancelled' ? 'bg-red-100 text-red-800' :

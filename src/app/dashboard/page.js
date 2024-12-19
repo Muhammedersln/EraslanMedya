@@ -136,7 +136,7 @@ export default function Dashboard() {
           orderCount={orderCount} 
           cartCount={cartCount}
         />
-
+        
         <CategorySlider 
           products={products}
           loading={loading}

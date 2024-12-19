@@ -367,82 +367,140 @@ export default function AdminProducts() {
         </div>
       </div>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-            <div 
-              key={product._id} 
-              className="group bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200"
-            >
-              <div className="relative h-48 bg-gray-100 overflow-hidden">
-                  <Image
-                    src={getImageUrl(product.image)}
-                    alt={product.name}
-                    fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-200"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200">
-                  <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button 
-                      onClick={() => handleEdit(product)}
-                      className="p-2 bg-white/90 hover:bg-white text-primary rounded-full transition-colors duration-200"
-                    >
-                      <FaEdit size={18} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(product._id)}
-                      className="p-2 bg-white/90 hover:bg-white text-red-600 rounded-full transition-colors duration-200"
-                    >
-                      <FaTrash size={18} />
-                    </button>
-                  </div>
-                </div>
-                <div className="absolute top-3 right-3">
-                  <span className={`px-3 py-1 text-sm rounded-full ${
-                    product.active 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {product.active ? 'Aktif' : 'Pasif'}
-                  </span>
-                </div>
-                </div>
-
-              <div className="p-5">
-                <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
-                  {product.description && (
-                      <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
-                  )}
-            </div>
-            
-                <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                    <p className="text-gray-500 mb-1">Kategori</p>
-                    <div className="flex items-center text-gray-900">
-                      {product.category === 'instagram' ? <FaInstagram className="mr-2" /> : <FaTiktok className="mr-2" />}
-                      <span className="capitalize">{product.subCategory}</span>
-                </div>
-              </div>
-              <div>
-                    <p className="text-gray-500 mb-1">Fiyat</p>
-                    <p className="font-medium text-gray-900">
-                  ₺{product.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div>
-                    <p className="text-gray-500 mb-1">Min. Miktar</p>
-                    <p className="text-gray-900">{product.minQuantity}</p>
-              </div>
-              <div>
-                    <p className="text-gray-500 mb-1">Max. Miktar</p>
-                    <p className="text-gray-900">{product.maxQuantity}</p>
-                  </div>
-                </div>
-            </div>
+        {/* Product List */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="hidden lg:table-header-group">
+                <tr className="border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">Görsel</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">Ürün Bilgileri</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">Kategori</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">Fiyat</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">Miktar</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">Durum</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredProducts.map((product) => (
+                  <tr key={product._id} className="block lg:table-row hover:bg-gray-50">
+                    <td className="px-6 py-4 flex lg:table-cell">
+                      <div className="relative h-20 w-20 lg:h-16 lg:w-16 rounded-lg overflow-hidden">
+                        <Image
+                          src={getImageUrl(product.image)}
+                          alt={product.name}
+                          fill
+                          sizes="(max-width: 768px) 80px, (max-width: 1024px) 64px"
+                          className="object-cover"
+                        />
+                      </div>
+                      {/* Mobile Product Info */}
+                      <div className="ml-4 flex-1 lg:hidden">
+                        <h3 className="text-base font-medium text-gray-900">{product.name}</h3>
+                        {product.description && (
+                          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                        )}
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
+                            product.active 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {product.active ? 'Aktif' : 'Pasif'}
+                          </span>
+                          <div className="flex items-center text-sm text-gray-900">
+                            {product.category === 'instagram' ? 
+                              <FaInstagram className="mr-1 text-pink-600" /> : 
+                              <FaTiktok className="mr-1 text-black" />
+                            }
+                            <span className="capitalize">{product.subCategory}</span>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-medium text-gray-900">
+                              ₺{product.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            </span>
+                            <div className="text-sm text-gray-500">
+                              Min: {product.minQuantity} / Max: {product.maxQuantity}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleEdit(product)}
+                              className="p-2 text-gray-600 hover:text-primary transition-colors"
+                            >
+                              <FaEdit size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(product._id)}
+                              className="p-2 text-gray-600 hover:text-red-600 transition-colors"
+                            >
+                              <FaTrash size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    {/* Desktop Only Cells */}
+                    <td className="hidden lg:table-cell px-6 py-4">
+                      <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
+                      {product.description && (
+                        <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                      )}
+                    </td>
+                    <td className="hidden lg:table-cell px-6 py-4">
+                      <div className="flex items-center text-sm text-gray-900">
+                        {product.category === 'instagram' ? 
+                          <FaInstagram className="mr-2 text-pink-600" /> : 
+                          <FaTiktok className="mr-2 text-black" />
+                        }
+                        <span className="capitalize">{product.subCategory}</span>
+                      </div>
+                    </td>
+                    <td className="hidden lg:table-cell px-6 py-4">
+                      <span className="text-sm font-medium text-gray-900">
+                        ₺{product.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </td>
+                    <td className="hidden lg:table-cell px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        <div>Min: {product.minQuantity}</div>
+                        <div>Max: {product.maxQuantity}</div>
+                      </div>
+                    </td>
+                    <td className="hidden lg:table-cell px-6 py-4">
+                      <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
+                        product.active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {product.active ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </td>
+                    <td className="hidden lg:table-cell px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => handleEdit(product)}
+                          className="p-2 text-gray-600 hover:text-primary transition-colors"
+                        >
+                          <FaEdit size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(product._id)}
+                          className="p-2 text-gray-600 hover:text-red-600 transition-colors"
+                        >
+                          <FaTrash size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </div>
 
         {/* Empty State */}
         {filteredProducts.length === 0 && (
@@ -452,9 +510,9 @@ export default function AdminProducts() {
                 'Arama kriterlerinize uygun ürün bulunamadı.' : 
                 'Henüz hiç ürün eklenmemiş.'
               }
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Product Modal */}
       {showModal && (
@@ -480,7 +538,7 @@ export default function AdminProducts() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Açıklama</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Açklama</label>
                 <textarea
                   name="description"
                   value={formData.description}

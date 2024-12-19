@@ -6,13 +6,6 @@ import Footer from '@/components/Footer';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SUPPORT_CATEGORIES = [
-  { id: 'order_issue', name: 'Sipariş Sorunu' },
-  { id: 'technical_issue', name: 'Teknik Sorun' },
-  { id: 'payment_issue', name: 'Ödeme Sorunu' },
-  { id: 'other', name: 'Diğer' }
-];
-
 const STATUS_COLORS = {
   open: {
     bg: 'bg-yellow-100',
@@ -36,6 +29,25 @@ const STATUS_COLORS = {
   }
 };
 
+const FAQ_ITEMS = [
+  {
+    question: 'Siparişim ne zaman tamamlanacak?',
+    answer: 'Siparişler genellikle 24-48 saat içerisinde tamamlanır. Yoğunluk durumuna göre bu süre değişebilir.'
+  },
+  {
+    question: 'Ödeme yaptım ama sipariş oluşmadı, ne yapmalıyım?',
+    answer: 'Endişelenmeyin! Ödemeniz başarıyla alındıysa, destek ekibimiz en kısa sürede size yardımcı olacaktır.'
+  },
+  {
+    question: 'Siparişimi iptal edebilir miyim?',
+    answer: 'İşleme alınmamış siparişlerinizi iptal edebilirsiniz. İşleme alınmış siparişler için destek ekibimizle iletişime geçin.'
+  },
+  {
+    question: 'Hangi ödeme yöntemlerini kullanabilirim?',
+    answer: 'Kredi kartı, banka kartı ve havale/EFT ile ödeme yapabilirsiniz. Tüm ödemeleriniz SSL ile güvence altındadır.'
+  }
+];
+
 export default function Support() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +59,7 @@ export default function Support() {
   const [myTickets, setMyTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
+  const [selectedFaq, setSelectedFaq] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -123,10 +136,10 @@ export default function Support() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
       <Navbar />
       
-      <main className="flex-grow container mx-auto px-4 py-12 mt-16">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-grow container mx-auto px-4 py-8 sm:py-12 mt-16">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-primary mb-4">Destek Merkezi</h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Size nasıl yardımcı olabiliriz? Aşağıdaki formu doldurarak destek ekibimizle iletişime geçebilirsiniz.
@@ -147,10 +160,10 @@ export default function Support() {
                     <table className="w-full">
                       <thead className="bg-gray-50/50">
                         <tr>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tarih</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Konu</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Durum</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600"></th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600">Tarih</th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600">Konu</th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600">Durum</th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -194,6 +207,45 @@ export default function Support() {
                   <p className="text-gray-600">Henüz destek talebiniz bulunmuyor.</p>
                 </div>
               )}
+
+              {/* Sık Sorulan Sorular */}
+              <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 mt-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Sık Sorulan Sorular</h3>
+                <div className="space-y-4">
+                  {FAQ_ITEMS.map((faq, index) => (
+                    <motion.div
+                      key={index}
+                      initial={false}
+                      animate={{ height: selectedFaq === index ? 'auto' : '48px' }}
+                      className="overflow-hidden border-b border-gray-100 last:border-0"
+                    >
+                      <button
+                        onClick={() => setSelectedFaq(selectedFaq === index ? null : index)}
+                        className="w-full flex justify-between items-center py-3 text-left"
+                      >
+                        <span className="font-medium text-gray-900">{faq.question}</span>
+                        <svg
+                          className={`w-5 h-5 text-gray-500 transform transition-transform ${
+                            selectedFaq === index ? 'rotate-180' : ''
+                          }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      <motion.div
+                        initial={false}
+                        animate={{ opacity: selectedFaq === index ? 1 : 0 }}
+                        className="pb-3 text-gray-600"
+                      >
+                        {faq.answer}
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Sağ Taraf - Yeni Destek Talebi Formu */}
@@ -257,7 +309,49 @@ export default function Support() {
                 >
                   {isLoading ? 'Gönderiliyor...' : 'Destek Talebi Gönder'}
                 </button>
+
+                <p className="text-sm text-gray-500 text-center mt-4">
+                  Destek talebiniz genellikle 24 saat içinde yanıtlanır.
+                  Acil durumlarda yüksek öncelik seçeneğini kullanabilirsiniz.
+                </p>
               </form>
+            </div>
+          </div>
+
+          {/* İletişim Bilgileri */}
+          <div className="mt-12 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-8 text-center">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Bize Ulaşın</h3>
+            <p className="text-gray-600 mb-6">
+              Destek talebiniz dışında bizimle doğrudan iletişime geçmek isterseniz:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">E-posta</h4>
+                <p className="text-gray-600">destek@eraslanmedya.com</p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Çalışma Saatleri</h4>
+                <p className="text-gray-600">09:00 - 22:00</p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Canlı Destek</h4>
+                <p className="text-gray-600">7/24 Hizmetinizdeyiz</p>
+              </div>
             </div>
           </div>
         </div>

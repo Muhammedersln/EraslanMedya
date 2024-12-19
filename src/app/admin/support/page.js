@@ -183,7 +183,8 @@ export default function AdminSupport() {
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            {/* Desktop Table - Hidden on Mobile */}
+            <table className="w-full hidden lg:table">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kullanıcı</th>
@@ -241,6 +242,65 @@ export default function AdminSupport() {
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile and Tablet View */}
+            <div className="lg:hidden divide-y divide-gray-200">
+              {tickets.map((ticket) => (
+                <div key={ticket._id} className="p-4 sm:p-6 hover:bg-gray-50">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 text-xs rounded-full ${STATUS_COLORS[ticket.status]?.bg} ${STATUS_COLORS[ticket.status]?.text}`}>
+                        {STATUS_COLORS[ticket.status]?.label || 'Beklemede'}
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${PRIORITY_COLORS[ticket.priority]?.bg} ${PRIORITY_COLORS[ticket.priority]?.text}`}>
+                        {PRIORITY_COLORS[ticket.priority]?.label || 'Normal'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(ticket.createdAt).toLocaleDateString('tr-TR')}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{ticket.user?.username || 'Silinmiş Kullanıcı'}</div>
+                      {ticket.user?.email && (
+                        <div className="text-sm text-gray-500">{ticket.user.email}</div>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="font-medium text-gray-900 mb-1">{ticket.subject}</div>
+                      <div className="text-sm text-gray-600 line-clamp-2">{ticket.message}</div>
+                    </div>
+
+                    {ticket.responses?.length > 0 && (
+                      <div className="text-sm text-gray-500">
+                        {ticket.responses.length} yanıt
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => {
+                          setSelectedTicket(ticket);
+                          setShowModal(true);
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Görüntüle
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ticket._id)}
+                        className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-500 transition-colors"
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
