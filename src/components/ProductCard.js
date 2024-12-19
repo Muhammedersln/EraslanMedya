@@ -405,11 +405,10 @@ export default function ProductCard({ product }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           whileHover={{ 
-            y: -5,
-            scale: 1.02,
-            transition: { duration: 0.2 }
+            y: -3,
+            transition: { duration: 0.2, ease: "easeOut" }
           }}
-          whileTap={{ scale: 0.98 }}
+          whileTap={{ scale: 0.995 }}
           transition={{ duration: 0.3 }}
           className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden h-full flex flex-col hover:shadow-xl hover:border-primary/20 transition-all duration-300"
           onClick={handleCardClick}
@@ -420,13 +419,13 @@ export default function ProductCard({ product }) {
               src={getImageUrl(product.image)}
               alt={product.name}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-110"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 33vw, 25vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/25 to-transparent group-hover:from-black/60 transition-all duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/25 to-transparent opacity-100 group-hover:opacity-70 transition-opacity duration-300" />
             
             {/* Kategori Etiketleri */}
-            <div className="absolute top-3 left-3 flex items-center gap-2 transition-transform duration-300 group-hover:translate-y-1">
+            <div className="absolute top-3 left-3 flex items-center gap-2 transform transition-all duration-300 group-hover:translate-y-0.5">
               {/* Ana Kategori */}
               <div className="flex items-center gap-1.5 bg-white/95 px-3 py-1.5 rounded-full shadow-sm">
                 {product.category === 'instagram' ? (
@@ -453,30 +452,42 @@ export default function ProductCard({ product }) {
             </div>
 
             {/* Fiyat Etiketi */}
-            <div className="absolute bottom-3 right-3 transition-transform duration-300 group-hover:translate-y-[-4px] group-hover:scale-105">
-              <motion.span 
-                whileHover={{ scale: 1.1 }}
-                className="px-3 py-1.5 rounded-full text-sm font-bold bg-white shadow-sm text-primary"
+            <div className="absolute bottom-3 right-3 transition-transform duration-300 group-hover:translate-y-[-4px]">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="px-4 py-2 rounded-full bg-white shadow-lg text-base font-bold text-primary border border-primary/10"
               >
                 {formatPrice(product.price)}
-              </motion.span>
+              </motion.div>
             </div>
           </div>
 
           {/* İçerik Alanı */}
-          <div className="p-5 flex-grow flex flex-col">
+          <div className="p-5 flex-grow flex flex-col justify-between">
+            <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
               {product.name}
             </h3>
             
-            <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-grow">
+            <p 
+                className="text-sm text-gray-600 mb-4"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: '2',
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}
+            >
               {product.description}
             </p>
+            </div>
 
+            <div className="space-y-4">
             {/* Miktar Bilgisi */}
             <motion.div 
-              whileHover={{ scale: 1.02 }}
-              className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200"
+              whileHover={{ scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100/80 transition-colors duration-200"
             >
               <div className="flex items-center gap-6">
                 <div className="flex flex-col items-center">
@@ -491,26 +502,29 @@ export default function ProductCard({ product }) {
               </div>
             </motion.div>
 
-            {/* Sepete Ekle Butonu */}
+              {/* Buton */}
             <motion.button 
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 if (!user) {
                   setShowAuthModal(true);
                 } else {
                   router.push(`/dashboard/products/${product._id}`);
                 }
               }}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-primary text-white py-3 px-4 rounded-xl font-medium 
-                transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/20
-                hover:bg-primary-dark"
+              transition={{ duration: 0.2 }}
+              className="w-full bg-primary text-white py-3.5 px-4 rounded-xl font-medium 
+                transition-all duration-200 flex items-center justify-center gap-2 
+                hover:shadow-lg hover:shadow-primary/20 hover:bg-primary-dark"
             >
               <span>Ürünü İncele</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </motion.button>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -521,11 +535,10 @@ export default function ProductCard({ product }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           whileHover={{ 
-            y: -5,
-            scale: 1.02,
-            transition: { duration: 0.2 }
+            y: -3,
+            transition: { duration: 0.2, ease: "easeOut" }
           }}
-          whileTap={{ scale: 0.98 }}
+          whileTap={{ scale: 0.995 }}
           transition={{ duration: 0.3 }}
           className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden h-full flex flex-col hover:shadow-xl hover:border-primary/20 transition-all duration-300 mt-3"
           onClick={handleCardClick}
@@ -536,13 +549,13 @@ export default function ProductCard({ product }) {
               src={getImageUrl(product.image)}
               alt={product.name}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-110"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 33vw, 25vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/25 to-transparent group-hover:from-black/60 transition-all duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/25 to-transparent opacity-100 group-hover:opacity-70 transition-opacity duration-300" />
             
             {/* Kategori Etiketleri */}
-            <div className="absolute top-3 left-3 flex items-center gap-2 transition-transform duration-300 group-hover:translate-y-1">
+            <div className="absolute top-3 left-3 flex items-center gap-2 transform transition-all duration-300 group-hover:translate-y-0.5">
               {/* Ana Kategori */}
               <div className="flex items-center gap-1.5 bg-white/95 px-3 py-1.5 rounded-full shadow-sm">
                 {product.category === 'instagram' ? (
@@ -569,30 +582,42 @@ export default function ProductCard({ product }) {
             </div>
 
             {/* Fiyat Etiketi */}
-            <div className="absolute bottom-3 right-3 transition-transform duration-300 group-hover:translate-y-[-4px] group-hover:scale-105">
-              <motion.span 
-                whileHover={{ scale: 1.1 }}
-                className="px-3 py-1.5 rounded-full text-sm font-bold bg-white shadow-sm text-primary"
+            <div className="absolute bottom-3 right-3 transition-transform duration-300 group-hover:translate-y-[-4px]">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="px-4 py-2 rounded-full bg-white shadow-lg text-base font-bold text-primary border border-primary/10"
               >
                 {formatPrice(product.price)}
-              </motion.span>
+              </motion.div>
             </div>
           </div>
 
           {/* İçerik Alanı */}
-          <div className="p-5 flex-grow flex flex-col">
+          <div className="p-5 flex-grow flex flex-col justify-between">
+            <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
               {product.name}
             </h3>
             
-            <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-grow">
+            <p 
+                className="text-sm text-gray-600 mb-4"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: '2',
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}
+            >
               {product.description}
             </p>
+            </div>
 
+            <div className="space-y-4">
             {/* Miktar Bilgisi */}
             <motion.div 
-              whileHover={{ scale: 1.02 }}
-              className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200"
+              whileHover={{ scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100/80 transition-colors duration-200"
             >
               <div className="flex items-center gap-6">
                 <div className="flex flex-col items-center">
@@ -607,26 +632,29 @@ export default function ProductCard({ product }) {
               </div>
             </motion.div>
 
-            {/* Sepete Ekle Butonu */}
+              {/* Buton */}
             <motion.button 
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 if (!user) {
                   setShowAuthModal(true);
                 } else {
                   router.push(`/dashboard/products/${product._id}`);
                 }
               }}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-primary text-white py-3 px-4 rounded-xl font-medium 
-                transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/20
-                hover:bg-primary-dark"
+              transition={{ duration: 0.2 }}
+              className="w-full bg-primary text-white py-3.5 px-4 rounded-xl font-medium 
+                transition-all duration-200 flex items-center justify-center gap-2 
+                hover:shadow-lg hover:shadow-primary/20 hover:bg-primary-dark"
             >
               <span>Ürünü İncele</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </motion.button>
+            </div>
           </div>
         </motion.div>
       </div>

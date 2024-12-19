@@ -5,7 +5,26 @@ import ProductCard from "@/components/ProductCard";
 
 export default function ProductsGridSection() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const intervalRef = useRef(null);
+
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/products/featured');
+        if (!response.ok) throw new Error('Ürünler yüklenemedi');
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        console.error('Ürünler yüklenirken hata:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
 
   const startSlider = () => {
     const interval = setInterval(() => {
@@ -68,21 +87,6 @@ export default function ProductsGridSection() {
   };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(`/api/products`);
-        if (!response.ok) throw new Error('Ürünler yüklenemedi');
-        const data = await response.json();
-        setProducts(data);
-      } catch (error) {
-        console.error('Ürünler yüklenirken hata:', error);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  useEffect(() => {
     startSlider();
     return () => {
       if (intervalRef.current) {
@@ -90,6 +94,24 @@ export default function ProductsGridSection() {
       }
     };
   }, []);
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="animate-pulse">
+                <div className="bg-gray-200 rounded-lg h-64 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-white overflow-hidden">
@@ -99,7 +121,7 @@ export default function ProductsGridSection() {
             Popüler Hizmetlerimiz
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            En çok tercih edilen sosyal medya hizmetlerimizi keşfedin
+            Her kategoriden öne çıkan hizmetlerimizi keşfedin
           </p>
         </div>
 
@@ -145,14 +167,13 @@ export default function ProductsGridSection() {
               transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
-            {products.map((product) => (
-              <div 
-                key={product._id} 
-                className="flex-none w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] snap-start"
-              >
-                <ProductCard product={product} />
-              </div>
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <div key={product._id} className="h-full">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

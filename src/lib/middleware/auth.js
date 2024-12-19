@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 
 export async function auth(request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const cookieStore = await cookies();
-    const cookieToken = await cookieStore.get('token');
-    const token = cookieToken?.value || (authHeader ? authHeader.split(' ')[1] : null);
-
-    if (!token) {
+    if (!request?.headers) {
       return null;
     }
 
+    const headers = request.headers;
+    const authHeader = await headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     await dbConnect();

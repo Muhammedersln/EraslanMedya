@@ -47,7 +47,7 @@ export default function AdminDashboard() {
     }
 
     fetchStats();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -114,10 +114,10 @@ export default function AdminDashboard() {
                         #{order._id.slice(-6)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {order.user.username}
+                        {order.user?.username || 'Silinmiş Kullanıcı'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        {order.items.map(item => item.product.name).join(', ')}
+                        {order.items.map(item => item.product?.name || 'Silinmiş Ürün').join(', ')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         ₺{order.totalAmount.toLocaleString('tr-TR', {

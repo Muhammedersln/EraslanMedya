@@ -1,31 +1,13 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/navbar/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaInstagram, FaTiktok } from "react-icons/fa";
 import toast from "react-hot-toast";
-import ProductCard from "@/components/ProductCard";
 import Footer from '@/components/Footer';
 import HeroSection from "./components/HeroSection";
-
-const categories = [
-  {
-    id: 'instagram',
-    name: 'Instagram', 
-    icon: <FaInstagram className="text-2xl" />,
-    color: 'from-pink-500 to-purple-500',
-    gradient: 'bg-gradient-to-r from-pink-500 to-purple-500'
-  },
-  {
-    id: 'tiktok',
-    name: 'TikTok',
-    icon: <FaTiktok className="text-2xl" />,
-    color: 'from-[#00f2ea] to-[#ff0050]',
-    gradient: 'bg-gradient-to-r from-[#00f2ea] to-[#ff0050]'
-  }
-];
+import CategorySlider from "./components/CategorySlider";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -35,102 +17,8 @@ export default function Dashboard() {
   const [cartCount, setCartCount] = useState(0);
   const [orderCount, setOrderCount] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const sliderRefs = useRef({});
-  const [sliderIntervals, setSliderIntervals] = useState({});
 
-  // Slider'ı başlatma fonksiyonu
-  const startSlider = (categoryId) => {
-    const interval = setInterval(() => {
-      const slider = sliderRefs.current[categoryId];
-      if (slider) {
-        const scrollAmount = slider.clientWidth;
-        const maxScroll = slider.scrollWidth - slider.clientWidth;
-        const currentScroll = slider.scrollLeft;
-
-        // Eğer sona yaklaşıyorsa başa dön ve devam et
-        if (currentScroll >= maxScroll - 20) { // 20px tolerans ekledik
-          slider.scrollTo({
-            left: 0,
-            behavior: 'smooth'
-          });
-        } else {
-          // Bir sonraki karta kaydır
-          slider.scrollBy({
-            left: scrollAmount,
-            behavior: 'smooth'
-          });
-        }
-      }
-    }, 3000);
-
-    setSliderIntervals(prev => ({
-      ...prev,
-      [categoryId]: interval
-    }));
-  };
-
-  // Slider'ı manuel kaydırma fonksiyonu
-  const scrollSlider = (categoryId, direction) => {
-    const slider = sliderRefs.current[categoryId];
-    if (slider) {
-      const scrollAmount = slider.clientWidth;
-      const maxScroll = slider.scrollWidth - slider.clientWidth;
-      const currentScroll = slider.scrollLeft;
-      let newScroll;
-
-      if (direction === 'left') {
-        // Sola kaydırma - başa gelince sona git
-        if (currentScroll <= 0) {
-          newScroll = maxScroll;
-        } else {
-          newScroll = Math.max(0, currentScroll - scrollAmount);
-        }
-      } else {
-        // Sağa kaydırma - sona gelince başa git
-        if (currentScroll >= maxScroll - 20) { // 20px tolerans
-          newScroll = 0;
-        } else {
-          newScroll = Math.min(maxScroll, currentScroll + scrollAmount);
-        }
-      }
-
-      slider.scrollTo({
-        left: newScroll,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  // Slider'ı durdurma fonksiyonu
-  const stopSlider = (categoryId) => {
-    if (sliderIntervals[categoryId]) {
-      clearInterval(sliderIntervals[categoryId]);
-      setSliderIntervals(prev => {
-        const newIntervals = { ...prev };
-        delete newIntervals[categoryId];
-        return newIntervals;
-      });
-    }
-  };
-
-  useEffect(() => {
-    // Cleanup function
-    return () => {
-      Object.values(sliderIntervals).forEach(interval => {
-        clearInterval(interval);
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!user) {
-      router.push('/');
-    } else {
-      fetchInitialData();
-    }
-  }, [user, router]);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([
@@ -143,11 +31,19 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/');
+    } else {
+      fetchInitialData();
+    }
+  }, [user, router, fetchInitialData]);
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch('/api/products/featured');
       if (!response.ok) {
         throw new Error('Ürünler yüklenemedi');
       }
@@ -241,95 +137,11 @@ export default function Dashboard() {
           cartCount={cartCount}
         />
 
-        {/* Category Sections */}
-        {categories.map((category) => {
-          const categoryProducts = products.filter(p => p.category === category.id);
-          
-          return (
-            <section key={category.id} className="mb-8 sm:mb-12">
-              <div className="flex justify-between items-center mb-4 sm:mb-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${category.gradient} text-white`}>
-                    {category.icon}
-                  </div>
-                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">{category.name} Hizmetleri</h2>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <button
-                    onClick={() => scrollSlider(category.id, 'left')}
-                    className="p-2.5 rounded-full bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:scale-105 group"
-                  >
-                    <svg className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => scrollSlider(category.id, 'right')}
-                    className="p-2.5 rounded-full bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:scale-105 group"
-                  >
-                    <svg className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div 
-                ref={el => {
-                  sliderRefs.current[category.id] = el;
-                  if (el && !sliderIntervals[category.id]) {
-                    startSlider(category.id);
-                  }
-                }}
-                className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4 scroll-smooth"
-                onMouseEnter={() => stopSlider(category.id)}
-                onMouseLeave={() => startSlider(category.id)}
-                style={{ 
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  WebkitOverflowScrolling: 'touch',
-                  scrollSnapType: 'x mandatory'
-                }}
-              >
-                {loading ? (
-                  [...Array(4)].map((_, index) => (
-                    <div 
-                      key={index}
-                      className="w-[calc(100%-32px)] sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-none snap-start"
-                    >
-                      <div className="bg-white rounded-xl p-4 shadow-sm animate-pulse">
-                        <div className="w-full aspect-square bg-gray-200 rounded-lg mb-3"></div>
-                        <div className="h-4 sm:h-5 bg-gray-200 rounded w-2/3 mb-2"></div>
-                        <div className="h-3 sm:h-4 bg-gray-200 rounded w-full mb-3"></div>
-                        <div className="flex justify-between items-center">
-                          <div className="h-5 sm:h-6 bg-gray-200 rounded w-1/3"></div>
-                          <div className="h-7 sm:h-8 bg-gray-200 rounded w-1/4"></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  categoryProducts.map((product, index) => (
-                    <div 
-                      key={product._id} 
-                      className="w-[calc(100%-32px)] sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-none snap-start"
-                      style={{
-                        scrollSnapAlign: 'start',
-                        scrollSnapStop: 'always'
-                      }}
-                    >
-                      <ProductCard 
-                        product={product} 
-                        index={index}
-                        onCartUpdate={fetchCartCount}
-                      />
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          );
-        })}
+        <CategorySlider 
+          products={products}
+          loading={loading}
+          onCartUpdate={fetchCartCount}
+        />
 
         {/* Auth Modal */}
         <AnimatePresence>
