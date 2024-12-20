@@ -42,26 +42,105 @@ export async function POST(request) {
         from: process.env.SENDGRID_FROM_EMAIL,
         subject: 'Şifrenizi Sıfırlayın',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #333; text-align: center;">Şifrenizi Sıfırlayın</h1>
-            <p style="color: #666;">Merhaba ${user.firstName},</p>
-            <p style="color: #666;">Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" 
-                 style="background-color: #4F46E5; color: white; padding: 12px 24px; 
-                        text-decoration: none; border-radius: 5px; display: inline-block;">
-                Şifremi Sıfırla
-              </a>
-            </div>
-            <p style="color: #666;">Veya aşağıdaki linki tarayıcınıza kopyalayabilirsiniz:</p>
-            <p style="color: #666; word-break: break-all;">${resetUrl}</p>
-            <p style="color: #666;">Bu link 1 saat içinde geçerliliğini yitirecektir.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="color: #999; font-size: 12px; text-align: center;">
-              Bu e-posta şifrenizi sıfırlamak için gönderilmiştir.
-              Eğer bu işlemi siz yapmadıysanız, lütfen bu e-postayı dikkate almayın.
-            </p>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Şifre Sıfırlama</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            </style>
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Inter', Arial, sans-serif; line-height: 1.6; background-color: #f9fafb;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f9fafb">
+              <tr>
+                <td align="center" style="padding: 40px 20px;">
+                  <table width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; margin: 0 auto;">
+                    <!-- Header with Logo -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <img src="${process.env.NEXT_PUBLIC_APP_URL}/images/logo.png" alt="Eraslan Medya Logo" style="width: 180px; height: auto;">
+                      </td>
+                    </tr>
+                    
+                    <!-- Main Content -->
+                    <tr>
+                      <td bgcolor="#ffffff" style="padding: 48px 40px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                          <tr>
+                            <td>
+                              <h1 style="margin: 0 0 24px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">
+                                Şifrenizi Sıfırlayın
+                              </h1>
+                              
+                              <p style="margin: 0 0 32px; font-size: 16px; color: #4b5563; text-align: center; line-height: 1.6;">
+                                Merhaba ${user.firstName}, şifrenizi sıfırlamak için bir talepte bulundunuz. Yeni şifrenizi belirlemek için aşağıdaki butona tıklayın.
+                              </p>
+                              
+                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                  <td align="center" style="padding: 32px 0;">
+                                    <a href="${resetUrl}" 
+                                       style="display: inline-block; padding: 16px 32px; font-size: 16px; font-weight: 600; 
+                                              color: #ffffff; background: linear-gradient(135deg, #4F46E5, #6366F1); 
+                                              text-decoration: none; border-radius: 12px;
+                                              box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);">
+                                      Şifremi Sıfırla
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                              
+                              <div style="margin: 32px 0 0; padding: 24px; background-color: #f9fafb; border-radius: 12px;">
+                                <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280;">
+                                  Butona tıklayamıyor musunuz? Aşağıdaki bağlantıyı tarayıcınıza kopyalayabilirsiniz:
+                                </p>
+                                <p style="margin: 0; font-size: 12px; color: #9ca3af; word-break: break-all;">
+                                  ${resetUrl}
+                                </p>
+                              </div>
+                              
+                              <div style="margin: 32px 0 0; padding: 24px; background-color: #fff7ed; border-radius: 12px; border: 1px solid #fed7aa;">
+                                <p style="margin: 0; font-size: 14px; color: #9a3412; text-align: center;">
+                                  ⚠️ Bu bağlantı güvenliğiniz için 1 saat içinde geçerliliğini yitirecektir.
+                                </p>
+                              </div>
+                              
+                              <div style="margin: 32px 0 0; padding-top: 32px; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; font-size: 14px; color: #6b7280; text-align: center;">
+                                  Bu işlemi siz yapmadıysanız, lütfen bu e-postayı görmezden gelin ve hesabınızın güvenliğini kontrol edin.
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="padding: 32px 20px;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                          <tr>
+                            <td style="text-align: center;">
+                              <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280;">
+                                © ${new Date().getFullYear()} Eraslan Medya. Tüm hakları saklıdır.
+                              </p>
+                              <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                                Bu e-posta Eraslan Medya tarafından gönderilmiştir.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `
       };
 

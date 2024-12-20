@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from 'react';
 import { MdEmail, MdDashboard, MdShoppingBag, MdInfo, MdShoppingCart, MdMenu, MdClose, MdLogin, MdPersonAdd, MdHeadsetMic, MdReceipt, MdExpandMore } from 'react-icons/md';
 import { FaUserCircle,FaUserPlus  } from 'react-icons/fa';
+import Logo from '@/components/Logo';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -110,24 +111,9 @@ export default function Navbar() {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Mobil Menü Butonu ve Logo */}
-            <div className="flex items-center space-x-3">
-              {(!user || !isMobile) && (
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="lg:hidden p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
-                >
-                  {isMobileMenuOpen ? (
-                    <MdClose className="h-5 w-5 transition-transform duration-200 rotate-180" />
-                  ) : (
-                    <MdMenu className="h-5 w-5 transition-transform duration-200" />
-                  )}
-                </button>
-              )}
-              
-              {/* Logo */}
-              <Link href={user ? "/dashboard" : "/"} className="text-lg sm:text-xl font-bold mb-2 text-primary hover:text-primary-dark transition-colors">
-                Medya Eraslan
-              </Link>
+            <div className="flex items-center">
+              {/* Logo component'ini kullanalım */}
+              <Logo href={user ? "/dashboard" : "/"} className="mb-2 w-36 h-36" />
             </div>
 
             {/* Desktop Navigation */}
@@ -229,15 +215,17 @@ export default function Navbar() {
 
             {/* Tablet & Mobile Auth Section */}
             {!user ? (
-              <div className="lg:hidden flex items-center space-x-4">
-                <Link
-                  href="/login"
-                  className="flex items-center space-x-1 p-1.5 rounded-lg hover:bg-gray-50"
+              <div className="lg:hidden">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                    <FaUserCircle className="w-5 h-5 text-white" />
-                  </div>
-                </Link>
+                  {isMobileMenuOpen ? (
+                    <MdClose className="h-5 w-5 transition-transform duration-200 rotate-180" />
+                  ) : (
+                    <MdMenu className="h-5 w-5 transition-transform duration-200" />
+                  )}
+                </button>
               </div>
             ) : (
               <div className="hidden md:flex lg:hidden items-center">

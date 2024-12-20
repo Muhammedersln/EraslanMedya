@@ -248,9 +248,23 @@ export default function Register() {
                 />
                 <label className="ml-2 text-sm text-gray-600">
                   <span>Kullanım şartlarını ve </span>
-                  <a href="#" className="text-primary hover:text-primary-dark transition-colors">
+                  <Link 
+                    href="/terms" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary-dark transition-colors"
+                  >
+                    kullanım şartlarını
+                  </Link>
+                  <span> ve </span>
+                  <Link 
+                    href="/privacy" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary-dark transition-colors"
+                  >
                     gizlilik politikasını
-                  </a>
+                  </Link>
                   <span> kabul ediyorum</span>
                 </label>
               </div>

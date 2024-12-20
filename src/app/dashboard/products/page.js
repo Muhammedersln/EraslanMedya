@@ -21,6 +21,8 @@ export default function Products() {
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [sortBy, setSortBy] = useState('popular');
   const [isMobile, setIsMobile] = useState(false);
+  const [defaultCategories] = useState(['instagram', 'tiktok']);
+  const [defaultSubCategory] = useState('followers');
 
   const categories = [
     { 
@@ -53,6 +55,21 @@ export default function Products() {
     fetchProducts();
     fetchSettings();
   }, []);
+    
+  useEffect(() => {
+    // Set default categories when products are loaded
+    if (products.length > 0) {
+    const defaultFilters = products.filter(product => 
+      defaultCategories.includes(product.category) && 
+      product.subCategory === defaultSubCategory
+    );
+    
+    if (defaultFilters.length > 0) {
+      setSelectedCategory(defaultCategories[0]);
+      setSelectedSubCategory(defaultSubCategory);
+    }
+    }
+  }, [products, defaultCategories, defaultSubCategory]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -127,6 +144,15 @@ export default function Products() {
 
     return matchesCategory && matchesSubCategory && matchesSearch && matchesPriceRange;
   }).sort((a, b) => {
+    // Prioritize follower category for all, instagram, and tiktok categories
+    if (selectedCategory === 'all' || selectedCategory === 'instagram' || selectedCategory === 'tiktok') {
+      if (selectedSubCategory === 'all') {
+      if (a.subCategory === 'followers' && b.subCategory !== 'followers') return -1;
+      if (a.subCategory !== 'followers' && b.subCategory === 'followers') return 1;
+      }
+    }
+
+    // Then apply the selected sort
     switch (sortBy) {
       case 'price-low':
         return a.price - b.price;
@@ -435,52 +461,48 @@ export default function Products() {
                 </h3>
                 <div className="space-y-3">
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => {
                       setSelectedCategory('all');
                       setSelectedSubCategory('all');
                     }}
-                    className={`w-full px-4 py-3 rounded-xl text-left transition-all duration-200 border-2 ${
+                    className={`w-full px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
                       selectedCategory === 'all'
-                        ? 'bg-gradient-to-r from-primary to-primary-dark text-white border-transparent shadow-lg shadow-primary/20'
-                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-100'
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'hover:bg-gray-50 text-gray-600'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${selectedCategory === 'all' ? 'bg-white/20' : 'bg-gray-100'}`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                        </svg>
-                      </div>
-                      <span className="font-medium">Tümü</span>
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                      <span>Tümü</span>
                     </div>
                   </motion.button>
 
                   {categories.map(category => (
-                    <div key={category.id} className="space-y-2">
+                    <div key={category.id} className="space-y-1">
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                         onClick={() => {
                           setSelectedCategory(category.id);
                           setSelectedSubCategory('all');
                         }}
-                        className={`w-full px-4 py-3 rounded-xl text-left transition-all duration-200 border-2 ${
+                        className={`w-full px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
                           selectedCategory === category.id
-                            ? `bg-gradient-to-r ${category.color} text-white border-transparent shadow-lg shadow-${category.color}/20`
-                            : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-100'
+                            ? 'bg-primary/10 text-primary font-medium'
+                            : 'hover:bg-gray-50 text-gray-600'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${selectedCategory === category.id ? 'bg-white/20' : 'bg-gray-100'}`}>
-                              {category.icon}
-                            </div>
-                            <span className="font-medium">{category.name}</span>
+                          <div className="flex items-center gap-2">
+                            {category.icon}
+                            <span>{category.name}</span>
                           </div>
                           <svg
-                            className={`w-5 h-5 transform transition-transform duration-200 ${
+                            className={`w-4 h-4 transform transition-transform duration-200 ${
                               selectedCategory === category.id ? 'rotate-180' : ''
                             }`}
                             fill="none"
@@ -499,22 +521,22 @@ export default function Products() {
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="ml-4 space-y-2 overflow-hidden"
+                            className="ml-6 space-y-1"
                           >
                             {category.subCategories.map(subCat => (
                               <motion.button
                                 key={subCat.id}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
                                 onClick={() => setSelectedSubCategory(subCat.id)}
-                                className={`w-full px-4 py-2.5 rounded-lg text-left transition-all duration-200 ${
+                                className={`w-full px-3 py-2 rounded-lg text-left transition-all duration-200 ${
                                   selectedSubCategory === subCat.id
-                                    ? 'bg-primary/10 text-primary font-medium'
-                                    : 'hover:bg-gray-50 text-gray-600'
+                                    ? 'bg-primary/5 text-primary font-medium'
+                                    : 'hover:bg-gray-50/80 text-gray-500'
                                 }`}
                               >
                                 <div className="flex items-center gap-2">
-                                  <div className={`w-1.5 h-1.5 rounded-full ${
+                                  <div className={`w-1 h-1 rounded-full ${
                                     selectedSubCategory === subCat.id ? 'bg-primary' : 'bg-gray-400'
                                   }`} />
                                   {subCat.name}

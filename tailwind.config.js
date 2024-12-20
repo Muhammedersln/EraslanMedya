@@ -7,6 +7,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
+      },
       colors: {
         primary: {
           DEFAULT: '#2563eb',

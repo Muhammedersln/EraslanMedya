@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/Footer';
-import heroImage from "../../../public/images/herosection.png"; //değişecek
+import heroImage from "../../../public/images/logo.jpeg"; //değişecek
 import Link from 'next/link';
 
 
@@ -38,6 +38,7 @@ export default function AboutPage() {
                   fill
                   className="object-cover"
                   priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 50vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
               </div>

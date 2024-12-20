@@ -5,9 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import Link from "next/link";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/Footer";
-import HeroSection from "@/components/HeroSection";
-import ProductsGridSection from "@/components/ProductsGridSection";
-import FeaturesSection from "@/components/FeaturesSection";
+import HeroSection from "@/components/Section/HeroSection";
+import ProductsGridSection from "@/components/Section/ProductsGridSection";
+import FeaturesSection from "@/components/Section/FeaturesSection";
 
 export default function Home() {
   const router = useRouter();

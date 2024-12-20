@@ -202,60 +202,85 @@ export default function ProductDetail() {
             </button>
           </nav>
 
-          <div className="bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-0">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 lg:gap-8 lg:p-6">
               {/* Sol Taraf - Ürün Görseli ve Bilgiler */}
-              <div className="lg:col-span-1 p-4 lg:border-r lg:border-gray-100">
-                <div className="relative w-full max-w-[300px] mx-auto lg:max-w-none aspect-square rounded-lg overflow-hidden bg-gray-50">
+              <div className="lg:col-span-1">
+                <div className="relative w-full max-w-[300px] mx-auto lg:max-w-none aspect-square rounded-xl overflow-hidden bg-gray-50 group">
                   <Image
                     src={getImageUrl(product.image)}
                     alt={product.name}
                     fill
-                    className="object-cover transform hover:scale-102 transition-transform duration-300"
+                    priority
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    loading="eager"
+                    quality={75}
+                    className="object-cover transform group-hover:scale-105 transition-transform duration-500"
                   />
-                  <span className="absolute top-2 right-2 px-2 py-1 bg-white/90 rounded-md text-xs font-medium text-gray-600">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <span className="absolute top-3 right-3 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg text-sm font-medium text-gray-700 shadow-sm">
                     {product.category === 'instagram' ? 'Instagram' : 'TikTok'}
                   </span>
                 </div>
 
+                {/* Mobil için fiyat ve başlık */}
+                <div className="mt-4 lg:hidden">
+                  <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Fiyat:</span>
+                    <span className="text-2xl font-bold text-primary">₺{product.price}</span>
+                  </div>
+                </div>
+
                 <div className="mt-6 space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-gray-900 mb-3">Önemli Bilgiler</h3>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-600">Min. Sipariş: <span className="font-medium">{product.minQuantity}</span></span>
+                  <div className="bg-gray-50/50 backdrop-blur-sm rounded-xl p-4 lg:p-5 border border-gray-100/80">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Önemli Bilgiler
+                    </h3>
+                    <ul className="space-y-3">
+                      <li className="flex items-center gap-3 text-gray-600">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span>Min. Sipariş: <span className="font-medium text-gray-900">{product.minQuantity}</span></span>
                       </li>
-                      <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-600">Max. Sipariş: <span className="font-medium">{product.maxQuantity}</span></span>
+                      <li className="flex items-center gap-3 text-gray-600">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span>Max. Sipariş: <span className="font-medium text-gray-900">{product.maxQuantity}</span></span>
                       </li>
-                      <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <span className="text-gray-600">Hızlı Teslimat</span>
+                      <li className="flex items-center gap-3 text-gray-600">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </div>
+                        <span>Hızlı Teslimat</span>
                       </li>
                     </ul>
                   </div>
 
-                  {/* Progress Steps */}
+                  {/* Progress Steps - Mobile için düzenlendi */}
                   {user && (
-                    <div className="bg-white rounded-lg border border-gray-100 p-4">
+                    <div className="bg-white rounded-xl border border-gray-100 p-4 lg:p-5">
                       <div className="relative">
-                        <div className="h-1.5 mb-4 rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-2 mb-4 lg:mb-6 rounded-full bg-gray-100 overflow-hidden">
                           <div
                             style={{ width: `${(currentStep / (product.category === 'instagram' && product.subCategory === 'followers' ? 3 : 2)) * 100}%` }}
                             className="h-full bg-primary transition-all duration-500 rounded-full"
                           ></div>
                         </div>
-                        <div className="flex justify-between text-xs">
+                        <div className="flex justify-between text-xs lg:text-sm">
                           <div className={`flex flex-col items-center ${currentStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${currentStep >= 1 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                            <div className={`w-6 h-6 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center mb-1 lg:mb-2 transition-colors duration-300 ${currentStep >= 1 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
                               1
                             </div>
                             <span className="font-medium">Bilgi</span>
@@ -263,13 +288,13 @@ export default function ProductDetail() {
                           {product.category === 'instagram' && product.subCategory === 'followers' ? (
                             <>
                               <div className={`flex flex-col items-center ${currentStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${currentStep >= 2 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                                <div className={`w-6 h-6 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center mb-1 lg:mb-2 transition-colors duration-300 ${currentStep >= 2 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
                                   2
                                 </div>
                                 <span className="font-medium">Ayarlar</span>
                               </div>
                               <div className={`flex flex-col items-center ${currentStep >= 3 ? 'text-primary' : 'text-gray-400'}`}>
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${currentStep >= 3 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                                <div className={`w-6 h-6 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center mb-1 lg:mb-2 transition-colors duration-300 ${currentStep >= 3 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
                                   3
                                 </div>
                                 <span className="font-medium">Onay</span>
@@ -277,7 +302,7 @@ export default function ProductDetail() {
                             </>
                           ) : (
                             <div className={`flex flex-col items-center ${currentStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${currentStep >= 2 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                              <div className={`w-6 h-6 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center mb-1 lg:mb-2 transition-colors duration-300 ${currentStep >= 2 ? 'bg-primary text-white' : 'bg-gray-100'}`}>
                                 2
                               </div>
                               <span className="font-medium">Onay</span>
@@ -291,46 +316,45 @@ export default function ProductDetail() {
               </div>
 
               {/* Sağ Taraf - Sipariş Detayları */}
-              <div className="lg:col-span-2 p-4">
-                <div className="max-w-xl mx-auto lg:mx-0">
-                  <h1 className="text-xl lg:text-2xl font-semibold text-gray-900 mb-4">{product.name}</h1>
+              <div className="lg:col-span-2">
+                <div className="max-w-2xl">
+                  {/* Desktop için başlık ve fiyat - mobilde gizli */}
+                  <div className="hidden lg:flex flex-wrap items-start justify-between gap-4 mb-6">
+                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{product.name}</h1>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">Fiyat:</span>
+                      <span className="text-2xl font-bold text-primary">₺{product.price}</span>
+                    </div>
+                  </div>
 
                   {!user ? (
-                    // Giriş yapmamış kullanıcı için görünüm
-                    <div className="space-y-6">
-                      <div className="bg-white rounded-lg border border-gray-100 p-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-4">Sipariş Gereksinimleri</h3>
-                        {/* Ürün Detayları */}
-                        <div className="mt-8 bg-white rounded-lg border border-gray-100 p-4">
-                          <h3 className="text-base font-medium text-gray-900 mb-4">Ürün Detayları</h3>
-                          <div className="prose prose-sm max-w-none">
-                            <div className="bg-gray-50 rounded-lg p-4">
-                              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                                {product.description}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">
-                              Miktar
+                    // Giriş yapmamış kullanıcı için görünüm - Mobile uyumlu
+                    <div className="space-y-4 lg:space-y-8">
+                      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 lg:p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 lg:mb-6">Sipariş Gereksinimleri</h3>
+                        <div className="space-y-4 lg:space-y-6">
+                          <div className="bg-gray-50 rounded-xl p-4 lg:p-5">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                              Sipariş Miktarı
                             </label>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center gap-4 bg-white p-3 lg:p-4 rounded-lg border border-gray-200">
                               <button
                                 onClick={() => setQuantity(Math.max(product.minQuantity, quantity - 1))}
-                                className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 hover:border-primary hover:bg-primary/5 transition-colors"
+                                className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:border-primary hover:text-primary transition-colors"
                               >
-                                <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                                 </svg>
                               </button>
-                              <span className="w-16 text-center text-sm font-medium">{quantity}</span>
+                              <div className="w-20 lg:w-24 text-center">
+                                <span className="text-xl font-semibold text-gray-900">{quantity}</span>
+                                <p className="text-xs text-gray-500 mt-1">adet</p>
+                              </div>
                               <button
                                 onClick={() => setQuantity(Math.min(product.maxQuantity, quantity + 1))}
-                                className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 hover:border-primary hover:bg-primary/5 transition-colors"
+                                className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:border-primary hover:text-primary transition-colors"
                               >
-                                <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
                               </button>
@@ -339,18 +363,30 @@ export default function ProductDetail() {
                         </div>
                       </div>
 
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
+                      {/* Mobil için sabit alt bar */}
+                      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 lg:relative lg:border-0 lg:p-0 lg:bg-transparent">
+                        <div className="flex items-center justify-between max-w-5xl mx-auto">
                           <div>
                             <p className="text-xs text-gray-500 mb-1">Toplam Tutar</p>
-                            <p className="text-2xl font-semibold text-primary">₺{product.price}</p>
+                            <p className="text-xl font-bold text-primary">₺{product.price * quantity}</p>
                           </div>
                           <button
                             onClick={() => setShowAuthModal(true)}
-                            className="px-6 py-2 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg font-medium transition-all hover:scale-102 active:scale-98"
+                            className="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-medium transition-all hover:scale-102 active:scale-98 shadow-lg shadow-primary/20"
                           >
                             Sepete Ekle
                           </button>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl border border-gray-100 p-4 lg:p-6 mb-20 lg:mb-0">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Ürün Detayları</h3>
+                        <div className="prose prose-sm max-w-none">
+                          <div className="bg-gray-50 rounded-xl p-4 lg:p-5">
+                            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                              {product.description}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
