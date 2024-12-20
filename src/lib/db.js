@@ -23,11 +23,14 @@ async function dbConnect() {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      dbName: 'eraslan_medya'
     };
 
     try {
+      console.log('MongoDB bağlantısı başlatılıyor...');
       cached.promise = mongoose.connect(MONGODB_URI, opts);
-      console.log('MongoDB bağlantısı başarılı');
+      const conn = await cached.promise;
+      console.log('MongoDB bağlantısı başarılı. Veritabanı:', conn.connection.db.databaseName);
     } catch (error) {
       console.error('MongoDB bağlantı hatası:', error);
       throw error;

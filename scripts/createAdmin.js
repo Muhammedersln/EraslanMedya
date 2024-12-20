@@ -9,13 +9,16 @@ async function createAdmin() {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.message || 'Admin oluşturulurken bir hata oluştu');
+      throw new Error(data.message || data.error || 'Admin oluşturulurken bir hata oluştu');
     }
 
     console.log('Admin kullanıcısı başarıyla oluşturuldu:', data.admin);
     process.exit(0);
   } catch (error) {
     console.error('Hata:', error.message);
+    if (error.cause) {
+      console.error('Hata detayı:', error.cause);
+    }
     process.exit(1);
   }
 }
