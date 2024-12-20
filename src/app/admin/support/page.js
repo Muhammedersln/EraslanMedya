@@ -1,7 +1,9 @@
 "use client";
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 const STATUS_COLORS = {
   open: {
@@ -45,6 +47,7 @@ const PRIORITY_COLORS = {
 };
 
 export default function AdminSupport() {
+  const router = useRouter();
   const { user } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,12 +57,23 @@ export default function AdminSupport() {
   const [responseMessage, setResponseMessage] = useState('');
 
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
+
     fetchTickets();
-  }, []);
+  }, [user, router]);
 
   const fetchTickets = async () => {
     try {
       const response = await fetch('/api/admin/support', {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

@@ -1,9 +1,12 @@
 "use client";
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const { user } = useAuth();
   const [stats, setStats] = useState({
     userCount: 0,
@@ -16,6 +19,7 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const response = await fetch('/api/admin', {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -37,17 +41,17 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!user) {
-      setLoading(true);
+      router.push('/login');
       return;
     }
 
     if (user.role !== 'admin') {
-      router.replace('/');
+      router.push('/');
       return;
     }
 
     fetchStats();
-  }, [user]);
+  }, [user, router]);
 
   if (loading) {
     return (

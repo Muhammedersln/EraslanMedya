@@ -1,11 +1,14 @@
 "use client";
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { FaInstagram, FaTiktok, FaPlus, FaSearch, FaEdit, FaTrash } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 export default function AdminProducts() {
+  const router = useRouter();
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,13 +56,24 @@ export default function AdminProducts() {
   ];
 
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
+
     fetchProducts();
-  }, []);
+  }, [user, router]);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/admin/products', {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

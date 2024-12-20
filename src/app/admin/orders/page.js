@@ -1,9 +1,12 @@
 "use client";
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function AdminOrders() {
+  const router = useRouter();
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,12 +17,23 @@ export default function AdminOrders() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
+
     fetchOrders();
-  }, []);
+  }, [user, router]);
 
   const fetchOrders = async () => {
     try {
       const response = await fetch('/api/admin/orders', {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

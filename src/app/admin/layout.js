@@ -1,28 +1,31 @@
+"use client";
+
 import { Suspense } from "react";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { adminAuth } from "@/lib/middleware/adminAuth";
-import Loading from "./loading";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import Loading from "./loading";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-async function getAdminUser() {
-  try {
-    const headersList = await headers();
-    const response = await adminAuth({ headers: headersList });
-    
-    if (response instanceof Response && response.status === 403) {
-      redirect('/login');
+export default function AdminLayout({ children }) {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
     }
-    
-    return response;
-  } catch (error) {
-    console.error('Admin authentication error:', error);
-    redirect('/login');
-  }
-}
 
-export default async function AdminLayout({ children }) {
-  await getAdminUser();
+    if (user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
+  }, [user, router]);
+
+  if (!user || user.role !== 'admin') {
+    return <Loading />;
+  }
 
   return (
     <Suspense fallback={<Loading />}>

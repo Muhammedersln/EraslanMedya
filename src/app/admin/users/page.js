@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminUsers() {
   const router = useRouter();
   const { user } = useAuth();

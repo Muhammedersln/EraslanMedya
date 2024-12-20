@@ -1,7 +1,7 @@
-export default function AdminLoading() {
+export default function Loading() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary"></div>
     </div>
   );
 } 
