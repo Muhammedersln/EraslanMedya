@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 import { auth } from '@/lib/middleware/auth';
@@ -8,6 +8,9 @@ import crypto from 'crypto';
 
 // SendGrid API key yapılandırması
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// JWT secret'ı Uint8Array'e çevir
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 // Get current user endpoint
 export async function GET(request) {
@@ -54,12 +57,16 @@ export async function POST(request) {
       );
     }
 
-    // Token oluştur
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
-    );
+    // Token oluştur (jose kütüphanesi ile)
+    const token = await new SignJWT({ 
+      id: user._id.toString(), 
+      role: user.role,
+      username: user.username 
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('30d')
+      .sign(secret);
 
     // Kullanıcı bilgilerini döndür
     const userResponse = {
@@ -80,12 +87,18 @@ export async function POST(request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 30 * 24 * 60 * 60 // 30 days
     });
 
+    // Admin için ek header ekle
+    if (user.role === 'admin') {
+      response.headers.set('Authorization', `Bearer ${token}`);
+      response.headers.set('x-auth-token', token);
+    }
+
     return response;
   } catch (error) {
-    console.error('Login error:', error);
     return NextResponse.json(
       { message: 'Giriş yapılırken bir hata oluştu', error: error.message },
       { status: 500 }

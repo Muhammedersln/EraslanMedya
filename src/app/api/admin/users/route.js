@@ -7,20 +7,24 @@ import { adminAuth } from '@/lib/middleware/auth';
 export async function GET(request) {
   try {
     const user = await adminAuth(request);
-    if (!user) {
+    if (!user || user.role !== 'admin') {
+      console.error('Admin yetkisi reddedildi:', user);
       return NextResponse.json(
-        { message: 'Admin access required' },
+        { message: 'Admin erişimi gerekli' },
         { status: 403 }
       );
     }
 
     await dbConnect();
-    const users = await User.find().select('-password').sort('-createdAt');
+    const users = await User.find()
+      .select('-password')
+      .sort('-createdAt');
 
     return NextResponse.json(users);
   } catch (error) {
+    console.error('Admin users GET hatası:', error);
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { message: 'Sunucu hatası', error: error.message },
       { status: 500 }
     );
   }
@@ -30,9 +34,10 @@ export async function GET(request) {
 export async function PATCH(request) {
   try {
     const user = await adminAuth(request);
-    if (!user) {
+    if (!user || user.role !== 'admin') {
+      console.error('Admin yetkisi reddedildi:', user);
       return NextResponse.json(
-        { message: 'Admin access required' },
+        { message: 'Admin erişimi gerekli' },
         { status: 403 }
       );
     }
@@ -50,15 +55,16 @@ export async function PATCH(request) {
 
     if (!updatedUser) {
       return NextResponse.json(
-        { message: 'User not found' },
+        { message: 'Kullanıcı bulunamadı' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(updatedUser);
   } catch (error) {
+    console.error('Admin users PATCH hatası:', error);
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { message: 'Sunucu hatası', error: error.message },
       { status: 500 }
     );
   }

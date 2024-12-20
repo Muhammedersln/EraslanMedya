@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
@@ -13,20 +13,29 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      router.push('/');
-      return;
-    }
-    fetchUsers();
-  }, [user, router]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Oturum süresi dolmuş');
+        router.push('/login');
+        return;
+      }
+
       const response = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         credentials: 'include'
       });
       
+      if (response.status === 403) {
+        toast.error('Admin yetkisi gerekiyor');
+        router.push('/login');
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -34,13 +43,36 @@ export default function AdminUsers() {
       const data = await response.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Kullanıcılar yüklenirken hata:', error);
       toast.error('Kullanıcılar yüklenirken bir hata oluştu');
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const checkAdminAccess = async () => {
+      try {
+        if (!user) {
+          router.push('/login');
+          return;
+        }
+
+        if (user.role !== 'admin') {
+          toast.error('Bu sayfaya erişim yetkiniz yok');
+          router.push('/');
+          return;
+        }
+
+        await fetchUsers();
+      } catch (error) {
+        toast.error('Yetkilendirme hatası');
+        router.push('/login');
+      }
+    };
+
+    checkAdminAccess();
+  }, [user, router, fetchUsers]);
 
   const handleDelete = async (userId) => {
     if (!window.confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {

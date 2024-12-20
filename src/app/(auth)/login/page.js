@@ -25,10 +25,10 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       const response = await login(formData.username, formData.password);
-      
+
       // Backend'den gelen yanıtı kontrol et
       if (response.status === 'error') {
         throw new Error(response.message);
@@ -37,7 +37,7 @@ export default function Login() {
       // Admin kullanıcıları için e-posta doğrulamayı es geç
       if (response.user.role === 'admin') {
         toast.success('Admin girişi başarılı!');
-        router.push('/admin');
+        router.push('/admin')
         return;
       }
 
@@ -53,9 +53,9 @@ export default function Login() {
       router.push('/dashboard');
     } catch (err) {
       const errorMessage = err.message || 'Giriş yapılırken bir hata oluştu!';
-      
-      if (errorMessage.toLowerCase().includes('e-posta') || 
-          errorMessage.toLowerCase().includes('doğrula')) {
+
+      if (errorMessage.toLowerCase().includes('e-posta') ||
+        errorMessage.toLowerCase().includes('doğrula')) {
         toast.error('Lütfen önce e-posta adresinizi doğrulayın.');
         router.push('/verification-pending');
       } else {
@@ -67,7 +67,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background-dark">
       <Navbar />
-      
+
       <div className="min-h-screen flex items-center justify-center relative px-4 py-12 sm:px-6 lg:px-8">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
@@ -118,21 +118,21 @@ export default function Login() {
                   required
                 />
                 <div className="flex justify-end">
-                  <Link 
+                  <Link
                     href="/forgot-password"
                     className="text-sm text-gray-600 hover:text-primary transition-colors duration-200 inline-flex items-center gap-1 group"
                   >
                     <span>Şifrenizi mi unuttunuz?</span>
-                    <svg 
-                      className="w-4 h-4 transform transition-transform duration-200 group-hover:translate-x-0.5" 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
+                    <svg
+                      className="w-4 h-4 transform transition-transform duration-200 group-hover:translate-x-0.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
                         d="M9 5l7 7-7 7"
                       />
                     </svg>
@@ -165,8 +165,8 @@ export default function Login() {
               <div className="text-center">
                 <p className="text-sm text-gray-600">
                   Hesabınız yok mu?{' '}
-                  <Link 
-                    href="/register" 
+                  <Link
+                    href="/register"
                     className="font-semibold text-primary hover:text-primary-dark transition-colors"
                   >
                     Kayıt Ol
