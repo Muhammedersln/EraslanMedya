@@ -17,6 +17,11 @@ const nextConfig = {
     ],
     domains: ['via.placeholder.com'],
   },
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
 }
 
 module.exports = nextConfig 

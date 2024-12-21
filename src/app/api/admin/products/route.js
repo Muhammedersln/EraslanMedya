@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Product from '@/lib/models/Product';
 import { adminAuth } from '@/lib/middleware/auth';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 export async function GET(request) {
@@ -64,7 +64,9 @@ export async function POST(request) {
     const buffer = Buffer.from(bytes);
     const filename = `${Date.now()}-${image.name}`;
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    await writeFile(path.join(uploadDir, filename), buffer);
+    await mkdir(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, filename);
+    await writeFile(filePath, buffer);
 
     // Create product
     const product = await Product.create({

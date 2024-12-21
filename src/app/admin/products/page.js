@@ -140,13 +140,23 @@ export default function AdminProducts() {
       formDataToSend.append('maxQuantity', String(Number(formData.maxQuantity)));
       formDataToSend.append('active', String(formData.active));
 
-      if (!editingProduct && !formData.imageFile) {
-        toast.error('Lütfen bir ürün görseli seçin');
-        return;
-      }
-      
       if (formData.imageFile) {
-        formDataToSend.append('image', formData.imageFile);
+        try {
+          if (formData.imageFile.size > 5 * 1024 * 1024) {
+            throw new Error('Dosya boyutu 5MB\'dan küçük olmalıdır');
+          }
+
+          const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+          if (!allowedTypes.includes(formData.imageFile.type)) {
+            throw new Error('Sadece JPEG, PNG ve WEBP formatları desteklenmektedir');
+          }
+
+          formDataToSend.append('image', formData.imageFile);
+        } catch (error) {
+          toast.error(error.message);
+          setSubmitting(false);
+          return;
+        }
       }
 
       const url = editingProduct 
@@ -181,7 +191,7 @@ export default function AdminProducts() {
       fetchProducts();
 
     } catch (error) {
-      console.error('Ürün işlemi hatası:', error);
+      console.error('Ürün işlemi detaylı hata:', error);
       toast.error(error.message || 'İşlem sırasında bir hata oluştu');
     } finally {
       setSubmitting(false);
