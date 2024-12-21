@@ -130,36 +130,38 @@ export default function AdminSidebar() {
           </div>
 
           {/* Navigation - Scrollable Area */}
-          <nav className="flex-1 space-y-1 mt-4 overflow-y-auto">
-            {menuItems.map((item) => (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`
-                  flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all
-                  hover:bg-primary/5 active:scale-[0.99]
-                  ${pathname === item.path 
-                    ? 'bg-primary/10 text-primary font-medium' 
-                    : 'text-gray-600 hover:text-primary'
-                  }
-                `}
-              >
-                <span className="flex-shrink-0">{item.icon}</span>
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            ))}
-          </nav>
+          <div className="flex-1 flex flex-col min-h-0">
+            <nav className="flex-1 space-y-1 mt-4 overflow-y-auto">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`
+                    flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all
+                    hover:bg-primary/5 active:scale-[0.99]
+                    ${pathname === item.path 
+                      ? 'bg-primary/10 text-primary font-medium' 
+                      : 'text-gray-600 hover:text-primary'
+                    }
+                  `}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              ))}
+            </nav>
 
-          {/* Footer - Çıkış Butonu - Always visible at bottom */}
-          <div className="pt-4 mt-auto border-t border-gray-100 bg-white">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl
-                text-red-600 hover:bg-red-50 transition-colors active:scale-[0.99]"
-            >
-              <RiLogoutBoxRLine className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium">Çıkış Yap</span>
-            </button>
+            {/* Footer - Çıkış Butonu */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl
+                  text-red-600 hover:bg-red-50 transition-colors active:scale-[0.99]"
+              >
+                <RiLogoutBoxRLine className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Çıkış Yap</span>
+              </button>
+            </div>
           </div>
         </div>
       </aside>

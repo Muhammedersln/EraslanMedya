@@ -1,5 +1,6 @@
 "use client";
 import Link from 'next/link';
+import Image from 'next/image';
 import { FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
@@ -133,9 +134,27 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 sm:mt-16 pt-6 sm:pt-8 border-t border-gray-200">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-gray-600 text-sm sm:text-base text-center sm:text-left">
-              © {new Date().getFullYear()} Medya Eraslan. Tüm hakları saklıdır.
-            </p>
+            <div className="flex flex-col items-center sm:items-start gap-4">
+              <div className="flex items-center gap-6">
+                <Image 
+                  src="/images/Visa_Inc._logo.svg.png"
+                  alt="Visa"
+                  width={60}
+                  height={20}
+                  className="object-contain"
+                />
+                <Image 
+                  src="/images/Mastercard-logo.svg.png"
+                  alt="Mastercard"
+                  width={50}
+                  height={30}
+                  className="object-contain"
+                />
+              </div>
+              <p className="text-gray-600 text-sm sm:text-base text-center sm:text-left">
+                © {new Date().getFullYear()} Medya Eraslan. Tüm hakları saklıdır.
+              </p>
+            </div>
             <div className="flex items-center gap-6 sm:gap-8">
               <Link 
                 href="/privacy" 
