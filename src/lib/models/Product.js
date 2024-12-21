@@ -15,9 +15,13 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Product price is required'],
     min: [0, 'Price cannot be negative']
   },
-  image: {
+  imageUrl: {
     type: String,
-    required: [true, 'Product image is required']
+    required: [true, 'Product image URL is required']
+  },
+  imagePublicId: {
+    type: String,
+    required: [true, 'Product image public ID is required']
   },
   category: {
     type: String,

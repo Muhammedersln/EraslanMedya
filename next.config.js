@@ -1,26 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    domains: ['res.cloudinary.com'],
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '5000',
-        pathname: '/uploads/**',
-      },
-      {
         protocol: 'https',
-        hostname: '**',
-        port: '',
-        pathname: '/**',
-      }
+        hostname: 'res.cloudinary.com',
+      },
     ],
-    domains: ['via.placeholder.com'],
   },
   api: {
     bodyParser: {
       sizeLimit: '10mb',
     },
+    responseLimit: '10mb',
   },
 }
 

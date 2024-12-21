@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Product from '@/lib/models/Product';
 import { adminAuth } from '@/lib/middleware/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { cloudinary } from '@/utils/cloudinary';
 
 export async function GET(request) {
   try {
@@ -40,7 +39,7 @@ export async function POST(request) {
     await dbConnect();
     const formData = await request.formData();
     
-    // Extract file and other data
+    // Extract data
     const image = formData.get('image');
     const name = formData.get('name');
     const description = formData.get('description');
@@ -59,48 +58,54 @@ export async function POST(request) {
       );
     }
 
-    // Handle image upload
-    const bytes = await image.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filename = `${Date.now()}-${image.name}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, buffer);
+    try {
+      // Upload image to Cloudinary
+      const bytes = await image.arrayBuffer();
+      const buffer = Buffer.from(bytes);
 
-    // Create product
-    const product = await Product.create({
-      name,
-      description,
-      price,
-      category,
-      subCategory,
-      minQuantity,
-      maxQuantity,
-      active,
-      image: filename
-    });
-    
-    return NextResponse.json(product, { status: 201 });
-  } catch (error) {
-    console.error('Error creating product:', error);
-    
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map(err => ({
-        field: err.path,
-        message: err.message
-      }));
-      
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: 'auto',
+            folder: 'products',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+
+        // Write buffer to stream
+        const bufferStream = require('stream').Readable.from(buffer);
+        bufferStream.pipe(uploadStream);
+      });
+
+      const result = await uploadPromise;
+
+      // Create product with Cloudinary data
+      const product = await Product.create({
+        name,
+        description,
+        price,
+        category,
+        subCategory,
+        minQuantity,
+        maxQuantity,
+        active,
+        imageUrl: result.secure_url,
+        imagePublicId: result.public_id
+      });
+
+      return NextResponse.json(product, { status: 201 });
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
       return NextResponse.json(
-        { 
-          message: 'Validation error', 
-          errors: validationErrors 
-        },
-        { status: 400 }
+        { message: 'Error uploading image' },
+        { status: 500 }
       );
     }
-    
+  } catch (error) {
+    console.error('Error creating product:', error);
     return NextResponse.json(
       { message: 'Server error', error: error.message },
       { status: 500 }

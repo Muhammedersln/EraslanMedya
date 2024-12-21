@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Product from '@/lib/models/Product';
 import { adminAuth } from '@/lib/middleware/auth';
-import { writeFile, unlink } from 'fs/promises';
-import path from 'path';
+import { cloudinary } from '@/utils/cloudinary';
 
-export async function GET(request, context) {
+export async function GET(request) {
   try {
     const user = await adminAuth(request);
     if (!user) {
@@ -16,10 +15,9 @@ export async function GET(request, context) {
     }
 
     await dbConnect();
-    const params = await context.params;
-    const id = params.id;
+    const productId = new URL(request.url).pathname.split('/').pop();
     
-    const product = await Product.findById(id);
+    const product = await Product.findById(productId);
     if (!product) {
       return NextResponse.json(
         { message: 'Product not found' },
@@ -36,7 +34,7 @@ export async function GET(request, context) {
   }
 }
 
-export async function PUT(request, context) {
+export async function PUT(request) {
   try {
     const user = await adminAuth(request);
     if (!user) {
@@ -47,8 +45,7 @@ export async function PUT(request, context) {
     }
 
     await dbConnect();
-    const params = await context.params;
-    const id = params.id;
+    const productId = new URL(request.url).pathname.split('/').pop();
     
     const formData = await request.formData();
     
@@ -72,7 +69,7 @@ export async function PUT(request, context) {
     }
 
     // Find existing product
-    const existingProduct = await Product.findById(id);
+    const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
       return NextResponse.json(
         { message: 'Product not found' },
@@ -81,28 +78,52 @@ export async function PUT(request, context) {
     }
 
     // Handle image upload if new image is provided
-    let filename = existingProduct.image;
-    if (image) {
-      // Delete old image if it exists
-      if (existingProduct.image) {
-        try {
-          await unlink(path.join(process.cwd(), 'public', 'uploads', existingProduct.image));
-        } catch (error) {
-          console.error('Error deleting old image:', error);
-        }
-      }
+    let imageUrl = existingProduct.imageUrl;
+    let imagePublicId = existingProduct.imagePublicId;
 
-      // Upload new image
-      const bytes = await image.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      filename = `${Date.now()}-${image.name}`;
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-      await writeFile(path.join(uploadDir, filename), buffer);
+    if (image) {
+      try {
+        // Delete old image from Cloudinary if it exists
+        if (existingProduct.imagePublicId) {
+          await cloudinary.uploader.destroy(existingProduct.imagePublicId);
+        }
+
+        // Upload new image to Cloudinary
+        const bytes = await image.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        const uploadPromise = new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: 'auto',
+              folder: 'products',
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+
+          // Write buffer to stream
+          const bufferStream = require('stream').Readable.from(buffer);
+          bufferStream.pipe(uploadStream);
+        });
+
+        const result = await uploadPromise;
+        imageUrl = result.secure_url;
+        imagePublicId = result.public_id;
+      } catch (error) {
+        console.error('Error uploading to Cloudinary:', error);
+        return NextResponse.json(
+          { message: 'Error uploading image' },
+          { status: 500 }
+        );
+      }
     }
 
     // Update product
     const updatedProduct = await Product.findByIdAndUpdate(
-      id,
+      productId,
       {
         name,
         description,
@@ -112,7 +133,8 @@ export async function PUT(request, context) {
         minQuantity,
         maxQuantity,
         active,
-        image: filename
+        imageUrl,
+        imagePublicId
       },
       { new: true }
     );
@@ -127,7 +149,7 @@ export async function PUT(request, context) {
   }
 }
 
-export async function DELETE(request, context) {
+export async function DELETE(request) {
   try {
     const user = await adminAuth(request);
     if (!user) {
@@ -138,10 +160,9 @@ export async function DELETE(request, context) {
     }
 
     await dbConnect();
-    const params = await context.params;
-    const id = params.id;
-
-    const product = await Product.findById(id);
+    const productId = new URL(request.url).pathname.split('/').pop();
+    const product = await Product.findById(productId);
+    
     if (!product) {
       return NextResponse.json(
         { message: 'Product not found' },
@@ -149,20 +170,23 @@ export async function DELETE(request, context) {
       );
     }
 
-    // Delete product image if it exists
-    if (product.image) {
+    // Delete image from Cloudinary
+    if (product.imagePublicId) {
       try {
-        await unlink(path.join(process.cwd(), 'public', 'uploads', product.image));
+        await cloudinary.uploader.destroy(product.imagePublicId);
       } catch (error) {
-        console.error('Error deleting product image:', error);
+        console.error('Error deleting image from Cloudinary:', error);
       }
     }
-
-    await Product.findByIdAndDelete(id);
+    
+    // Delete product from database
+    await Product.findByIdAndDelete(productId);
+    
     return NextResponse.json({ message: 'Product deleted successfully' });
   } catch (error) {
+    console.error('Error:', error);
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { message: 'Error deleting product', error: error.message },
       { status: 500 }
     );
   }

@@ -118,11 +118,9 @@ export default function ProductCard({ product }) {
     }
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/images/placeholder.svg';
-    if (imagePath.startsWith('http')) return imagePath;
-    if (imagePath.startsWith('/')) return imagePath;
-    return `/uploads/${imagePath}`;
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/images/placeholder.svg';
+    return imageUrl;
   };
 
   const formatPrice = (price) => {
