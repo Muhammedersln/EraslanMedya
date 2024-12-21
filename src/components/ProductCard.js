@@ -411,7 +411,7 @@ export default function ProductCard({ product }) {
           {/* Görsel Alanı */}
           <div className="relative aspect-[2/1.5] w-full overflow-hidden group">
             <Image
-              src={getImageUrl(product.image)}
+              src={getImageUrl(product.imageUrl)}
               alt={product.name}
               fill
               priority
@@ -531,7 +531,7 @@ export default function ProductCard({ product }) {
           {/* Görsel Alanı */}
           <div className="relative aspect-[3/2] w-full overflow-hidden group">
             <Image
-              src={getImageUrl(product.image)}
+              src={getImageUrl(product.imageUrl)}
               alt={product.name}
               fill
               priority

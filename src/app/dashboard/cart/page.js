@@ -214,9 +214,9 @@ export default function Cart() {
     }
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-image.png';
-    return imagePath.startsWith('http') ? imagePath : `/uploads/${imagePath}`;
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/images/placeholder.svg';
+    return imageUrl;
   };
 
   if (loading) {
@@ -255,12 +255,13 @@ export default function Cart() {
                             className="flex flex-col p-4 bg-gray-50 rounded-lg"
                           >
                             <div className="flex items-center gap-4">
-                              <div className="relative h-16 w-16 flex-shrink-0">
+                              <div className="relative w-20 h-20 rounded-lg overflow-hidden">
                                 <Image
-                                  src={getImageUrl(item.product.image)}
+                                  src={getImageUrl(item.product.imageUrl)}
                                   alt={item.product.name}
                                   fill
-                                  className="object-cover rounded-md"
+                                  className="object-cover"
+                                  sizes="80px"
                                 />
                               </div>
                               
@@ -424,12 +425,13 @@ export default function Cart() {
                               className="p-6 hover:bg-gray-50 transition-colors"
                             >
                               <div className="flex gap-6">
-                                <div className="relative h-24 w-24 flex-shrink-0">
+                                <div className="relative w-20 h-20 rounded-lg overflow-hidden">
                                   <Image
-                                    src={getImageUrl(item.product.image)}
+                                    src={getImageUrl(item.product.imageUrl)}
                                     alt={item.product.name}
                                     fill
-                                    className="object-cover rounded-lg"
+                                    className="object-cover"
+                                    sizes="80px"
                                   />
                                 </div>
                                 

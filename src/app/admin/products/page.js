@@ -301,9 +301,9 @@ export default function AdminProducts() {
     }
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-image.png';
-    return imagePath.startsWith('http') ? imagePath : `/uploads/${imagePath}`;
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/images/placeholder.svg';
+    return imageUrl;
   };
 
   const filteredProducts = products.filter(product => {
@@ -412,7 +412,7 @@ export default function AdminProducts() {
                     <td className="px-6 py-4 flex lg:table-cell">
                       <div className="relative h-20 w-20 lg:h-16 lg:w-16 rounded-lg overflow-hidden">
                         <Image
-                          src={product.imageUrl || '/images/placeholder.svg'}
+                          src={getImageUrl(product.imageUrl)}
                           alt={product.name}
                           fill
                           sizes="(max-width: 768px) 80px, (max-width: 1024px) 64px"

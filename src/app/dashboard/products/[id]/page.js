@@ -153,11 +153,9 @@ export default function ProductDetail() {
     }
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/images/placeholder.png';
-    if (imagePath.startsWith('http')) return imagePath;
-    if (imagePath.startsWith('/')) return imagePath;
-    return `/uploads/${imagePath}`;
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/images/placeholder.svg';
+    return imageUrl;
   };
 
   if (loading) {
@@ -207,16 +205,16 @@ export default function ProductDetail() {
               {/* Sol Taraf - Ürün Görseli ve Bilgiler */}
               <div className="lg:col-span-1">
                 <div className="relative w-full max-w-[300px] mx-auto lg:max-w-none aspect-square rounded-xl overflow-hidden bg-gray-50 group">
-                  <Image
-                    src={getImageUrl(product.image)}
-                    alt={product.name}
-                    fill
-                    priority
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    loading="eager"
-                    quality={75}
-                    className="object-cover transform group-hover:scale-105 transition-transform duration-500"
-                  />
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
+                    <Image
+                      src={getImageUrl(product.imageUrl)}
+                      alt={product.name}
+                      fill
+                      priority
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <span className="absolute top-3 right-3 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg text-sm font-medium text-gray-700 shadow-sm">
                     {product.category === 'instagram' ? 'Instagram' : 'TikTok'}
