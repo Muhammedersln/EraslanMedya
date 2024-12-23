@@ -340,28 +340,32 @@ export default function Navbar() {
 
       {/* Mobile Bottom Navigation Bar - Only for authenticated mobile users */}
       {user && isMobile && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50">
-          <div className="flex items-center justify-around h-16">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 mt-8">
+          <div className="flex items-center justify-around h-16 px-2">
             {/* Home Button */}
             <Link
               href="/dashboard"
-              className={`flex flex-col items-center space-y-1 ${
-                pathname === '/dashboard' ? 'text-primary' : 'text-gray-600'
+              className={`flex flex-col items-center space-y-1 transition-all duration-200 ${
+                pathname === '/dashboard' 
+                  ? 'text-primary scale-110' 
+                  : 'text-gray-500 hover:text-primary/80 hover:scale-105'
               }`}
             >
               <MdDashboard className="w-6 h-6" />
-              <span className="text-xs">Ana Sayfa</span>
+              <span className="text-[10px] font-medium">Ana Sayfa</span>
             </Link>
 
             {/* Products Button */}
             <Link
               href="/dashboard/products"
-              className={`flex flex-col items-center space-y-1 ${
-                pathname === '/dashboard/products' ? 'text-primary' : 'text-gray-600'
+              className={`flex flex-col items-center space-y-1 transition-all duration-200 ${
+                pathname === '/dashboard/products'
+                  ? 'text-primary scale-110'
+                  : 'text-gray-500 hover:text-primary/80 hover:scale-105'
               }`}
             >
               <MdShoppingBag className="w-6 h-6" />
-              <span className="text-xs">Ürünler</span>
+              <span className="text-[10px] font-medium">Ürünler</span>
             </Link>
 
             {/* Cart Button (Centered) */}
@@ -369,80 +373,84 @@ export default function Navbar() {
               href="/dashboard/cart"
               className="relative -mt-8 flex flex-col items-center"
             >
-              <div className={`p-4 rounded-full shadow-lg ${
-                pathname === '/dashboard/cart' ? 'bg-primary' : 'bg-white border-2 border-primary'
+              <div className={`p-4 rounded-full shadow-lg transition-all duration-300 ${
+                pathname === '/dashboard/cart' 
+                  ? 'bg-primary scale-110' 
+                  : 'bg-white border-2 border-primary hover:bg-primary/10'
               }`}>
                 <MdShoppingCart className={`w-7 h-7 ${
                   pathname === '/dashboard/cart' ? 'text-white' : 'text-primary'
                 }`} />
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
                     {cartItemCount}
                   </span>
                 )}
               </div>
-              <span className="text-xs mt-1">Sepet</span>
+              <span className="text-[10px] font-medium mt-1">Sepet</span>
             </Link>
 
             {/* Orders Button */}
             <Link
               href="/dashboard/orders"
-              className={`flex flex-col items-center space-y-1 ${
-                pathname === '/dashboard/orders' ? 'text-primary' : 'text-gray-600'
+              className={`flex flex-col items-center space-y-1 transition-all duration-200 ${
+                pathname === '/dashboard/orders'
+                  ? 'text-primary scale-110'
+                  : 'text-gray-500 hover:text-primary/80 hover:scale-105'
               }`}
             >
               <MdReceipt className="w-6 h-6" />
-              <span className="text-xs">Siparişler</span>
+              <span className="text-[10px] font-medium">Siparişler</span>
             </Link>
 
             {/* Profile Button with Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`flex flex-col items-center space-y-1 ${
-                  showProfileMenu ? 'text-primary' : 'text-gray-600'
+                className={`flex flex-col items-center space-y-1 transition-all duration-200 ${
+                  showProfileMenu ? 'text-primary scale-110' : 'text-gray-500 hover:text-primary/80 hover:scale-105'
                 }`}
               >
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
-                  <span className="text-white text-xs">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
+                  <span className="text-white text-xs font-medium">
                     {user?.firstName?.charAt(0)}
                   </span>
                 </div>
-                <span className="text-xs">Profil</span>
+                <span className="text-[10px] font-medium">Profil</span>
               </button>
 
               {/* Mobile Profile Dropdown */}
               {showProfileMenu && (
-                <div className="absolute bottom-full right-0 mb-2 w-56 bg-white rounded-2xl shadow-xl py-3 border border-gray-100 transform transition-all duration-200 ease-in-out">
+                <div className="absolute bottom-full right-0 mb-2 w-64 bg-white rounded-2xl shadow-2xl py-3 border border-gray-100">
                   <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-xs font-medium text-gray-400">Hesap</p>
+                    <p className="text-xs font-medium text-gray-500">Hesap Ayarları</p>
                   </div>
                   
                   <Link
                     href="/dashboard/profile"
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 group"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50/80 transition-all duration-200 group"
                     onClick={() => setShowProfileMenu(false)}
                   >
-                    <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-150">
+                    <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-200">
                       <FaUserCircle className="w-4 h-4 text-primary" />
                     </div>
                     <div className="ml-3">
                       <span className="font-medium">Profil</span>
-                      <p className="text-xs text-gray-400">Hesap bilgilerinizi yönetin</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Hesap bilgilerinizi yönetin</p>
                     </div>
                   </Link>
 
                   <Link
                     href="/dashboard/support"
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 group"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50/80 transition-all duration-200 group"
                     onClick={() => setShowProfileMenu(false)}
                   >
-                    <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-150">
+                    <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-200">
                       <MdHeadsetMic className="w-4 h-4 text-primary" />
                     </div>
                     <div className="ml-3">
                       <span className="font-medium">Destek</span>
-                      <p className="text-xs text-gray-400">Yardım ve destek alın</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Yardım ve destek alın</p>
                     </div>
                   </Link>
 
@@ -452,9 +460,9 @@ export default function Navbar() {
                         handleLogout();
                         setShowProfileMenu(false);
                       }}
-                      className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
+                      className="flex items-center w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 group"
                     >
-                      <div className="p-2 rounded-lg bg-red-100/50 group-hover:bg-red-100 transition-colors duration-150">
+                      <div className="p-2 rounded-lg bg-red-100/50 group-hover:bg-red-100 transition-colors duration-200">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>

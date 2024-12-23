@@ -9,6 +9,7 @@ export default function Footer() {
     company: [
       { name: 'Hakkımızda', href: '/about' },
       { name: 'İletişim', href: '/contact' },
+      { name: 'Sık Sorulan Sorular', href: '/faq' },
     ],
     services: [
       { name: 'Instagram Hizmetleri', href: '/products?category=instagram' },
@@ -43,11 +44,11 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative mt-12 sm:mt-16 overflow-hidden">
+    <footer className="relative mt-12 sm:mt-16 overflow-hidden ">
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10" />
       
-      <div className="relative container mx-auto px-4 py-8 sm:py-16">
+      <div className="relative container mx-auto px-4 py-8 sm:py-16 md:pb-8 pb-24">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-12">
           {/* Brand Column */}
           <div className="md:col-span-4 space-y-4 sm:space-y-6">

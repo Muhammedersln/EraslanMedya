@@ -19,7 +19,7 @@ export default function HeroSection({ user }) {
         },
         {
             icon: <FaCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />,
-            text: "365 gün garantili",
+            text: "Takipçi düşüşleri minimum seviyede!",
             gradient: "from-blue-500 to-indigo-600"
         }
     ];

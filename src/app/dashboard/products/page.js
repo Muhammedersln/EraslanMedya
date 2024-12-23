@@ -8,8 +8,12 @@ import { FaInstagram } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Products() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -52,9 +56,16 @@ export default function Products() {
   ];
 
   useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
     fetchProducts();
     fetchSettings();
-  }, []);
+  }, [user, router, authLoading]);
     
   useEffect(() => {
     const checkMobile = () => {
@@ -150,7 +161,7 @@ export default function Products() {
     }
   });
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>

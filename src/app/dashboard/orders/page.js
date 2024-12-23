@@ -16,10 +16,10 @@ const STATUS_COLORS = {
 };
 
 export default function Orders() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,17 +46,20 @@ export default function Orders() {
     } catch (error) {
       toast.error('Siparişler yüklenirken bir hata oluştu');
     } finally {
-      setLoading(false);
+      setOrdersLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (loading) return;
+    
     if (!user) {
       router.push('/login');
       return;
     }
+    
     fetchOrders();
-  }, [user, router, fetchOrders]);
+  }, [user, router, fetchOrders, loading]);
 
   // Table row için item render fonksiyonu
   const renderOrderItem = (item, index) => (
@@ -115,7 +118,7 @@ export default function Orders() {
     return result;
   }, [orders, statusFilter, searchQuery, sortBy]);
 
-  if (loading) {
+  if (loading || ordersLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <Navbar />

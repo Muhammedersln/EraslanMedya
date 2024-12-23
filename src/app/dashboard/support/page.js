@@ -29,25 +29,6 @@ const STATUS_COLORS = {
   }
 };
 
-const FAQ_ITEMS = [
-  {
-    question: 'Siparişim ne zaman tamamlanacak?',
-    answer: 'Siparişler genellikle 24-48 saat içerisinde tamamlanır. Yoğunluk durumuna göre bu süre değişebilir.'
-  },
-  {
-    question: 'Ödeme yaptım ama sipariş oluşmadı, ne yapmalıyım?',
-    answer: 'Endişelenmeyin! Ödemeniz başarıyla alındıysa, destek ekibimiz en kısa sürede size yardımcı olacaktır.'
-  },
-  {
-    question: 'Siparişimi iptal edebilir miyim?',
-    answer: 'İşleme alınmamış siparişlerinizi iptal edebilirsiniz. İşleme alınmış siparişler için destek ekibimizle iletişime geçin.'
-  },
-  {
-    question: 'Hangi ödeme yöntemlerini kullanabilirim?',
-    answer: 'Kredi kartı, banka kartı ve havale/EFT ile ödeme yapabilirsiniz. Tüm ödemeleriniz SSL ile güvence altındadır.'
-  }
-];
-
 export default function Support() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +40,6 @@ export default function Support() {
   const [myTickets, setMyTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
-  const [selectedFaq, setSelectedFaq] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -207,45 +187,6 @@ export default function Support() {
                   <p className="text-gray-600">Henüz destek talebiniz bulunmuyor.</p>
                 </div>
               )}
-
-              {/* Sık Sorulan Sorular */}
-              <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 mt-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Sık Sorulan Sorular</h3>
-                <div className="space-y-4">
-                  {FAQ_ITEMS.map((faq, index) => (
-                    <motion.div
-                      key={index}
-                      initial={false}
-                      animate={{ height: selectedFaq === index ? 'auto' : '48px' }}
-                      className="overflow-hidden border-b border-gray-100 last:border-0"
-                    >
-                      <button
-                        onClick={() => setSelectedFaq(selectedFaq === index ? null : index)}
-                        className="w-full flex justify-between items-center py-3 text-left"
-                      >
-                        <span className="font-medium text-gray-900">{faq.question}</span>
-                        <svg
-                          className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                            selectedFaq === index ? 'rotate-180' : ''
-                          }`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                      <motion.div
-                        initial={false}
-                        animate={{ opacity: selectedFaq === index ? 1 : 0 }}
-                        className="pb-3 text-gray-600"
-                      >
-                        {faq.answer}
-                      </motion.div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Sağ Taraf - Yeni Destek Talebi Formu */}

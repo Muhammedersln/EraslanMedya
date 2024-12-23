@@ -42,31 +42,40 @@ export function AuthProvider({ children }) {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
         
-        if (token && storedUser) {
-          // Önce localStorage'dan kullanıcı bilgilerini yükle
-          setUser(JSON.parse(storedUser));
-          
-          // Sonra sunucudan doğrula
-          const userData = await checkAuth(token);
-          if (userData) {
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-          } else {
-            // Token geçersizse çıkış yap
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            setUser(null);
-          }
+        if (!token || !storedUser) {
+          setLoading(false);
+          return;
+        }
+
+        // Önce localStorage'dan kullanıcı bilgilerini yükle
+        setUser(JSON.parse(storedUser));
+        
+        // Sonra sunucudan doğrula
+        const userData = await checkAuth(token);
+        if (userData) {
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+          // Token geçersizse çıkış yap
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+          router.push('/login');
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        // Hata durumunda da çıkış yap
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        router.push('/login');
       } finally {
         setLoading(false);
       }
     };
 
     initializeAuth();
-  }, []);
+  }, [router]);
 
   const login = async (username, password) => {
     setLoading(true);
