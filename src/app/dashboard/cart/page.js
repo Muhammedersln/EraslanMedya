@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { FaTrash, FaShoppingCart, FaArrowRight, FaInstagram, FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
+import PaymentForm from '@/components/PaymentForm';
 
 export default function Cart() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function Cart() {
   const [editingItem, setEditingItem] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [settings, setSettings] = useState({ taxRate: 0.18 });
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
 
   const calculateTotal = useCallback((items) => {
     const validItems = items.filter(item => item.product);
@@ -205,9 +208,23 @@ export default function Cart() {
         throw new Error(error.message || 'Sipariş oluşturulamadı');
       }
 
-      const result = await response.json();
-      toast.success('Siparişiniz başarıyla oluşturuldu!');
-      router.push('/dashboard/orders');
+      const order = await response.json();
+      console.log('Created Order:', order); // Debug log
+      
+      setOrderDetails({
+        id: order._id,
+        totalAmount: totalPrice.total,
+        email: user.email,
+        items: cartItems.map(item => ({
+          product: {
+            name: item.product.name
+          },
+          price: item.product.price,
+          quantity: item.quantity
+        }))
+      });
+      
+      setShowPaymentForm(true);
     } catch (error) {
       console.error('Checkout hatası:', error);
       toast.error(error.message || 'Sipariş oluşturulurken bir hata oluştu');
@@ -687,6 +704,28 @@ export default function Cart() {
                 </div>
               </div>
             </motion.div>
+          </div>
+        )}
+
+        {showPaymentForm && orderDetails && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <PaymentForm
+                orderDetails={{
+                  id: orderDetails.id,
+                  totalAmount: orderDetails.totalAmount,
+                  email: orderDetails.email,
+                  items: orderDetails.items.map(item => ({
+                    product: {
+                      name: item.product.name
+                    },
+                    price: item.price,
+                    quantity: item.quantity
+                  }))
+                }}
+                onClose={() => setShowPaymentForm(false)}
+              />
+            </div>
           </div>
         )}
       </AnimatePresence>

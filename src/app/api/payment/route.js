@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createPaymentToken } from '@/lib/paytr';
+import { createPaymentToken, verifyPaymentCallback } from '@/lib/paytr';
+import { auth } from '@/lib/middleware/auth';
+import Order from '@/lib/models/Order';
 
 export async function POST(request) {
   try {
+    // Authenticate user
+    const user = await auth(request);
+    if (!user) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Get request body
     const body = await request.json();
     const {
       orderId,
@@ -12,26 +24,48 @@ export async function POST(request) {
       callbackUrl,
     } = body;
 
-    // Get user IP from request headers
+    // Validate required fields
+    if (!orderId) {
+      throw new Error('Order ID is required');
+    }
+    if (!amount) {
+      throw new Error('Amount is required');
+    }
+    if (!email) {
+      throw new Error('Email is required');
+    }
+    if (!userBasket || !Array.isArray(userBasket) || userBasket.length === 0) {
+      throw new Error('User basket is required and must be a non-empty array');
+    }
+    if (!callbackUrl) {
+      throw new Error('Callback URL is required');
+    }
+
+    // Get user IP
     const userIp = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
+                  request.headers.get('x-client-ip') ||
                   '127.0.0.1';
 
     // Create payment token
     const paymentData = await createPaymentToken({
       orderId,
-      amount: Math.round(amount * 100), // Convert to kuruş
+      amount,
       email,
       userBasket,
       userIp,
       callbackUrl,
+      testMode: '1',
+      currency: 'TL',
+      noInstallment: '1',
+      maxInstallment: '1'
     });
 
     return NextResponse.json(paymentData);
   } catch (error) {
     console.error('Payment creation error:', error);
     return NextResponse.json(
-      { error: 'Payment creation failed' },
+      { error: error.message || 'Payment creation failed' },
       { status: 500 }
     );
   }
@@ -43,13 +77,20 @@ export async function PUT(request) {
     const body = await request.json();
     const result = verifyPaymentCallback(body);
 
-    if (result.isValid) {
-      // TODO: Update order status in your database
+    if (result.status === 'success') {
+      // Update order status
+      await Order.findByIdAndUpdate(result.orderId, {
+        status: 'processing',
+        'paymentDetails.status': 'paid',
+        'paymentDetails.amount': result.amount,
+        'paymentDetails.paidAt': new Date()
+      });
+
       return NextResponse.json({ success: true });
     }
 
     return NextResponse.json(
-      { error: 'Invalid payment callback' },
+      { error: result.error || 'Invalid payment callback' },
       { status: 400 }
     );
   } catch (error) {

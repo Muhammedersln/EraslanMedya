@@ -52,4 +52,7 @@ cartSchema.pre('save', async function(next) {
   }
 });
 
-export default mongoose.models.Cart || mongoose.model('Cart', cartSchema); 
+// Check if model exists before creating
+const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
+
+export default Cart; 
