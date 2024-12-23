@@ -57,21 +57,6 @@ export default function Products() {
   }, []);
     
   useEffect(() => {
-    // Set default categories when products are loaded
-    if (products.length > 0) {
-    const defaultFilters = products.filter(product => 
-      defaultCategories.includes(product.category) && 
-      product.subCategory === defaultSubCategory
-    );
-    
-    if (defaultFilters.length > 0) {
-      setSelectedCategory(defaultCategories[0]);
-      setSelectedSubCategory(defaultSubCategory);
-    }
-    }
-  }, [products, defaultCategories, defaultSubCategory]);
-
-  useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
@@ -144,15 +129,9 @@ export default function Products() {
 
     return matchesCategory && matchesSubCategory && matchesSearch && matchesPriceRange;
   }).sort((a, b) => {
-    // Prioritize follower category for all, instagram, and tiktok categories
-    if (selectedCategory === 'all' || selectedCategory === 'instagram' || selectedCategory === 'tiktok') {
-      if (selectedSubCategory === 'all') {
-      if (a.subCategory === 'followers' && b.subCategory !== 'followers') return -1;
-      if (a.subCategory !== 'followers' && b.subCategory === 'followers') return 1;
-      }
-    }
+    if (a.subCategory === 'followers' && b.subCategory !== 'followers') return -1;
+    if (a.subCategory !== 'followers' && b.subCategory === 'followers') return 1;
 
-    // Then apply the selected sort
     switch (sortBy) {
       case 'price-low':
         return a.price - b.price;

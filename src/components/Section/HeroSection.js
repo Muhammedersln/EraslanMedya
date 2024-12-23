@@ -24,7 +24,7 @@ export default function HeroSection() {
                 Hemen Başla
               </Link>
               <Link 
-                href="/products" 
+                href="/dashboard/products" 
                 className="w-full xs:w-auto inline-flex items-center justify-center bg-white text-primary border-2 border-primary hover:border-primary-dark px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:bg-primary/5 transition-all duration-300 font-medium text-sm sm:text-base"
               >
                 Ürünleri İncele
