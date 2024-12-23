@@ -13,10 +13,7 @@ export async function POST(request) {
     const allowedIps = ['193.192.59.22', '193.192.59.23'];
     if (!allowedIps.includes(clientIp)) {
       console.error('Unauthorized callback attempt from IP:', clientIp);
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return new Response('OK'); // PayTR her zaman "OK" bekler
     }
 
     const body = await request.formData();
@@ -45,8 +42,6 @@ export async function POST(request) {
         paymentId: params.payment_id,
         amount: params.total_amount
       });
-      
-      return NextResponse.json({ status: 'success' });
     } else {
       // Ödeme başarısız - siparişi iptal et
       await updateOrderStatus(params.merchant_oid, 'failed', {
@@ -57,14 +52,13 @@ export async function POST(request) {
         orderId: params.merchant_oid,
         reason: params.failed_reason_msg
       });
-      
-      return NextResponse.json({ status: 'failed' });
     }
+    
+    // PayTR her zaman "OK" yanıtı bekler
+    return new Response('OK');
   } catch (error) {
     console.error('Payment callback error:', error);
-    return NextResponse.json(
-      { error: 'Payment callback processing failed' },
-      { status: 500 }
-    );
+    // Hata durumunda bile "OK" dönmeliyiz
+    return new Response('OK');
   }
 } 
