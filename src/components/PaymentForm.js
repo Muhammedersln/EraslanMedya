@@ -46,6 +46,11 @@ export default function PaymentForm({ orderDetails, onClose }) {
           orderId: orderDetails.id,
           amount: orderDetails.totalAmount,
           email: orderDetails.email,
+          userName: orderDetails.firstName && orderDetails.lastName 
+            ? `${orderDetails.firstName} ${orderDetails.lastName}`
+            : orderDetails.email.split('@')[0],
+          userPhone: orderDetails.phone || '05000000000',
+          userAddress: orderDetails.address || 'Türkiye',
           userBasket,
           callbackUrl: `${window.location.origin}/dashboard/orders`
         })

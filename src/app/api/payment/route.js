@@ -20,26 +20,12 @@ export async function POST(request) {
       orderId,
       amount,
       email,
+      userName,
+      userPhone,
+      userAddress,
       userBasket,
       callbackUrl,
     } = body;
-
-    // Validate required fields
-    if (!orderId) {
-      throw new Error('Order ID is required');
-    }
-    if (!amount) {
-      throw new Error('Amount is required');
-    }
-    if (!email) {
-      throw new Error('Email is required');
-    }
-    if (!userBasket || !Array.isArray(userBasket) || userBasket.length === 0) {
-      throw new Error('User basket is required and must be a non-empty array');
-    }
-    if (!callbackUrl) {
-      throw new Error('Callback URL is required');
-    }
 
     // Get user IP
     const userIp = request.headers.get('x-forwarded-for') || 
@@ -52,6 +38,9 @@ export async function POST(request) {
       orderId,
       amount,
       email,
+      userName,
+      userPhone,
+      userAddress,
       userBasket,
       userIp,
       callbackUrl,
@@ -65,7 +54,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Payment creation error:', error);
     return NextResponse.json(
-      { error: error.message || 'Payment creation failed' },
+      { error: error.message },
       { status: 500 }
     );
   }
