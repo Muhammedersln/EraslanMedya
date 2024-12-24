@@ -186,7 +186,7 @@ export default function Cart() {
   };
 
   const handleCheckout = () => {
-    setOrderDetails({
+    const orderDetails = {
       id: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       totalAmount: totalPrice.total,
       email: user.email,
@@ -200,7 +200,10 @@ export default function Cart() {
         productData: item.productData,
         targetCount: item.quantity
       }))
-    });
+    };
+    
+    console.log('Created orderDetails:', orderDetails);
+    setOrderDetails(orderDetails);
     setShowPaymentForm(true);
   };
 

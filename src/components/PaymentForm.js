@@ -14,6 +14,8 @@ export default function PaymentForm({ orderDetails, onClose }) {
       setLoading(true);
       setError(null);
 
+      console.log('OrderDetails received:', orderDetails);
+
       // Validate orderDetails
       if (!orderDetails?.totalAmount) {
         throw new Error('Sipariş tutarı eksik');
