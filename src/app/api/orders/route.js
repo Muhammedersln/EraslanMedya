@@ -104,7 +104,7 @@ export async function POST(req) {
       paymentStatus: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
-      expiresAt: new Date(Date.now() + 2 * 60 * 1000) // 2 dakika
+      expiresAt: new Date(Date.now() + 3 * 60 * 1000) // 3 dakika
     });
 
     // Siparişi kaydet

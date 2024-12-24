@@ -33,9 +33,9 @@ export async function POST(request) {
       const user_phone = userInfo.phone || '05111111111';
       const merchant_ok_url = 'https://eraslanmedya.com/payment/success';
       const merchant_fail_url = 'https://eraslanmedya.com/payment/fail';
-      const timeout_limit = '30';
+      const timeout_limit = '3';
       const debug_on = '1';
-      const test_mode = "1";
+      const test_mode = "0";
       const no_installment = '0';
       const max_installment = '0';
       const currency = 'TL';

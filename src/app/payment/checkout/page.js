@@ -60,7 +60,7 @@ export default function CheckoutPage() {
         // Local storage'dan order details'i al
         const storedOrderDetails = localStorage.getItem('pendingOrderDetails');
         if (!storedOrderDetails) {
-          toast.error('Sipariş detayları bulunamadı');
+          toast.error('Sipariş iptal oldu');
           router.push('/dashboard/cart');
           return;
         }
@@ -120,7 +120,7 @@ export default function CheckoutPage() {
           setToken(paytrToken);
           localStorage.removeItem('pendingOrderDetails');
           
-          // Sipariş süresi kontrolü
+          // Sipariş süresi kontrolü (3 dakika)
           const expirationTime = new Date(savedOrder.expiresAt).getTime();
           const timeoutDuration = expirationTime - Date.now();
           
@@ -138,10 +138,10 @@ export default function CheckoutPage() {
               });
             }, 1000);
 
-            // Süre dolunca yönlendirme
+            // 3 dakika sonra yönlendirme
             timeoutRef.current = setTimeout(() => {
               checkOrders(); // Siparişleri kontrol et
-              toast.error('Ödeme süresi doldu. Lütfen tekrar deneyin.');
+              toast.error('3 dakikalık ödeme süresi doldu. Lütfen tekrar deneyin.');
               router.push('/dashboard/cart');
             }, timeoutDuration);
           }
