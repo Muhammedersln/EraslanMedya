@@ -64,6 +64,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
           cartItems: orderDetails.items.map(item => ({
             product: item.product.id,
             quantity: item.quantity,
+            price: parseFloat(item.price),
             productData: item.productData,
             targetCount: item.targetCount
           }))
