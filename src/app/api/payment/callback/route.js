@@ -17,6 +17,12 @@ export async function POST(req) {
     const total_amount = data.get('total_amount');
     const hash = data.get('hash');
 
+    console.log('PayTR Callback received:', {
+      merchant_oid,
+      status,
+      total_amount
+    });
+
     // Hash doğrulama
     const hashStr = `${MERCHANT_ID}${merchant_oid}${total_amount}${MERCHANT_SALT}`;
     const calculatedHash = crypto.createHmac('sha256', MERCHANT_KEY)
@@ -24,6 +30,10 @@ export async function POST(req) {
       .digest('base64');
 
     if (hash !== calculatedHash) {
+      console.error('PayTR hash mismatch:', {
+        received: hash,
+        calculated: calculatedHash
+      });
       return new Response('PAYTR notification failed: hash mismatch', {
         status: 400,
         headers: { 'Content-Type': 'text/plain' }
@@ -33,15 +43,25 @@ export async function POST(req) {
     // Siparişi bul ve güncelle
     const order = await Order.findById(merchant_oid);
     if (!order) {
+      console.error('PayTR order not found:', merchant_oid);
       return new Response('PAYTR notification failed: order not found', {
         status: 404,
         headers: { 'Content-Type': 'text/plain' }
       });
     }
 
+    // Eğer sipariş zaten işlendiyse tekrar işleme
+    if (order.paymentStatus === 'paid' && status === 'success') {
+      console.log('PayTR duplicate success notification:', merchant_oid);
+      return new Response('OK', {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    }
+
     // Ödeme durumuna göre sipariş durumunu güncelle
     if (status === 'success') {
-      order.status = 'processing'; // Ödeme başarılıysa siparişi aktif et
+      order.status = 'processing';
       order.paymentStatus = 'paid';
       order.paymentDetails = {
         ...order.paymentDetails,
@@ -52,8 +72,14 @@ export async function POST(req) {
         paytrMerchantOid: merchant_oid,
         paytrResponse: Object.fromEntries(data.entries())
       };
+
+      // Email bildirimi gönder
+      try {
+        await sendOrderConfirmationEmail(order);
+      } catch (emailError) {
+        console.error('Order confirmation email failed:', emailError);
+      }
     } else {
-      // Ödeme başarısızsa sipariş iptal durumunda kalsın
       order.status = 'cancelled';
       order.paymentStatus = 'failed';
       order.paymentDetails = {
@@ -63,13 +89,18 @@ export async function POST(req) {
         failedAt: new Date(),
         paymentType: 'paytr',
         paytrMerchantOid: merchant_oid,
-        paytrResponse: Object.fromEntries(data.entries())
+        paytrResponse: Object.fromEntries(data.entries()),
+        failureReason: data.get('failed_reason_code') || data.get('failed_reason_msg')
       };
     }
 
     await order.save();
+    console.log('PayTR order updated successfully:', {
+      orderId: merchant_oid,
+      status: order.status,
+      paymentStatus: order.paymentStatus
+    });
 
-    // PayTR'ye OK yanıtı gönder
     return new Response('OK', {
       status: 200,
       headers: { 'Content-Type': 'text/plain' }

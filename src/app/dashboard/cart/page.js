@@ -214,7 +214,7 @@ export default function Cart() {
 
       // PayTR için gerekli bilgileri hazırla
       const paytrOrderDetails = {
-        id: orderDetails._id, // Henüz kaydedilmemiş sipariş ID'si
+        id: orderDetails._id,
         totalAmount: orderDetails.totalAmount,
         email: user.email,
         items: formattedItems.map(item => ({
@@ -225,11 +225,14 @@ export default function Cart() {
           price: item.price,
           quantity: item.quantity
         })),
-        orderData: orderDetails // Tüm sipariş verilerini PayTR bileşenine geçiriyoruz
+        orderData: orderDetails
       };
+
+      // Sipariş detaylarını local storage'a kaydet
+      localStorage.setItem('pendingOrderDetails', JSON.stringify(paytrOrderDetails));
       
-      setOrderDetails(paytrOrderDetails);
-      setShowPaymentForm(true);
+      // Ödeme sayfasına yönlendir
+      router.push('/payment/checkout');
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error(error.message || 'Sipariş oluşturulurken bir hata oluştu');
@@ -709,37 +712,6 @@ export default function Cart() {
                 </div>
               </div>
             </motion.div>
-          </div>
-        )}
-
-        {showPaymentForm && orderDetails && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-lg">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900">Sipariş Onayı</h3>
-                  <button
-                    onClick={() => {
-                      setShowPaymentForm(false);
-                      setOrderDetails(null);
-                    }}
-                    className="text-gray-400 hover:text-gray-500 transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <PayTRPayment
-                  orderDetails={orderDetails}
-                  onClose={() => {
-                    setShowPaymentForm(false);
-                    setOrderDetails(null);
-                  }}
-                />
-              </div>
-            </div>
           </div>
         )}
       </AnimatePresence>

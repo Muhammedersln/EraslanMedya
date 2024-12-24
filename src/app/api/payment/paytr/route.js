@@ -63,7 +63,7 @@ export async function POST(req) {
       test_mode,
       lang,
       // Callback URL'i güncelle
-      merchant_notify_url: 'https://eraslanmedya.com/api/payment/callback/'
+      merchant_notify_url: 'https://eraslanmedya.com/api/payment/callback'
     };
 
     // PayTR API'ye istek
