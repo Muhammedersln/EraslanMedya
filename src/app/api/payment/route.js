@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createPaymentToken, verifyPaymentCallback } from '@/lib/paytr';
+import { createPaymentToken } from '@/lib/paytr';
 import { auth } from '@/lib/middleware/auth';
 import Order from '@/lib/models/Order';
+import Product from '@/lib/models/Product';
 
 export async function POST(request) {
   try {
@@ -24,6 +25,7 @@ export async function POST(request) {
       userPhone,
       userAddress,
       userBasket,
+      cartItems,
       callbackUrl,
     } = body;
 
@@ -36,6 +38,7 @@ export async function POST(request) {
       userPhone,
       userAddress,
       userBasket,
+      cartItems,
       callbackUrl
     };
 
@@ -51,6 +54,38 @@ export async function POST(request) {
       );
     }
 
+    // Validate cart items and create temporary order
+    const validatedItems = await Promise.all(
+      cartItems.map(async (item) => {
+        const product = await Product.findById(item.product);
+        if (!product) {
+          throw new Error(`Product not found: ${item.product}`);
+        }
+
+        return {
+          product: product._id,
+          quantity: item.quantity,
+          price: product.price,
+          taxRate: product.taxRate || 0.18,
+          productData: item.productData,
+          targetCount: item.targetCount,
+          currentCount: 0
+        };
+      })
+    );
+
+    // Create temporary order
+    const tempOrder = await Order.create({
+      _id: orderId,
+      user: user.id,
+      items: validatedItems,
+      totalAmount: amount / 100, // Convert from kuruş to TL
+      status: 'pending',
+      paymentDetails: {
+        status: 'pending'
+      }
+    });
+
     // Get user IP
     const userIp = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
@@ -62,13 +97,10 @@ export async function POST(request) {
       orderId,
       amount,
       email,
-      userName,
-      userPhone,
-      userAddress,
       userBasket,
       userIp,
       callbackUrl,
-      testMode: '0',
+      testMode: '1',
       currency: 'TL',
       noInstallment: '1',
       maxInstallment: '1'
