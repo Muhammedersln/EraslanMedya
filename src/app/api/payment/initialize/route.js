@@ -3,7 +3,7 @@ import { createPaymentToken } from '@/lib/paytr';
 import { auth } from '@/lib/middleware/auth';
 import Order from '@/lib/models/Order';
 import Product from '@/lib/models/Product';
-import { connectToDatabase } from '@/lib/db';
+import dbConnect from '@/lib/db';
 
 export async function POST(request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request) {
       );
     }
 
-    await connectToDatabase();
+    await dbConnect();
 
     // Get request body
     const body = await request.json();

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/middleware/auth';
 import Order from '@/lib/models/Order';
 import Cart from '@/lib/models/Cart';
-import { connectToDatabase } from '@/lib/db';
+import dbConnect from '@/lib/db';
 
 export async function GET(request, { params }) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    await connectToDatabase();
+    await dbConnect();
 
     // Siparişi kontrol et
     const order = await Order.findOne({

@@ -1,5 +1,5 @@
 import { verifyPaymentCallback } from '@/lib/paytr';
-import { connectToDatabase } from '@/lib/db';
+import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
 
 export async function POST(request) {
@@ -16,7 +16,7 @@ export async function POST(request) {
       return new Response('OK'); // PayTR her zaman "OK" bekler
     }
 
-    await connectToDatabase();
+    await dbConnect();
 
     const body = await request.formData();
     const params = Object.fromEntries(body.entries());
