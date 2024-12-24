@@ -14,6 +14,24 @@ export default function PaymentForm({ orderDetails, onClose }) {
       setLoading(true);
       setError(null);
 
+      // Validate orderDetails
+      if (!orderDetails?.totalAmount) {
+        throw new Error('Sipariş tutarı eksik');
+      }
+      if (!orderDetails?.email) {
+        throw new Error('E-posta adresi eksik');
+      }
+      if (!orderDetails?.items?.length) {
+        throw new Error('Sipariş ürünleri eksik');
+      }
+
+      // Format basket items
+      const userBasket = orderDetails.items.map(item => ({
+        name: item.product.name,
+        price: item.price,
+        quantity: item.quantity
+      }));
+
       // Ödeme işlemini başlat
       const response = await fetch('/api/payment', {
         method: 'POST',
@@ -29,18 +47,13 @@ export default function PaymentForm({ orderDetails, onClose }) {
             : orderDetails.email.split('@')[0],
           userPhone: orderDetails.phone || '05000000000',
           userAddress: orderDetails.address || 'Türkiye',
-          userBasket: orderDetails.items.map(item => ({
-            name: item.product.name,
-            price: item.price,
-            quantity: item.quantity
-          })),
+          userBasket,
           cartItems: orderDetails.items.map(item => ({
             product: item.product.id,
             quantity: item.quantity,
             productData: item.productData,
             targetCount: item.targetCount
-          })),
-          callbackUrl: `${window.location.origin}/dashboard/orders`
+          }))
         })
       });
 
@@ -51,6 +64,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       }
 
       if (data.status === 'success' && data.token) {
+        // Show PayTR iframe
         setIframeUrl(`https://www.paytr.com/odeme/guvenli/${data.token}`);
         setShowIframe(true);
       } else {
