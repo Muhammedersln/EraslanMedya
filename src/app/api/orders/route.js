@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
+import Product from '@/lib/models/Product';
 import { auth } from '@/lib/middleware/auth';
 
 // Süresi dolan siparişleri kontrol et ve güncelle
@@ -36,11 +37,14 @@ export async function GET(req) {
     // Her istek geldiğinde süresi dolan siparişleri kontrol et
     await checkExpiredOrders();
 
+    // Önce Product modelini yükle
+    await Product.init();
+
     const orders = await Order.find({ user: user.id })
       .sort({ createdAt: -1 })
       .populate({
         path: 'items.product',
-        model: 'Product',
+        model: Product,
         select: 'name price subCategory'
       });
 

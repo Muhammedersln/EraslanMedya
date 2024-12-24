@@ -29,25 +29,31 @@ export default function CheckoutPage() {
       return;
     }
 
+    let isSubscribed = true;
+
     // Sayfa yüklendiğinde siparişleri kontrol et
-    fetch('/api/orders', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+    const checkOrders = async () => {
+      try {
+        const response = await fetch('/api/orders', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Siparişler kontrol edilemedi');
+        }
+      } catch (error) {
+        console.error('Orders check error:', error);
       }
-    });
+    };
 
     // Sayfa kapatıldığında veya yenilendiğinde siparişleri kontrol et
     const handleBeforeUnload = () => {
-      fetch('/api/orders', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      checkOrders();
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-
-    let isSubscribed = true;
 
     const initPayment = async () => {
       try {
@@ -134,6 +140,7 @@ export default function CheckoutPage() {
 
             // Süre dolunca yönlendirme
             timeoutRef.current = setTimeout(() => {
+              checkOrders(); // Siparişleri kontrol et
               toast.error('Ödeme süresi doldu. Lütfen tekrar deneyin.');
               router.push('/dashboard/cart');
             }, timeoutDuration);
@@ -153,6 +160,7 @@ export default function CheckoutPage() {
     };
 
     initPayment();
+    checkOrders(); // İlk yüklemede siparişleri kontrol et
 
     // Cleanup function
     return () => {

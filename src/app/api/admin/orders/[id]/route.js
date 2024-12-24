@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
+import Product from '@/lib/models/Product';
 import { adminAuth } from '@/lib/middleware/auth';
 
 export async function PATCH(request, context) {
@@ -17,6 +18,9 @@ export async function PATCH(request, context) {
     const params = await context.params;
     const id = params.id;
     const { status, currentCount } = await request.json();
+
+    // Önce Product modelini yükle
+    await Product.init();
 
     const order = await Order.findById(id);
     if (!order) {
@@ -38,7 +42,11 @@ export async function PATCH(request, context) {
 
     await order.save();
     await order.populate('user', 'username email');
-    await order.populate('items.product', 'name price subCategory category');
+    await order.populate({
+      path: 'items.product',
+      model: Product,
+      select: 'name price subCategory category'
+    });
 
     // Format order for response
     const formattedOrder = {

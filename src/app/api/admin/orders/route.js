@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
+import Product from '@/lib/models/Product';
 import { adminAuth } from '@/lib/middleware/auth';
 
 // Get all orders
@@ -15,9 +16,17 @@ export async function GET(request) {
     }
 
     await dbConnect();
+
+    // Önce Product modelini yükle
+    await Product.init();
+
     const orders = await Order.find()
       .populate('user', 'username email')
-      .populate('items.product', 'name price subCategory category')
+      .populate({
+        path: 'items.product',
+        model: Product,
+        select: 'name price subCategory category'
+      })
       .sort('-createdAt')
       .lean()
       .exec();
@@ -41,6 +50,7 @@ export async function GET(request) {
 
     return NextResponse.json(formattedOrders);
   } catch (error) {
+    console.error('Get orders error:', error);
     return NextResponse.json(
       { message: 'Server error', error: error.message },
       { status: 500 }
@@ -84,10 +94,15 @@ export async function PATCH(request) {
 
     await order.save();
     await order.populate('user', 'username email');
-    await order.populate('items.product', 'name price');
+    await order.populate({
+      path: 'items.product',
+      model: Product,
+      select: 'name price subCategory category'
+    });
 
     return NextResponse.json(order);
   } catch (error) {
+    console.error('Update order error:', error);
     return NextResponse.json(
       { message: 'Server error', error: error.message },
       { status: 500 }
