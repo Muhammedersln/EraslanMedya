@@ -1,64 +1,69 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Settings from '@/lib/models/Settings';
+import { adminAuth } from '@/lib/middleware/auth';
 
-// Get settings
-export async function GET(request) {
+// Ayarları getir
+export async function GET() {
   try {
     await dbConnect();
     
     let settings = await Settings.findOne();
     
+    // Eğer ayarlar yoksa, varsayılan değerlerle oluştur
     if (!settings) {
-      // Varsayılan ayarları oluştur
-      settings = new Settings({
-        taxRate: 0.18,
-        updatedAt: new Date()
+      settings = await Settings.create({
+        taxRate: 0.18
       });
-      await settings.save();
     }
 
-    return NextResponse.json({
-      taxRate: settings.taxRate || 0.18
-    });
+    return NextResponse.json(settings);
   } catch (error) {
-    console.error('Settings error:', error);
+    console.error("Ayarlar getirilirken hata:", error);
     return NextResponse.json(
-      { taxRate: 0.18 },
-      { status: 200 }
+      { error: "Ayarlar getirilirken bir hata oluştu" },
+      { status: 500 }
     );
   }
 }
 
-// Update settings
+// Ayarları güncelle
 export async function POST(request) {
   try {
     const user = await adminAuth(request);
     if (!user) {
       return NextResponse.json(
-        { message: 'Admin access required' },
+        { error: "Bu işlem için yetkiniz yok" },
         { status: 403 }
       );
     }
 
     await dbConnect();
-    const data = await request.json();
 
-    let settings = await Settings.findOne();
-    
-    if (!settings) {
-      settings = new Settings(data);
-    } else {
-      Object.assign(settings, data);
+    const { taxRate } = await request.json();
+
+    // Vergi oranı kontrolü
+    if (typeof taxRate !== "number" || taxRate < 0 || taxRate > 1) {
+      return NextResponse.json(
+        { error: "Geçersiz vergi oranı. 0 ile 1 arasında bir değer girin" },
+        { status: 400 }
+      );
     }
 
-    settings.updatedAt = new Date();
-    await settings.save();
+    let settings = await Settings.findOne();
+
+    if (!settings) {
+      settings = await Settings.create({ taxRate });
+    } else {
+      settings.taxRate = taxRate;
+      await settings.save();
+    }
 
     return NextResponse.json(settings);
   } catch (error) {
+    console.error("Ayarlar güncellenirken hata:", error);
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { error: "Ayarlar güncellenirken bir hata oluştu" },
       { status: 500 }
     );
   }

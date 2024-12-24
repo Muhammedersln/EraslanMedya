@@ -14,7 +14,12 @@ export async function GET(request) {
     }
 
     await dbConnect();
-    const count = await Cart.countDocuments({ user: user.id });
+    
+    // Get all cart items and populate product info
+    const cartItems = await Cart.find({ user: user.id }).populate('product');
+    
+    // Count only items with valid products
+    const count = cartItems.filter(item => item.product).length;
 
     return NextResponse.json({ count });
   } catch (error) {

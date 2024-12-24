@@ -107,34 +107,42 @@ export default function PaymentForm({ orderDetails, onClose }) {
   }, [handleIframeClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="relative w-full max-w-4xl bg-white rounded-lg shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl">
         {error && (
-          <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg">
-            <p>{error}</p>
+          <div className="p-4 mb-4 text-red-700 bg-red-50 rounded-xl mx-6 mt-6 border border-red-100">
+            <p className="text-sm">{error}</p>
           </div>
         )}
         
         {!showIframe ? (
-          <div className="p-6">
-            <h2 className="text-2xl font-semibold mb-4">Ödeme Yap</h2>
-            <div className="mb-4">
-              <p className="text-lg">Toplam Tutar: {orderDetails?.totalAmount?.toFixed(2)} TL</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Güvenli ödeme işleminiz PayTR altyapısı üzerinden gerçekleştirilecektir.
-              </p>
+          <div className="p-8">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Ödeme Yap</h2>
+            <div className="mb-8 space-y-4">
+              <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                <p className="text-2xl font-semibold text-gray-800">{orderDetails?.totalAmount?.toFixed(2)} TL</p>
+                <p className="text-sm text-gray-600 mt-2">Toplam Ödenecek Tutar</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <p className="text-sm text-gray-600 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
+                  Güvenli ödeme işleminiz PayTR altyapısı üzerinden gerçekleştirilecektir.
+                </p>
+              </div>
             </div>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors duration-200"
                 disabled={loading}
               >
                 İptal
               </button>
               <button
                 onClick={handlePayment}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200 shadow-lg shadow-blue-200"
                 disabled={loading}
               >
                 {loading ? (
@@ -153,7 +161,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
           <div className="relative">
             <button
               onClick={handleIframeClose}
-              className="absolute right-4 top-4 z-10 text-gray-500 hover:text-gray-700"
+              className="absolute right-4 top-4 z-10 text-gray-500 hover:text-gray-700 bg-white rounded-full p-2 shadow-lg transition-transform hover:scale-105"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -161,7 +169,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
             </button>
             <iframe
               src={iframeUrl}
-              className="w-full h-[600px] rounded-lg"
+              className="w-full h-[600px] rounded-xl"
               frameBorder="0"
             />
           </div>

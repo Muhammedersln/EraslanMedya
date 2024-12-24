@@ -10,7 +10,8 @@ import {
   RiUser3Line, 
   RiShoppingBag3Line, 
   RiShoppingCartLine,
-  RiLogoutBoxRLine 
+  RiLogoutBoxRLine,
+  RiSettings3Line 
 } from "react-icons/ri";
 
 export default function AdminSidebar() {
@@ -60,6 +61,11 @@ export default function AdminSidebar() {
       path: '/admin/support', 
       label: 'Destek Talepleri', 
       icon: <MdEmail className="w-5 h-5" />
+    },
+    { 
+      path: '/admin/settings', 
+      label: 'Ayarlar', 
+      icon: <RiSettings3Line className="w-5 h-5" /> 
     }
   ];
 

@@ -44,7 +44,7 @@ export async function POST(request) {
       userBasket,
       userIp,
       callbackUrl,
-      testMode: '1',
+      testMode: '0',
       currency: 'TL',
       noInstallment: '1',
       maxInstallment: '1'

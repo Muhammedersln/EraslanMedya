@@ -383,7 +383,7 @@ export default function Cart() {
                       
                       {totalPrice.taxDetails?.map(detail => (
                         <div key={detail.rate} className="flex justify-between text-sm sm:text-base text-gray-500">
-                          <span>KDV ({Math.round(detail.rate)}%)</span>
+                          <span>KDV ({detail.rate.toFixed(1)}%)</span>
                           <span>₺{detail.taxAmount.toFixed(2)}</span>
                         </div>
                       ))}
@@ -561,7 +561,7 @@ export default function Cart() {
                       
                       {totalPrice.taxDetails?.map(detail => (
                         <div key={detail.rate} className="flex justify-between text-base text-gray-600">
-                          <span>KDV ({Math.round(detail.rate)}%)</span>
+                          <span>KDV ({detail.rate.toFixed(1)}%)</span>
                           <span>₺{detail.taxAmount.toFixed(2)}</span>
                         </div>
                       ))}

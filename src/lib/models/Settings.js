@@ -3,15 +3,17 @@ import mongoose from 'mongoose';
 const settingsSchema = new mongoose.Schema({
   taxRate: {
     type: Number,
-    required: [true, 'Tax rate is required'],
-    min: [0, 'Tax rate cannot be negative'],
-    max: [1, 'Tax rate cannot be greater than 1'],
+    required: [true, 'Vergi oranı zorunludur'],
+    min: [0, 'Vergi oranı 0\'dan küçük olamaz'],
+    max: [1, 'Vergi oranı 1\'den büyük olamaz'],
     default: 0.18
   },
   updatedAt: {
     type: Date,
     default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 // Ensure only one settings document exists
