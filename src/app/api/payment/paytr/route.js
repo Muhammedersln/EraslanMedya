@@ -79,12 +79,16 @@ export async function POST(req) {
     if (data.status === 'success') {
       return NextResponse.json({ token: data.token });
     } else {
-      throw new Error(data.reason);
+      console.error('PayTR Error:', data);
+      throw new Error(data.reason || 'PayTR\'den beklenmeyen bir yanıt alındı');
     }
   } catch (error) {
-    console.error('PayTR token error:', error);
+    console.error('PayTR token error:', error.message);
     return NextResponse.json(
-      { error: 'Ödeme başlatılırken bir hata oluştu' },
+      { 
+        error: 'Ödeme başlatılırken bir hata oluştu',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
