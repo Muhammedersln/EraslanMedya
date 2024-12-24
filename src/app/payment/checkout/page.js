@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
@@ -8,8 +8,22 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null);
+  const timeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+
+  // Kalan süreyi formatlama fonksiyonu
+  const formatTimeLeft = (ms) => {
+    if (!ms) return '';
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
+    let isSubscribed = true;
+
     const initPayment = async () => {
       try {
         // Local storage'dan order details'i al
@@ -69,19 +83,62 @@ export default function CheckoutPage() {
           throw new Error('Ödeme başlatılamadı');
         }
 
-        const { token } = await paytrResponse.json();
-        setToken(token);
-        localStorage.removeItem('pendingOrderDetails');
+        const { token: paytrToken } = await paytrResponse.json();
+        
+        if (isSubscribed) {
+          setToken(paytrToken);
+          localStorage.removeItem('pendingOrderDetails');
+          
+          // Sipariş süresi kontrolü
+          const expirationTime = new Date(savedOrder.expiresAt).getTime();
+          const timeoutDuration = expirationTime - Date.now();
+          
+          if (timeoutDuration > 0) {
+            setTimeLeft(timeoutDuration);
+
+            // Geri sayım için interval
+            intervalRef.current = setInterval(() => {
+              setTimeLeft(prev => {
+                if (prev <= 1000) {
+                  clearInterval(intervalRef.current);
+                  return 0;
+                }
+                return prev - 1000;
+              });
+            }, 1000);
+
+            // Süre dolunca yönlendirme
+            timeoutRef.current = setTimeout(() => {
+              toast.error('Ödeme süresi doldu. Lütfen tekrar deneyin.');
+              router.push('/dashboard/cart');
+            }, timeoutDuration);
+          }
+        }
       } catch (error) {
         console.error('Payment initialization error:', error);
-        toast.error('Ödeme başlatılırken bir hata oluştu');
-        router.push('/dashboard/cart');
+        if (isSubscribed) {
+          toast.error('Ödeme başlatılırken bir hata oluştu');
+          router.push('/dashboard/cart');
+        }
       } finally {
-        setLoading(false);
+        if (isSubscribed) {
+          setLoading(false);
+        }
       }
     };
 
     initPayment();
+
+    // Cleanup function
+    return () => {
+      isSubscribed = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [router]);
 
   if (loading) {
@@ -116,6 +173,12 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {timeLeft > 0 && (
+        <div className="fixed top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
+          <p className="text-sm text-gray-600">Kalan Süre:</p>
+          <p className="text-lg font-bold text-primary">{formatTimeLeft(timeLeft)}</p>
+        </div>
+      )}
       <div className="h-screen">
         <iframe
           src={`https://www.paytr.com/odeme/guvenli/${token}`}

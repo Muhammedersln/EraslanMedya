@@ -39,12 +39,28 @@ export async function POST(req) {
       status: 'pending',
       paymentStatus: 'pending',
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      expiresAt: new Date(Date.now() + 2 * 60 * 1000) // 2 dakika
     });
 
     // Siparişi kaydet
     const savedOrder = await order.save();
     
+    // Otomatik iptal için timeout başlat
+    setTimeout(async () => {
+      try {
+        const expiredOrder = await Order.findById(order._id);
+        if (expiredOrder && expiredOrder.status === 'pending' && expiredOrder.paymentStatus === 'pending') {
+          expiredOrder.status = 'cancelled';
+          expiredOrder.paymentStatus = 'expired';
+          await expiredOrder.save();
+          console.log('Süresi dolmuş sipariş iptal edildi:', order._id);
+        }
+      } catch (error) {
+        console.error('Sipariş iptal hatası:', error);
+      }
+    }, 2 * 60 * 1000); // 2 dakika
+
     return NextResponse.json(savedOrder);
   } catch (error) {
     console.error('Create order error:', error);

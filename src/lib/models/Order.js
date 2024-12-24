@@ -55,7 +55,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'failed'],
+    enum: ['pending', 'paid', 'failed', 'expired'],
     default: 'pending'
   },
   paymentDetails: {
@@ -67,6 +67,10 @@ const orderSchema = new mongoose.Schema({
     paytrToken: String,
     paytrResponse: Map
   },
+  expiresAt: {
+    type: Date,
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -77,7 +81,10 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
-// Update timestamps on save
+// Otomatik iptal için index ekle
+orderSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// Güncelleme zamanını otomatik ayarla
 orderSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
