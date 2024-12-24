@@ -117,9 +117,10 @@ export async function POST(request) {
         rawBody
       });
 
-      // Hash doğrulama
-      const hashStr = `${MERCHANT_ID}${merchant_oid}${total_amount}${MERCHANT_SALT}`;
-      const calculatedHash = crypto.createHmac('sha256', MERCHANT_KEY)
+      // Hash doğrulama - PayTR'nin yeni hash hesaplama yöntemi
+      const hashStr = MERCHANT_ID + merchant_oid + total_amount + MERCHANT_SALT;
+      const calculatedHash = crypto
+        .createHmac('sha256', MERCHANT_KEY)
         .update(hashStr)
         .digest('base64');
 
@@ -127,6 +128,7 @@ export async function POST(request) {
         console.error('Hash doğrulama hatası:', {
           received: hash,
           calculated: calculatedHash,
+          hashString: hashStr,
           merchantId: MERCHANT_ID,
           merchantOid: merchant_oid,
           totalAmount: total_amount
