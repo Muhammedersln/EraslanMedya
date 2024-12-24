@@ -1,5 +1,7 @@
 import { verifyPaymentCallback } from '@/lib/paytr';
 import { updateOrderStatus } from '@/lib/orders';
+import { connectToDatabase } from '@/lib/db';
+import Order from '@/lib/models/Order';
 
 export async function POST(request) {
   try {
@@ -29,26 +31,26 @@ export async function POST(request) {
     const result = verifyPaymentCallback(params);
     
     if (result.status === 'success') {
-      // Ödeme başarılı - siparişi güncelle
-      await updateOrderStatus(params.merchant_oid, 'processing', {
+      await connectToDatabase();
+      
+      // Ödeme başarılı - sipariş oluştur
+      const order = new Order({
+        ...result.cartData,
+        status: 'processing',
         paymentId: params.payment_id,
         paymentAmount: params.total_amount,
         paymentType: 'paytr'
       });
       
-      console.log('Payment successful:', {
-        orderId: params.merchant_oid,
+      await order.save();
+      
+      console.log('Payment successful and order created:', {
+        orderId: order._id,
         paymentId: params.payment_id,
         amount: params.total_amount
       });
     } else {
-      // Ödeme başarısız - siparişi iptal et
-      await updateOrderStatus(params.merchant_oid, 'cancelled', {
-        error: params.failed_reason_msg || 'Ödeme başarısız'
-      });
-      
       console.error('Payment failed:', {
-        orderId: params.merchant_oid,
         reason: params.failed_reason_msg
       });
     }

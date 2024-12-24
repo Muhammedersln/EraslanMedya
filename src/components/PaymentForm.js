@@ -8,45 +8,11 @@ export default function PaymentForm({ orderDetails, onClose }) {
   const [error, setError] = useState(null);
   const [showIframe, setShowIframe] = useState(false);
   const [iframeUrl, setIframeUrl] = useState('');
-  const [orderId, setOrderId] = useState(null);
 
   const handlePayment = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Önce siparişi oluştur
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          cartItems: orderDetails.items.map(item => ({
-            product: item.product.id,
-            quantity: item.quantity,
-            productData: item.productData,
-            targetCount: item.targetCount
-          })),
-          status: 'pending'
-        })
-      });
-
-      if (!orderResponse.ok) {
-        const error = await orderResponse.json();
-        throw new Error(error.message || 'Sipariş oluşturulamadı');
-      }
-
-      const order = await orderResponse.json();
-      setOrderId(order._id);
-
-      // Format basket items
-      const userBasket = orderDetails.items.map(item => ({
-        name: item.product.name,
-        price: item.price,
-        quantity: item.quantity
-      }));
 
       // Ödeme işlemini başlat
       const response = await fetch('/api/payment', {
@@ -56,7 +22,6 @@ export default function PaymentForm({ orderDetails, onClose }) {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          orderId: order._id,
           amount: orderDetails.totalAmount,
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
@@ -64,7 +29,17 @@ export default function PaymentForm({ orderDetails, onClose }) {
             : orderDetails.email.split('@')[0],
           userPhone: orderDetails.phone || '05000000000',
           userAddress: orderDetails.address || 'Türkiye',
-          userBasket,
+          userBasket: orderDetails.items.map(item => ({
+            name: item.product.name,
+            price: item.price,
+            quantity: item.quantity
+          })),
+          cartItems: orderDetails.items.map(item => ({
+            product: item.product.id,
+            quantity: item.quantity,
+            productData: item.productData,
+            targetCount: item.targetCount
+          })),
           callbackUrl: `${window.location.origin}/dashboard/orders`
         })
       });
@@ -76,7 +51,6 @@ export default function PaymentForm({ orderDetails, onClose }) {
       }
 
       if (data.status === 'success' && data.token) {
-        // Show PayTR iframe
         setIframeUrl(`https://www.paytr.com/odeme/guvenli/${data.token}`);
         setShowIframe(true);
       } else {
@@ -86,40 +60,12 @@ export default function PaymentForm({ orderDetails, onClose }) {
       console.error('Payment error:', error);
       setError(error.message || 'Ödeme işlemi başlatılırken bir hata oluştu');
       toast.error(error.message || 'Ödeme işlemi başlatılırken bir hata oluştu');
-      
-      // Hata durumunda siparişi iptal et
-      if (orderId) {
-        try {
-          await fetch(`/api/orders/${orderId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-        } catch (deleteError) {
-          console.error('Sipariş iptal hatası:', deleteError);
-        }
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = async () => {
-    // Eğer sipariş oluşturulduysa ve ödeme tamamlanmadıysa siparişi iptal et
-    if (orderId) {
-      try {
-        await fetch(`/api/orders/${orderId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-      } catch (error) {
-        console.error('Sipariş iptal hatası:', error);
-      }
-    }
-    setOrderId(null);
+  const handleClose = () => {
     onClose();
   };
 
