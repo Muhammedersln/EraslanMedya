@@ -97,13 +97,9 @@ export async function POST(request) {
     } 
     // Eğer application/x-www-form-urlencoded ise, webhook bildirimidir
     else if (contentType && contentType.includes('application/x-www-form-urlencoded')) {
-      // Body'yi raw text olarak al
       const rawBody = await request.text();
-      
-      // URL-encoded formatındaki veriyi parse et
       const formData = new URLSearchParams(rawBody);
       
-      // Gerekli alanları al
       const merchant_oid = formData.get('merchant_oid');
       const status = formData.get('status');
       const total_amount = formData.get('total_amount');
@@ -117,59 +113,62 @@ export async function POST(request) {
         rawBody
       });
 
-      // Hash doğrulama - PayTR'nin yeni hash hesaplama yöntemi
-      const hashStr = MERCHANT_ID + merchant_oid + total_amount + MERCHANT_SALT;
+      // PayTR webhook hash doğrulama
+      const hashStr = formData.get('merchant_oid') + MERCHANT_SALT + status + total_amount;
       const calculatedHash = crypto
         .createHmac('sha256', MERCHANT_KEY)
         .update(hashStr)
         .digest('base64');
 
+      console.log('Hash Verification:', {
+        received: hash,
+        calculated: calculatedHash,
+        hashString: hashStr
+      });
+
       if (hash !== calculatedHash) {
         console.error('Hash doğrulama hatası:', {
           received: hash,
           calculated: calculatedHash,
-          hashString: hashStr,
-          merchantId: MERCHANT_ID,
-          merchantOid: merchant_oid,
-          totalAmount: total_amount
+          hashString: hashStr
         });
-        return new NextResponse('FAIL', { 
-          status: 400,
+        return new Response('OK', {
+          status: 200,
           headers: { 'Content-Type': 'text/plain' }
         });
       }
 
-      // Sipariş durumunu güncelle
-      const orderStatus = status === 'success' ? 'processing' : 'cancelled';
-      const paymentStatus = status === 'success' ? 'paid' : 'failed';
+      try {
+        // Siparişi bul ve güncelle
+        const order = await Order.findById(merchant_oid);
+        if (!order) {
+          console.error('Sipariş bulunamadı:', merchant_oid);
+          return new Response('OK', {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' }
+          });
+        }
 
-      // Siparişi bul ve güncelle
-      const order = await Order.findById(merchant_oid);
-      if (!order) {
-        console.error('Sipariş bulunamadı:', merchant_oid);
-        return new NextResponse('FAIL', { 
-          status: 404,
-          headers: { 'Content-Type': 'text/plain' }
-        });
+        // Sipariş durumunu güncelle
+        order.status = status === 'success' ? 'processing' : 'cancelled';
+        order.paymentStatus = status === 'success' ? 'paid' : 'failed';
+        order.paymentDetails = {
+          ...order.paymentDetails,
+          status: order.paymentStatus,
+          amount: total_amount / 100,
+          paidAt: status === 'success' ? new Date() : null,
+          paymentType: 'paytr',
+          paytrMerchantOid: merchant_oid,
+          paytrResponse: Object.fromEntries(formData)
+        };
+
+        await order.save();
+      } catch (dbError) {
+        console.error('Veritabanı güncelleme hatası:', dbError);
       }
 
-      // Sipariş durumunu güncelle
-      order.status = orderStatus;
-      order.paymentStatus = paymentStatus;
-      order.paymentDetails = {
-        ...order.paymentDetails,
-        status: paymentStatus,
-        amount: total_amount / 100,
-        paidAt: status === 'success' ? new Date() : null,
-        paymentType: 'paytr',
-        paytrMerchantOid: merchant_oid,
-        paytrResponse: Object.fromEntries(formData)
-      };
-
-      await order.save();
-      
-      // PayTR'ye başarılı yanıt dön
-      return new NextResponse('OK', {
+      // Her durumda OK yanıtı dön
+      return new Response('OK', {
         status: 200,
         headers: { 'Content-Type': 'text/plain' }
       });
