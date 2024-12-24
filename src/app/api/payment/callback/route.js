@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyPaymentCallback } from '@/lib/paytr';
 import { updateOrderStatus } from '@/lib/orders';
-import { Order } from '@/models/order';
+import Order from '@/lib/models/Order';
 
 export async function POST(request) {
   try {
