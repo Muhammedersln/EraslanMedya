@@ -33,9 +33,16 @@ export default function PaymentForm({ orderDetails, onClose }) {
       // Format basket items
       const userBasket = orderDetails.items.map(item => ({
         name: item.product.name,
-        price: Math.round(parseFloat(item.price) * 100),
-        quantity: item.quantity
+        price: Math.round(parseFloat(parseFloat(item.price).toFixed(2)) * 100),
+        quantity: parseInt(item.quantity)
       }));
+
+      // Log the basket for debugging
+      console.log('UserBasket before sending to PayTR:', userBasket);
+
+      // Calculate total amount in kuruş
+      const amountInKurus = Math.round(parseFloat(parseFloat(orderDetails.totalAmount).toFixed(2)) * 100);
+      console.log('Amount in kuruş before sending to PayTR:', amountInKurus);
 
       // Ödeme işlemini başlat
       const response = await fetch('/api/payment', {
@@ -46,7 +53,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
         },
         body: JSON.stringify({
           orderId: orderDetails.id,
-          amount: Math.round(parseFloat(orderDetails.totalAmount) * 100),
+          amount: amountInKurus,
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
             ? `${orderDetails.firstName} ${orderDetails.lastName}`
@@ -80,7 +87,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
           callbackUrl: `${window.location.origin}/dashboard/orders`
         });
         console.error('Payment API error response:', data);
-        throw new Error(data.error || 'Ödeme başlatılamadı');
+        throw new Error(data.error || 'Ödeme başlatılamad��');
       }
 
       if (data.status === 'success' && data.token) {

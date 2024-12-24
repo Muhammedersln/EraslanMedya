@@ -25,21 +25,26 @@ export default function Cart() {
   const calculateTotal = useCallback((items) => {
     const validItems = items.filter(item => item.product);
     
-    const subtotal = validItems.reduce((sum, item) => 
-      sum + (parseFloat(item.product.price) * item.quantity), 0);
+    const subtotal = validItems.reduce((sum, item) => {
+      const price = parseFloat(item.product.price);
+      const quantity = parseInt(item.quantity);
+      return sum + (price * quantity);
+    }, 0);
+    
+    const roundedSubtotal = parseFloat(subtotal.toFixed(2));
     
     const taxRate = settings.taxRate;
-    const taxAmount = parseFloat((subtotal * taxRate).toFixed(2));
+    const taxAmount = parseFloat((roundedSubtotal * taxRate).toFixed(2));
     
-    const total = parseFloat((subtotal + taxAmount).toFixed(2));
+    const total = parseFloat((roundedSubtotal + taxAmount).toFixed(2));
 
     setTotalPrice({
-      subtotal: parseFloat(subtotal.toFixed(2)),
+      subtotal: roundedSubtotal,
       tax: taxAmount,
       total: total,
       taxDetails: [{
         rate: parseFloat((taxRate * 100).toFixed(1)),
-        amount: subtotal,
+        amount: roundedSubtotal,
         taxAmount: taxAmount
       }]
     });
@@ -184,20 +189,22 @@ export default function Cart() {
   };
 
   const handleCheckout = () => {
+    const formattedItems = cartItems.map(item => ({
+      product: {
+        id: item.product._id,
+        name: item.product.name
+      },
+      price: parseFloat(parseFloat(item.product.price).toFixed(2)),
+      quantity: parseInt(item.quantity),
+      productData: item.productData,
+      targetCount: parseInt(item.quantity)
+    }));
+
     const orderDetails = {
       id: `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`,
       totalAmount: parseFloat(totalPrice.total.toFixed(2)),
       email: user.email,
-      items: cartItems.map(item => ({
-        product: {
-          id: item.product._id,
-          name: item.product.name
-        },
-        price: parseFloat(item.product.price),
-        quantity: item.quantity,
-        productData: item.productData,
-        targetCount: item.quantity
-      }))
+      items: formattedItems
     };
     
     console.log('Created orderDetails:', orderDetails);
