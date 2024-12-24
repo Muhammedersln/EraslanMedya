@@ -81,9 +81,6 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
-// Otomatik iptal için index ekle
-orderSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-
 // Güncelleme zamanını otomatik ayarla
 orderSchema.pre('save', function(next) {
   this.updatedAt = new Date();
