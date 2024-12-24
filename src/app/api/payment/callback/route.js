@@ -41,30 +41,56 @@ export async function POST(request) {
       // Ödeme başarılıysa siparişi onayla
       order.status = 'confirmed';
       order.paymentStatus = 'paid';
+      order.paymentDetails = {
+        ...order.paymentDetails,
+        status: 'paid',
+        completedAt: new Date()
+      };
       await order.save();
 
       // Sepeti temizle
       try {
-        const cartResult = await Cart.deleteMany({ user: order.user });
-        console.log('Cart cleared after successful payment:', {
-          orderId: merchant_oid,
-          userId: order.user,
-          deletedCount: cartResult.deletedCount
-        });
+        await Cart.deleteMany({ user: order.user });
       } catch (error) {
         console.error('Error clearing cart:', error);
+        // Sepet temizleme hatası durumunda siparişe not ekle
+        order.notes = [...(order.notes || []), {
+          type: 'error',
+          message: 'Sepet temizlenirken hata oluştu',
+          timestamp: new Date()
+        }];
+        await order.save();
       }
 
-      return NextResponse.json({ status: 'success' });
+      return NextResponse.json({ 
+        status: 'success',
+        message: 'Ödeme başarıyla tamamlandı'
+      });
     } else {
-      // Ödeme başarısızsa siparişi iptal et ve sil
-      console.log('Payment failed, deleting order:', merchant_oid);
-      await Order.findByIdAndDelete(merchant_oid);
+      // Ödeme başarısızsa siparişi iptal et
+      order.status = 'cancelled';
+      order.paymentStatus = 'failed';
+      order.paymentDetails = {
+        ...order.paymentDetails,
+        status: 'failed',
+        failedAt: new Date(),
+        failureReason: formData.get('failed_reason_code') || 'Ödeme başarısız'
+      };
+      await order.save();
       
-      return NextResponse.json({ status: 'error', message: 'Payment failed' });
+      return NextResponse.json({ 
+        status: 'error', 
+        message: 'Ödeme başarısız oldu'
+      });
     }
   } catch (error) {
     console.error('Payment callback error:', error);
-    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      status: 'error', 
+      message: 'Ödeme işlemi sırasında bir hata oluştu',
+      error: error.message 
+    }, { 
+      status: 500 
+    });
   }
 } 

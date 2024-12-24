@@ -30,11 +30,9 @@ export async function GET(request, { params }) {
     }
 
     if (order.status === 'processing' && order.paymentDetails?.status === 'paid') {
-      // Sepeti temizle
-      await Cart.deleteMany({ user: user.id });
-
       return NextResponse.json({
         status: 'success',
+        message: 'Ödeme başarıyla tamamlandı',
         order: {
           id: order._id,
           status: order.status,
@@ -43,8 +41,21 @@ export async function GET(request, { params }) {
       });
     }
 
+    if (order.status === 'cancelled' || order.paymentDetails?.status === 'failed') {
+      return NextResponse.json({
+        status: 'failed',
+        message: 'Ödeme başarısız oldu',
+        order: {
+          id: order._id,
+          status: order.status,
+          paymentStatus: order.paymentDetails?.status
+        }
+      });
+    }
+
     return NextResponse.json({
       status: 'pending',
+      message: 'Ödeme işlemi devam ediyor',
       order: {
         id: order._id,
         status: order.status,

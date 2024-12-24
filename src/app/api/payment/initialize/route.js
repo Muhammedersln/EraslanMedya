@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/middleware/auth';
 import Order from '@/lib/models/Order';
 import dbConnect from '@/lib/db';
-import crypto from 'crypto';
+import { createPaymentToken } from '@/lib/paytr';
 
 export async function POST(request) {
   try {
@@ -25,113 +25,65 @@ export async function POST(request) {
     await dbConnect();
 
     // Geçici sipariş oluştur (pending status ile)
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      {
-        user: user.id,
-        items: cartItems,
-        status: 'pending', // Ödeme başarılı olana kadar pending
-        totalAmount: amount / 100, // Kuruş to TL
-        paymentStatus: 'pending',
-        shippingAddress: userAddress,
-        email: email,
-        phone: userPhone
-      },
-      { new: true, upsert: true }
-    );
-
-    // PayTR için gerekli değişkenler
-    const merchant_id = process.env.PAYTR_MERCHANT_ID;
-    const merchant_key = process.env.PAYTR_MERCHANT_KEY;
-    const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
-    const merchant_ok_url = "https://www.eraslanmedya.com/dashboard/orders/success";
-    const merchant_fail_url = "https://www.eraslanmedya.com/dashboard/orders/fail";
-    const callback_url = "https://www.eraslanmedya.com/api/payment/callback";
-
-    console.log('PayTR URLs:', {
-      merchant_ok_url,
-      merchant_fail_url,
-      callback_url
-    });
-
-    const timeout_limit = "30";
-    const currency = "TL";
-    const test_mode = "1";
-    const debug_on = "1";
-    const lang = "tr";
-
-    // Benzersiz sipariş numarası
-    const merchant_oid = order._id.toString();
-
-    // User IP
-    const user_ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
-
-    // Hash string
-    const hashStr = `${merchant_id}${user_ip}${merchant_oid}${email}${amount}${userBasket}${test_mode}`;
-    const paytr_token = crypto.createHmac('sha256', merchant_key)
-      .update(hashStr + merchant_salt)
-      .digest('base64');
-
-    const params = {
-      merchant_id,
-      user_ip,
-      merchant_oid,
-      email,
-      payment_amount: amount,
-      paytr_token,
-      user_basket: userBasket,
-      merchant_ok_url,
-      merchant_fail_url,
-      callback_url,
-      user_name: userName,
-      user_phone: userPhone,
-      user_address: userAddress,
-      timeout_limit,
-      debug_on,
-      test_mode,
-      currency,
-      lang,
-      no_installment: "0",
-      max_installment: "0"
-    };
-
-    // PayTR token al
-    console.log('PayTR parameters:', {
-      merchant_id,
-      merchant_oid,
-      email,
-      payment_amount: amount,
-      user_basket: userBasket,
-      urls: {
-        merchant_ok_url,
-        merchant_fail_url,
-        callback_url
+    const order = new Order({
+      _id: orderId,
+      user: user.id,
+      items: cartItems.map(item => ({
+        product: item.product,
+        quantity: item.quantity,
+        price: item.price,
+        taxRate: item.taxRate || 0.18,
+        productData: item.productData,
+        targetCount: item.targetCount,
+        currentCount: 0
+      })),
+      status: 'pending',
+      totalAmount: amount / 100,
+      paymentStatus: 'pending',
+      paymentDetails: {
+        status: 'pending',
+        amount: amount / 100
       }
     });
 
-    const paytrResponse = await fetch('https://www.paytr.com/odeme/api/get-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams(params)
+    await order.save();
+
+    // Get user IP
+    const userIp = request.headers.get('x-forwarded-for') || 
+                  request.headers.get('x-real-ip') || 
+                  request.headers.get('x-client-ip') ||
+                  '127.0.0.1';
+
+    // Create payment token using the library function
+    const paymentData = await createPaymentToken({
+      orderId: orderId,
+      amount,
+      email,
+      userBasket,
+      userIp,
+      currency: 'TL',
+      testMode: '1',
+      noInstallment: '1',
+      maxInstallment: '1',
+      callbackUrl: "https://www.eraslanmedya.com/api/payment/callback",
+      userName: userName || email.split('@')[0],
+      userPhone: userPhone || '05000000000',
+      userAddress: userAddress || 'Türkiye'
     });
 
-    const paytrData = await paytrResponse.json();
-
-    if (paytrData.status === 'success') {
+    if (paymentData.status === 'success') {
       return NextResponse.json({
         status: 'success',
-        token: paytrData.token,
-        orderId: order._id
+        token: paymentData.token,
+        orderId: orderId
       });
     } else {
       // PayTR'den token alınamazsa siparişi sil
-      await Order.findByIdAndDelete(order._id);
+      await Order.findByIdAndDelete(orderId);
       
       return NextResponse.json({
         status: 'error',
-        error: paytrData.reason || 'Token alınamadı'
+        error: paymentData.error || 'Token alınamadı'
       }, { status: 400 });
     }
   } catch (error) {

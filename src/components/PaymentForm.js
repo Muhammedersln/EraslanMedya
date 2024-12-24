@@ -122,18 +122,6 @@ export default function PaymentForm({ orderDetails, onClose }) {
         
         try {
           if (status === 'success') {
-            // Sepeti temizle
-            const clearCartResponse = await fetch('/api/cart/clear', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            });
-
-            if (!clearCartResponse.ok) {
-              console.error('Error clearing cart:', await clearCartResponse.text());
-            }
-
             // Ödeme durumunu kontrol et
             const response = await fetch(`/api/payment/check/${orderDetails.id}`, {
               headers: {
@@ -144,22 +132,42 @@ export default function PaymentForm({ orderDetails, onClose }) {
             const data = await response.json();
             
             if (data.status === 'success') {
-              toast.success('Ödeme başarıyla tamamlandı');
+              // Sepeti temizle
+              const clearCartResponse = await fetch('/api/cart/clear', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+              });
+
+              if (!clearCartResponse.ok) {
+                console.error('Error clearing cart:', await clearCartResponse.text());
+                toast.error('Sepet temizlenirken bir hata oluştu');
+                return;
+              }
+
+              toast.success(data.message || 'Ödeme başarıyla tamamlandı');
               // Sayfayı yenilemeden önce kısa bir bekleme ekleyelim
               setTimeout(() => {
                 window.location.href = '/dashboard/orders';
-              }, 1000);
+              }, 1500);
+            } else if (data.status === 'failed') {
+              throw new Error(data.message || 'Ödeme başarısız oldu');
             } else {
               throw new Error('Ödeme durumu doğrulanamadı');
             }
           } else if (status === 'failed') {
             // Başarısız ödeme durumunda siparişi iptal et
-            await fetch(`/api/payment/cancel/${orderDetails.id}`, {
+            const cancelResponse = await fetch(`/api/payment/cancel/${orderDetails.id}`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
               }
             });
+
+            if (!cancelResponse.ok) {
+              console.error('Error cancelling order:', await cancelResponse.text());
+            }
 
             setError('Ödeme işlemi başarısız oldu');
             toast.error('Ödeme işlemi başarısız oldu');
@@ -167,8 +175,8 @@ export default function PaymentForm({ orderDetails, onClose }) {
           }
         } catch (error) {
           console.error('Payment status check error:', error);
-          setError('Ödeme durumu kontrol edilirken bir hata oluştu');
-          toast.error('Ödeme durumu kontrol edilirken bir hata oluştu');
+          setError(error.message || 'Ödeme durumu kontrol edilirken bir hata oluştu');
+          toast.error(error.message || 'Ödeme durumu kontrol edilirken bir hata oluştu');
           handleIframeClose();
         }
       }
