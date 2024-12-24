@@ -101,14 +101,33 @@ export default function PaymentForm({ orderDetails, onClose }) {
   const handleIframeClose = useCallback(async () => {
     if (orderDetails?.id) {
       try {
-        await fetch(`/api/payment/cancel/${orderDetails.id}`, {
+        // Önce sipariş durumunu cancelled olarak güncelle
+        const updateResponse = await fetch(`/api/orders?id=${orderDetails.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ status: 'cancelled' })
+        });
+
+        if (!updateResponse.ok) {
+          console.error('Error updating order status:', await updateResponse.text());
+        }
+
+        // Sonra cancel API'sini çağır
+        const cancelResponse = await fetch(`/api/payment/cancel/${orderDetails.id}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
+
+        if (!cancelResponse.ok) {
+          console.error('Error canceling order:', await cancelResponse.text());
+        }
       } catch (error) {
-        console.error('Error canceling order:', error);
+        console.error('Error during order cancellation:', error);
       }
     }
     setShowIframe(false);
@@ -195,15 +214,34 @@ export default function PaymentForm({ orderDetails, onClose }) {
             }
           } else if (status === 'failed') {
             // Başarısız ödeme durumunda siparişi iptal et
-            const cancelResponse = await fetch(`/api/payment/cancel/${orderDetails.id}`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            });
+            try {
+              // Önce sipariş durumunu cancelled olarak güncelle
+              const updateResponse = await fetch(`/api/orders?id=${orderDetails.id}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ status: 'cancelled' })
+              });
 
-            if (!cancelResponse.ok) {
-              console.error('Error cancelling order:', await cancelResponse.text());
+              if (!updateResponse.ok) {
+                console.error('Error updating order status:', await updateResponse.text());
+              }
+
+              // Sonra cancel API'sini çağır
+              const cancelResponse = await fetch(`/api/payment/cancel/${orderDetails.id}`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+              });
+
+              if (!cancelResponse.ok) {
+                console.error('Error cancelling order:', await cancelResponse.text());
+              }
+            } catch (error) {
+              console.error('Error during order cancellation:', error);
             }
 
             setError('Ödeme işlemi başarısız oldu');
