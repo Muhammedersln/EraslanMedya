@@ -133,40 +133,60 @@ export default function PaymentForm({ orderDetails, onClose }) {
             const data = await response.json();
             
             if (data.status === 'success') {
-              // Sepeti temizle
+              // Sipariş durumunu güncelle
               try {
-                const clearCartResponse = await fetch('/api/cart/clear', {
-                  method: 'POST',
+                const updateResponse = await fetch(`/api/orders?id=${orderDetails.id}`, {
+                  method: 'PATCH',
                   headers: {
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
+                  },
+                  body: JSON.stringify({ status: 'processing' })
                 });
 
-                const clearCartData = await clearCartResponse.json();
-
-                if (!clearCartResponse.ok || !clearCartData.success) {
-                  console.error('Error clearing cart:', clearCartData);
-                  toast.error('Sepet temizlenirken bir hata oluştu');
-                  return;
+                if (!updateResponse.ok) {
+                  console.error('Error updating order status:', await updateResponse.text());
+                  throw new Error('Sipariş durumu güncellenirken bir hata oluştu');
                 }
 
-                // Sepet başarıyla temizlendiyse
-                if (clearCartData.deletedCount > 0) {
-                  // Sepet güncellendiğinde event tetikle
-                  window.dispatchEvent(new Event('cartUpdated'));
-                  
-                  toast.success(data.message || 'Ödeme başarıyla tamamlandı');
-                  // Sayfayı yenilemeden önce kısa bir bekleme ekleyelim
-                  setTimeout(() => {
-                    window.location.href = '/dashboard/orders';
-                  }, 1500);
-                } else {
-                  console.error('Cart items not deleted:', clearCartData);
+                // Sepeti temizle
+                try {
+                  const clearCartResponse = await fetch('/api/cart/clear', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                  });
+
+                  const clearCartData = await clearCartResponse.json();
+
+                  if (!clearCartResponse.ok || !clearCartData.success) {
+                    console.error('Error clearing cart:', clearCartData);
+                    toast.error('Sepet temizlenirken bir hata oluştu');
+                    return;
+                  }
+
+                  // Sepet başarıyla temizlendiyse
+                  if (clearCartData.deletedCount > 0) {
+                    // Sepet güncellendiğinde event tetikle
+                    window.dispatchEvent(new Event('cartUpdated'));
+                    
+                    toast.success(data.message || 'Ödeme başarıyla tamamlandı');
+                    // Sayfayı yenilemeden önce kısa bir bekleme ekleyelim
+                    setTimeout(() => {
+                      window.location.href = '/dashboard/orders';
+                    }, 1500);
+                  } else {
+                    console.error('Cart items not deleted:', clearCartData);
+                    toast.error('Sepet temizlenirken bir hata oluştu');
+                  }
+                } catch (error) {
+                  console.error('Error clearing cart:', error);
                   toast.error('Sepet temizlenirken bir hata oluştu');
                 }
               } catch (error) {
-                console.error('Error clearing cart:', error);
-                toast.error('Sepet temizlenirken bir hata oluştu');
+                console.error('Error updating order status:', error);
+                toast.error('Sipariş durumu güncellenirken bir hata oluştu');
               }
             } else if (data.status === 'failed') {
               throw new Error(data.message || 'Ödeme başarısız oldu');
