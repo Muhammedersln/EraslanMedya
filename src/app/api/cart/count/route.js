@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import Cart from '@/lib/models/Cart';
 import { auth } from '@/lib/middleware/auth';
+import Cart from '@/lib/models/Cart';
+import dbConnect from '@/lib/db';
 
 export async function GET(request) {
   try {
@@ -14,17 +14,14 @@ export async function GET(request) {
     }
 
     await dbConnect();
-    
-    // Get all cart items and populate product info
-    const cartItems = await Cart.find({ user: user.id }).populate('product');
-    
-    // Count only items with valid products
-    const count = cartItems.filter(item => item.product).length;
+
+    const count = await Cart.countDocuments({ user: user.id });
 
     return NextResponse.json({ count });
   } catch (error) {
+    console.error('Error getting cart count:', error);
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { error: error.message },
       { status: 500 }
     );
   }
