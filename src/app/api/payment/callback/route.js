@@ -1,7 +1,6 @@
 import { verifyPaymentCallback } from '@/lib/paytr';
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/lib/models/Order';
-import Cart from '@/lib/models/Cart';
 
 export async function POST(request) {
   try {
@@ -32,55 +31,47 @@ export async function POST(request) {
     
     const result = verifyPaymentCallback(params);
     
-    if (result.status === 'success') {
-      try {
-        // Sipariş ID'sini kullanarak geçici siparişi bul
-        const tempOrder = await Order.findById(params.merchant_oid);
-        
-        if (!tempOrder) {
-          console.error('Order not found:', params.merchant_oid);
-          return new Response('OK');
-        }
+    try {
+      // Siparişi bul
+      const order = await Order.findById(params.merchant_oid);
+      
+      if (!order) {
+        console.error('Order not found:', params.merchant_oid);
+        return new Response('OK');
+      }
 
+      if (result.status === 'success') {
         // Siparişi güncelle
-        tempOrder.status = 'processing';
-        tempOrder.paymentDetails = {
+        order.status = 'processing';
+        order.paymentDetails = {
           status: 'paid',
           amount: result.amount,
           paidAt: new Date(),
           paymentId: params.payment_id,
           paymentType: 'paytr'
         };
-
-        await tempOrder.save();
-        
-        // Sepeti temizle
-        console.log('Clearing cart for user:', tempOrder.user);
-        const deleteResult = await Cart.deleteMany({ user: tempOrder.user });
-        console.log('Cart clear result:', deleteResult);
-        
-        console.log('Payment successful and order updated:', {
-          orderId: tempOrder._id,
-          userId: tempOrder.user,
+      } else {
+        // Başarısız ödeme
+        order.status = 'cancelled';
+        order.paymentDetails = {
+          status: 'failed',
+          amount: result.amount,
+          paidAt: new Date(),
           paymentId: params.payment_id,
-          amount: params.total_amount
-        });
-      } catch (error) {
-        console.error('Error updating order or clearing cart:', error);
-      }
-    } else {
-      try {
-        // Başarısız ödeme durumunda siparişi sil
-        await Order.findByIdAndDelete(params.merchant_oid);
-        console.log('Failed payment order deleted:', params.merchant_oid);
-      } catch (error) {
-        console.error('Error deleting failed order:', error);
+          paymentType: 'paytr',
+          failReason: params.failed_reason_msg
+        };
       }
 
-      console.error('Payment failed:', {
-        orderId: params.merchant_oid,
-        reason: params.failed_reason_msg
+      await order.save();
+      
+      console.log('Order updated:', {
+        orderId: order._id,
+        status: order.status,
+        paymentStatus: order.paymentDetails.status
       });
+    } catch (error) {
+      console.error('Error updating order:', error);
     }
 
     // PayTR her zaman "OK" yanıtı bekler

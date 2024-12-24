@@ -45,7 +45,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       console.log('Amount in kuruş before sending to PayTR:', amountInKurus);
 
       // Ödeme işlemini başlat
-      const response = await fetch('/api/payment', {
+      const response = await fetch('/api/payment/initialize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,7 +61,6 @@ export default function PaymentForm({ orderDetails, onClose }) {
           userPhone: orderDetails.phone || '05000000000',
           userAddress: orderDetails.address || 'Türkiye',
           userBasket,
-          callbackUrl: `${window.location.origin}/dashboard/orders`,
           cartItems: orderDetails.items.map(item => ({
             product: item.product.id,
             quantity: item.quantity,
@@ -74,19 +73,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       const data = await response.json();
 
       if (!response.ok) {
-        console.log('Payment request details:', {
-          orderId: orderDetails.id,
-          amount: Math.round(parseFloat(orderDetails.totalAmount) * 100),
-          email: orderDetails.email,
-          userName: orderDetails.firstName && orderDetails.lastName 
-            ? `${orderDetails.firstName} ${orderDetails.lastName}`
-            : orderDetails.email.split('@')[0],
-          userPhone: orderDetails.phone || '05000000000',
-          userAddress: orderDetails.address || 'Türkiye',
-          userBasket,
-          callbackUrl: `${window.location.origin}/dashboard/orders`
-        });
-        console.error('Payment API error response:', data);
+        console.error('Payment initialization error:', data);
         throw new Error(data.error || 'Ödeme başlatılamadı');
       }
 
@@ -117,39 +104,36 @@ export default function PaymentForm({ orderDetails, onClose }) {
 
   // Listen for payment result message
   useEffect(() => {
-    const handleMessage = (event) => {
+    const handleMessage = async (event) => {
       if (event.origin === 'https://www.paytr.com') {
         const { status } = event.data;
-        if (status === 'success') {
-          // Sepeti temizle
-          fetch('/api/cart/clear', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
+        
+        try {
+          if (status === 'success') {
+            // Ödeme durumunu kontrol et
+            const response = await fetch(`/api/payment/check/${orderDetails.id}`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+              toast.success('Ödeme başarıyla tamamlandı');
+              window.location.href = '/dashboard/orders';
+            } else {
+              throw new Error('Ödeme durumu doğrulanamadı');
             }
-          }).then(() => {
-            toast.success('Ödeme başarıyla tamamlandı');
-            window.location.href = '/dashboard/orders';
-          }).catch(error => {
-            console.error('Error clearing cart:', error);
-            toast.success('Ödeme başarıyla tamamlandı');
-            window.location.href = '/dashboard/orders';
-          });
-        } else if (status === 'failed') {
-          // Başarısız ödeme durumunda siparişi sil
-          fetch(`/api/payment/cancel/${orderDetails.id}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          }).catch(error => {
-            console.error('Error canceling order:', error);
-          });
-
-          setError('Ödeme işlemi başarısız oldu');
-          toast.error('Ödeme işlemi başarısız oldu');
+          } else if (status === 'failed') {
+            setError('Ödeme işlemi başarısız oldu');
+            toast.error('Ödeme işlemi başarısız oldu');
+            handleIframeClose();
+          }
+        } catch (error) {
+          console.error('Payment status check error:', error);
+          setError('Ödeme durumu kontrol edilirken bir hata oluştu');
+          toast.error('Ödeme durumu kontrol edilirken bir hata oluştu');
           handleIframeClose();
         }
       }
