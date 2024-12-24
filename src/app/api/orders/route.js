@@ -49,8 +49,16 @@ export async function POST(req) {
     // Otomatik iptal için timeout başlat
     setTimeout(async () => {
       try {
-        const expiredOrder = await Order.findById(order._id);
-        if (expiredOrder && expiredOrder.status === 'pending' && expiredOrder.paymentStatus === 'pending') {
+        // Sadece belirli siparişi bul ve durumunu kontrol et
+        const expiredOrder = await Order.findOne({
+          _id: order._id,
+          status: 'pending',
+          paymentStatus: 'pending',
+          expiresAt: { $lte: new Date() }
+        });
+
+        // Eğer sipariş bulunduysa ve hala pending durumundaysa iptal et
+        if (expiredOrder) {
           expiredOrder.status = 'cancelled';
           expiredOrder.paymentStatus = 'expired';
           await expiredOrder.save();
@@ -82,9 +90,22 @@ export async function GET(req) {
 
     const orders = await Order.find({ user: user.id })
       .sort({ createdAt: -1 })
-      .populate('items.product');
+      .populate({
+        path: 'items.product',
+        model: 'Product',
+        select: 'name price subCategory'
+      });
 
-    return NextResponse.json(orders);
+    // Null veya undefined product referanslarını filtrele
+    const validOrders = orders.map(order => {
+      const validItems = order.items.filter(item => item.product);
+      return {
+        ...order.toObject(),
+        items: validItems
+      };
+    });
+
+    return NextResponse.json(validOrders);
   } catch (error) {
     console.error('Get orders error:', error);
     return NextResponse.json(
