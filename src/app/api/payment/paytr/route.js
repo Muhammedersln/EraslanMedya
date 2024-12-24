@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import db from '@/lib/db';
 import Order from '@/lib/models/Order';
-import dbConnect from '@/lib/dbConnect';
 
 const MERCHANT_ID = process.env.PAYTR_MERCHANT_ID;
 const MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY;
@@ -10,6 +10,7 @@ const TEST_MODE = process.env.NODE_ENV === 'development' ? '1' : '0';
 
 export async function POST(req) {
   try {
+    await db.connect();
     const { orderDetails, userInfo } = await req.json();
 
     // PayTR için gerekli parametreler
