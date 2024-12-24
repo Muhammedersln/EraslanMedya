@@ -87,52 +87,80 @@ export default function PayTRPayment({ orderDetails, onClose }) {
 
   if (!showPayment) {
     return (
-      <div className="flex flex-col p-6">
+      <div className="flex flex-col">
         <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Sipariş Özeti</h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {orderDetails.items.map((item, index) => (
-              <div key={index} className="flex justify-between text-sm">
-                <span className="text-gray-600">{item.product.name} x {item.quantity}</span>
-                <span className="font-medium">₺{(item.price * item.quantity).toFixed(2)}</span>
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">{item.product.name}</h4>
+                  <p className="text-sm text-gray-500">Miktar: {item.quantity}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-gray-900">₺{(item.price * item.quantity).toFixed(2)}</p>
+                </div>
               </div>
             ))}
-            <div className="pt-3 border-t border-gray-200">
-              <div className="flex justify-between font-medium text-lg">
-                <span>Toplam Tutar</span>
-                <span className="text-primary">₺{orderDetails.totalAmount.toFixed(2)}</span>
+
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="flex justify-between text-sm text-gray-500 mb-2">
+                <span>Ara Toplam</span>
+                <span>₺{(orderDetails.totalAmount / 1.18).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-500 mb-4">
+                <span>KDV (%18)</span>
+                <span>₺{(orderDetails.totalAmount - (orderDetails.totalAmount / 1.18)).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-semibold text-gray-900">
+                <span>Toplam</span>
+                <span>₺{orderDetails.totalAmount.toFixed(2)}</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <button
-          onClick={handleStartPayment}
-          className="w-full bg-primary text-white py-3 rounded-xl hover:bg-primary-dark transition-colors font-medium"
-        >
-          Ödemeye Geç
-        </button>
+
+        <div className="space-y-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-800">
+              Ödeme işleminiz güvenli bir şekilde PayTR altyapısı üzerinden gerçekleştirilecektir.
+            </p>
+          </div>
+
+          <button
+            onClick={handleStartPayment}
+            className="w-full bg-primary text-white py-4 rounded-xl hover:bg-primary-dark transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            <span>Ödemeye Geç</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
-      <div className="aspect-[4/3] w-full">
-        <iframe
-          src={`https://www.paytr.com/odeme/guvenli/${token}`}
-          className="w-full h-full border-0"
-          allowFullScreen
-        ></iframe>
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl">
+        <div className="relative">
+          <div className="h-[600px]">
+            <iframe
+              src={`https://www.paytr.com/odeme/guvenli/${token}`}
+              className="w-full h-full border-0 rounded-xl"
+              allowFullScreen
+            ></iframe>
+          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white/90 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <button
-        onClick={onClose}
-        className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white/90 transition-colors"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
     </div>
   );
 } 

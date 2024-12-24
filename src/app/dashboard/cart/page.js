@@ -15,6 +15,7 @@ export default function Cart() {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [totalPrice, setTotalPrice] = useState({ subtotal: 0, tax: 0, total: 0, taxDetails: [] });
   const [editingItem, setEditingItem] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -89,13 +90,18 @@ export default function Cart() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    // Auth durumunu kontrol et
+    if (user === null && authChecked) {
       router.push('/login');
       return;
     }
-    fetchCartItems();
-    fetchSettings();
-  }, [user, router, fetchCartItems, fetchSettings]);
+
+    if (user) {
+      setAuthChecked(true);
+      fetchCartItems();
+      fetchSettings();
+    }
+  }, [user, router, fetchCartItems, fetchSettings, authChecked]);
 
   useEffect(() => {
     if (cartItems.length > 0) {
@@ -251,7 +257,7 @@ export default function Cart() {
     return imageUrl;
   };
 
-  if (loading) {
+  if (loading || !authChecked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -723,15 +729,32 @@ export default function Cart() {
         )}
 
         {showPaymentForm && orderDetails && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <PayTRPayment
-                orderDetails={orderDetails}
-                onClose={() => {
-                  setShowPaymentForm(false);
-                  setOrderDetails(null);
-                }}
-              />
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-lg">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">Sipariş Onayı</h3>
+                  <button
+                    onClick={() => {
+                      setShowPaymentForm(false);
+                      setOrderDetails(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <PayTRPayment
+                  orderDetails={orderDetails}
+                  onClose={() => {
+                    setShowPaymentForm(false);
+                    setOrderDetails(null);
+                  }}
+                />
+              </div>
             </div>
           </div>
         )}
