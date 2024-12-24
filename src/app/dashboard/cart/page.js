@@ -193,23 +193,8 @@ export default function Cart() {
 
   const handleCheckout = async () => {
     try {
-      // Sepet boş kontrolü
       if (cartItems.length === 0) {
         toast.error('Sepetiniz boş');
-        return;
-      }
-
-      // Token kontrolü
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
-        router.push('/login');
-        return;
-      }
-
-      // Kullanıcı bilgileri kontrolü
-      if (!user || !user.email) {
-        toast.error('Kullanıcı bilgilerinize ulaşılamadı');
         return;
       }
 
@@ -264,14 +249,11 @@ export default function Cart() {
       // Sipariş detaylarını local storage'a kaydet
       localStorage.setItem('pendingOrderDetails', JSON.stringify(paytrOrderDetails));
       
-      // Loading toast göster
-      toast.loading('Ödeme sayfasına yönlendiriliyorsunuz...');
-      
       // Ödeme sayfasına yönlendir
       router.push('/payment/checkout');
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error(error.message || 'Sipariş oluşturulurken bir hata oluştu');
+      toast.error('Sipariş oluşturulurken bir hata oluştu');
     }
   };
 
@@ -622,7 +604,7 @@ export default function Cart() {
                         disabled={cartItems.length === 0}
                         className="w-full mt-6 bg-primary text-white py-4 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                       >
-                        <span>Siparişi Onayla</span>
+                        <span>Ödemeye Geç</span>
                         <FaArrowRight size={16} />
                       </button>
 

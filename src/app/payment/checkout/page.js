@@ -3,45 +3,44 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { useAuth } from '@/context/AuthContext';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
-  const [orderDetails, setOrderDetails] = useState(null);
 
   useEffect(() => {
-    // Kullanıcı kontrolü
-    if (!user) {
-      toast.error('Lütfen önce giriş yapın');
-      router.push('/login');
-      return;
-    }
-
     const initPayment = async () => {
       try {
-        // Token kontrolü
-        const authToken = localStorage.getItem('token');
-        if (!authToken) {
-          throw new Error('Oturum bulunamadı');
-        }
-
         // Local storage'dan order details'i al
         const storedOrderDetails = localStorage.getItem('pendingOrderDetails');
         if (!storedOrderDetails) {
-          throw new Error('Sipariş detayları bulunamadı');
+          toast.error('Sipariş detayları bulunamadı');
+          router.push('/dashboard/cart');
+          return;
         }
 
         const orderData = JSON.parse(storedOrderDetails);
-        
-        // Sipariş tutarı kontrolü
-        if (!orderData.totalAmount || orderData.totalAmount <= 0) {
-          throw new Error('Geçersiz sipariş tutarı');
+
+        // Siparişi oluştur
+        const orderResponse = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            ...orderData.orderData,
+            status: 'pending',
+            paymentStatus: 'pending'
+          })
+        });
+
+        if (!orderResponse.ok) {
+          throw new Error('Sipariş oluşturulamadı');
         }
 
-        setOrderDetails(orderData);
+        const savedOrder = await orderResponse.json();
 
         // IP adresini al
         const ipResponse = await fetch('https://api.ipify.org?format=json');
@@ -52,91 +51,48 @@ export default function CheckoutPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify({
             orderDetails: {
               ...orderData,
-              id: orderData._id
+              id: savedOrder._id
             },
             userInfo: {
-              email: user.email,
-              name: user.firstName ? `${user.firstName} ${user.lastName}` : user.email,
-              phone: user.phone,
+              email: orderData.email,
               ip
             }
           })
         });
 
         if (!paytrResponse.ok) {
-          const error = await paytrResponse.json();
-          throw new Error(error.message || 'Ödeme başlatılamadı');
+          throw new Error('Ödeme başlatılamadı');
         }
 
         const { token } = await paytrResponse.json();
         setToken(token);
-
-        // Siparişi oluştur
-        const orderResponse = await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            ...orderData.orderData,
-            status: 'pending',
-            paymentStatus: 'pending'
-          })
-        });
-
-        if (!orderResponse.ok) {
-          const errorData = await orderResponse.json();
-          throw new Error(errorData.message || 'Sipariş oluşturulamadı');
-        }
-
-        // Temizlik işlemini başarılı PayTR token'ı aldıktan sonra yap
         localStorage.removeItem('pendingOrderDetails');
       } catch (error) {
         console.error('Payment initialization error:', error);
-        toast.error(error.message || 'Ödeme başlatılırken bir hata oluştu');
-        
-        // Hata durumunda sepete geri dön
-        setTimeout(() => {
-          router.push('/dashboard/cart');
-        }, 2000);
+        toast.error('Ödeme başlatılırken bir hata oluştu');
+        router.push('/dashboard/cart');
       } finally {
         setLoading(false);
       }
     };
 
     initPayment();
-  }, [router, user]);
-
-  // Sayfa yenilendiğinde ve localStorage boşsa sepete yönlendir
-  useEffect(() => {
-    const checkStoredData = () => {
-      const storedData = localStorage.getItem('pendingOrderDetails');
-      if (!storedData && !loading && !token) {
-        toast.error('Sipariş bilgileri bulunamadı');
-        router.push('/dashboard/cart');
-      }
-    };
-
-    checkStoredData();
-  }, [loading, token, router]);
+  }, [router]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
-        <p className="text-gray-600">Ödeme hazırlanıyor...</p>
-        <p className="text-sm text-gray-500 mt-2">Lütfen bekleyin, yönlendiriliyorsunuz.</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!token || !orderDetails) {
+  if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-lg shadow-lg text-center">
@@ -146,9 +102,7 @@ export default function CheckoutPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Ödeme Başlatılamadı</h1>
-          <p className="text-gray-600 mb-6">
-            {!token ? 'Ödeme sistemi şu anda kullanılamıyor.' : 'Sipariş bilgileri eksik veya hatalı.'}
-          </p>
+          <p className="text-gray-600 mb-6">Lütfen tekrar deneyiniz.</p>
           <button
             onClick={() => router.push('/dashboard/cart')}
             className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition-colors"
