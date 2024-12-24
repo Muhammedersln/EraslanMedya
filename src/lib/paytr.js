@@ -150,7 +150,7 @@ export const verifyPaymentCallback = (params) => {
       return {
         status: status === 'success' ? 'success' : 'failed',
         orderId: merchant_oid,
-        amount: parseInt(total_amount) / 100 // Convert from kuruş to TL
+        amount: parseFloat(total_amount) / 100 // Convert from kuruş to TL
       };
     }
     

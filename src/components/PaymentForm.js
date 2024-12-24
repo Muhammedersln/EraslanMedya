@@ -33,7 +33,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       // Format basket items
       const userBasket = orderDetails.items.map(item => ({
         name: item.product.name,
-        price: Math.round(parseFloat(parseFloat(item.price).toFixed(2)) * 100),
+        price: parseFloat(item.price),
         quantity: parseInt(item.quantity)
       }));
 
@@ -41,7 +41,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       console.log('UserBasket before sending to PayTR:', userBasket);
 
       // Calculate total amount in kuruş
-      const amountInKurus = Math.round(parseFloat(parseFloat(orderDetails.totalAmount).toFixed(2)) * 100);
+      const amountInKurus = Math.round(parseFloat(orderDetails.totalAmount) * 100);
       console.log('Amount in kuruş before sending to PayTR:', amountInKurus);
 
       // Ödeme işlemini başlat
@@ -87,7 +87,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
           callbackUrl: `${window.location.origin}/dashboard/orders`
         });
         console.error('Payment API error response:', data);
-        throw new Error(data.error || 'Ödeme başlatılamad��');
+        throw new Error(data.error || 'Ödeme başlatılamadı');
       }
 
       if (data.status === 'success' && data.token) {
