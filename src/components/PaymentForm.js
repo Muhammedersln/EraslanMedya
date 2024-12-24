@@ -40,26 +40,15 @@ export default function PaymentForm({ orderDetails, onClose }) {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          merchant_id: process.env.NEXT_PUBLIC_PAYTR_MERCHANT_ID,
-          user_ip: '127.0.0.1',
-          merchant_oid: Date.now(),
+          amount: Math.round(orderDetails.totalAmount.toFixed(2) * 100),
           email: orderDetails.email,
-          payment_amount: Math.round(orderDetails.totalAmount.toFixed(2) * 100),
-          currency: 'TL',
-          test_mode: 0,
-          no_installment: 0,
-          max_installment: 0,
-          user_name: orderDetails.firstName && orderDetails.lastName 
+          userName: orderDetails.firstName && orderDetails.lastName 
             ? `${orderDetails.firstName} ${orderDetails.lastName}`
             : orderDetails.email.split('@')[0],
-          user_phone: orderDetails.phone || '05000000000',
-          user_address: orderDetails.address || 'Türkiye',
-          merchant_ok_url: `${window.location.origin}/dashboard/orders/success`,
-          merchant_fail_url: `${window.location.origin}/dashboard/orders/fail`,
-          user_basket: userBasket,
-          debug_on: 0,
-          timeout: 30,
-          lang: 'tr',
+          userPhone: orderDetails.phone || '05000000000',
+          userAddress: orderDetails.address || 'Türkiye',
+          userBasket,
+          callbackUrl: `${window.location.origin}/dashboard/orders`,
           cartItems: orderDetails.items.map(item => ({
             product: item.product.id,
             quantity: item.quantity,
