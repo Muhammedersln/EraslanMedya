@@ -19,7 +19,7 @@ const orderSchema = new mongoose.Schema({
     quantity: {
       type: Number,
       required: true,
-      min: [1, 'Quantity cannot be less than 1']
+      min: 1
     },
     price: {
       type: Number,
@@ -27,10 +27,11 @@ const orderSchema = new mongoose.Schema({
     },
     taxRate: {
       type: Number,
-      required: true
+      default: 0.18
     },
     productData: {
       username: String,
+      link: String,
       postCount: Number,
       links: [String]
     },
@@ -43,14 +44,14 @@ const orderSchema = new mongoose.Schema({
       default: 0
     }
   }],
+  totalAmount: {
+    type: Number,
+    required: true
+  },
   status: {
     type: String,
     enum: ['pending', 'processing', 'completed', 'cancelled'],
     default: 'pending'
-  },
-  totalAmount: {
-    type: Number,
-    required: true
   },
   paymentStatus: {
     type: String,
@@ -58,25 +59,28 @@ const orderSchema = new mongoose.Schema({
     default: 'pending'
   },
   paymentDetails: {
-    status: {
-      type: String,
-      enum: ['pending', 'paid', 'failed'],
-      default: 'pending'
-    },
+    status: String,
     amount: Number,
     paidAt: Date,
-    paymentId: String,
     paymentType: String,
-    failReason: String,
     paytrMerchantOid: String,
     paytrToken: String,
-    paytrResponse: {
-      type: Map,
-      of: String
-    }
+    paytrResponse: Map
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
+});
+
+// Update timestamps on save
+orderSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
 });
 
 export default mongoose.models.Order || mongoose.model('Order', orderSchema); 

@@ -217,8 +217,8 @@ export default function Cart() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Sipariş oluşturulamadı');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Sipariş oluşturulamadı');
       }
 
       const savedOrder = await response.json();

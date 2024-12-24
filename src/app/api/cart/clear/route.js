@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/middleware/auth';
 import Cart from '@/lib/models/Cart';
-import db from '@/lib/db';
+import dbConnect from '@/lib/db';
 
 export async function POST(req) {
   try {
@@ -10,7 +10,7 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    await db.connect();
+    await dbConnect();
 
     // Kullanıcının sepetini temizle
     await Cart.deleteMany({ user: user.id });

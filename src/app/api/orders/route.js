@@ -1,131 +1,78 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
-import Cart from '@/lib/models/Cart';
-import Product from '@/lib/models/Product';
 import { auth } from '@/lib/middleware/auth';
 
-// Get user orders
-export async function GET(request) {
+export async function POST(req) {
   try {
-    const user = await auth(request);
+    const user = await auth(req);
     if (!user) {
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     await dbConnect();
+
+    const orderData = await req.json();
+    
+    // Sipariş verilerini doğrula
+    if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+      return NextResponse.json({ message: 'Invalid order items' }, { status: 400 });
+    }
+
+    if (!orderData.totalAmount || isNaN(orderData.totalAmount)) {
+      return NextResponse.json({ message: 'Invalid total amount' }, { status: 400 });
+    }
+
+    // Yeni sipariş oluştur
+    const order = new Order({
+      _id: orderData._id, // Client tarafından gönderilen ID'yi kullan
+      user: user.id,
+      items: orderData.items.map(item => ({
+        product: item.product,
+        quantity: item.quantity,
+        price: item.price,
+        taxRate: item.taxRate,
+        productData: item.productData,
+        targetCount: item.targetCount
+      })),
+      totalAmount: orderData.totalAmount,
+      status: 'pending',
+      paymentStatus: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Siparişi kaydet
+    const savedOrder = await order.save();
+    
+    return NextResponse.json(savedOrder);
+  } catch (error) {
+    console.error('Create order error:', error);
+    return NextResponse.json(
+      { message: error.message || 'Failed to create order' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req) {
+  try {
+    const user = await auth(req);
+    if (!user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    await dbConnect();
+
     const orders = await Order.find({ user: user.id })
-      .populate('items.product')
-      .sort('-createdAt');
+      .sort({ createdAt: -1 })
+      .populate('items.product');
 
     return NextResponse.json(orders);
   } catch (error) {
+    console.error('Get orders error:', error);
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-// Create order
-export async function POST(request) {
-  try {
-    const user = await auth(request);
-    if (!user) {
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    await dbConnect();
-    const { cartItems } = await request.json();
-
-    // Validate cart items
-    const validatedItems = await Promise.all(
-      cartItems.map(async (item) => {
-        const product = await Product.findById(item.product);
-        if (!product) {
-          throw new Error(`Product not found: ${item.product}`);
-        }
-
-        return {
-          product: product._id,
-          quantity: item.quantity,
-          price: product.price,
-          taxRate: product.taxRate || 0.18,
-          productData: item.productData,
-          targetCount: item.targetCount,
-          currentCount: 0
-        };
-      })
-    );
-
-    // Calculate total amount
-    const totalAmount = validatedItems.reduce((sum, item) => {
-      return sum + (item.price * item.quantity * (1 + item.taxRate));
-    }, 0);
-
-    // Create order
-    const order = await Order.create({
-      user: user.id,
-      items: validatedItems,
-      totalAmount
-    });
-
-    // Clear cart
-    await Cart.deleteMany({ user: user.id });
-
-    await order.populate('items.product');
-
-    return NextResponse.json(order);
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-// Update order status
-export async function PATCH(request) {
-  try {
-    const user = await auth(request);
-    if (!user) {
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    await dbConnect();
-    const { searchParams } = new URL(request.url);
-    const orderId = searchParams.get('id');
-    const { status } = await request.json();
-
-    const order = await Order.findOne({
-      _id: orderId,
-      user: user.id
-    });
-
-    if (!order) {
-      return NextResponse.json(
-        { message: 'Order not found' },
-        { status: 404 }
-      );
-    }
-
-    order.status = status;
-    await order.save();
-    await order.populate('items.product');
-
-    return NextResponse.json(order);
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { message: 'Failed to fetch orders' },
       { status: 500 }
     );
   }
