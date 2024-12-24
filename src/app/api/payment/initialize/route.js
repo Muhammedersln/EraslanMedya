@@ -46,6 +46,15 @@ export async function POST(request) {
     const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
     const merchant_ok_url = `${process.env.NEXT_PUBLIC_API_URL}/payment/success`;
     const merchant_fail_url = `${process.env.NEXT_PUBLIC_API_URL}/payment/fail`;
+    const callback_url = `${process.env.NEXT_PUBLIC_API_URL}/api/payment/callback`;
+
+    console.log('PayTR URLs:', {
+      merchant_ok_url,
+      merchant_fail_url,
+      callback_url,
+      base_url: process.env.NEXT_PUBLIC_API_URL
+    });
+
     const timeout_limit = "30";
     const currency = "TL";
     const test_mode = "1";
@@ -74,6 +83,7 @@ export async function POST(request) {
       user_basket: userBasket,
       merchant_ok_url,
       merchant_fail_url,
+      callback_url,
       user_name: userName,
       user_phone: userPhone,
       user_address: userAddress,
@@ -87,6 +97,19 @@ export async function POST(request) {
     };
 
     // PayTR token al
+    console.log('PayTR parameters:', {
+      merchant_id,
+      merchant_oid,
+      email,
+      payment_amount: amount,
+      user_basket: userBasket,
+      urls: {
+        merchant_ok_url,
+        merchant_fail_url,
+        callback_url
+      }
+    });
+
     const paytrResponse = await fetch('https://www.paytr.com/odeme/api/get-token', {
       method: 'POST',
       headers: {
