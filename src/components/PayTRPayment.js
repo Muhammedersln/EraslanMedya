@@ -163,20 +163,6 @@ export default function PayTRPayment({ orderDetails, onClose }) {
     );
   }
 
-  if (!token) {
-    return (
-      <div className="flex flex-col items-center justify-center p-6">
-        <p className="text-red-500 mb-4">Ödeme başlatılamadı</p>
-        <button
-          onClick={onClose}
-          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          Kapat
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-xl">

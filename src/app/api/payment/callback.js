@@ -7,7 +7,7 @@ const MERCHANT_ID = process.env.PAYTR_MERCHANT_ID;
 const MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY;
 const MERCHANT_SALT = process.env.PAYTR_MERCHANT_SALT;
 
-export async function PUT(req) {
+export async function POST(req) {
   try {
     await dbConnect();
 
