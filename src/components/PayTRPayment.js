@@ -1,24 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 export default function PayTRPayment({ orderDetails, onClose }) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [token, setToken] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
-    const initializePayment = async () => {
+    const getClientIp = async () => {
       try {
-        // Kullanıcı IP'sini al
-        const ipResponse = await fetch('https://api.ipify.org?format=json');
-        const { ip } = await ipResponse.json();
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+      } catch (error) {
+        console.error('IP fetch error:', error);
+        return '127.0.0.1';
+      }
+    };
 
-        // PayTR token'ı al
+    const initPayment = async () => {
+      try {
+        const ip = await getClientIp();
+        
         const response = await fetch('/api/payment/paytr', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify({
             orderDetails,
@@ -29,65 +39,45 @@ export default function PayTRPayment({ orderDetails, onClose }) {
           })
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-          throw new Error(data.error || 'Ödeme başlatılamadı');
+          const error = await response.json();
+          throw new Error(error.message || 'Ödeme başlatılamadı');
         }
 
-        // PayTR iFrame'i yükle
-        if (data.token) {
-          // iFrame Resizer scriptini yükle
-          await loadScript('https://www.paytr.com/js/iframeResizer.min.js');
-          
-          const iframeContainer = document.getElementById('paytr-iframe-container');
-          if (iframeContainer) {
-            const iframe = document.createElement('iframe');
-            iframe.src = `https://www.paytr.com/odeme/guvenli/${data.token}`;
-            iframe.frameBorder = '0';
-            iframe.style.width = '100%';
-            iframeContainer.innerHTML = '';
-            iframeContainer.appendChild(iframe);
-            
-            // @ts-ignore
-            if (window.iFrameResize) {
-              // @ts-ignore
-              window.iFrameResize({}, '#paytr-iframe-container iframe');
-            }
-            
-            setLoading(false);
-          }
-        }
+        const data = await response.json();
+        setToken(data.token);
       } catch (error) {
-        console.error('Payment error:', error);
-        setError(error.message);
+        console.error('Payment init error:', error);
+        toast.error(error.message || 'Ödeme başlatılırken bir hata oluştu');
+        onClose();
+      } finally {
         setLoading(false);
-        toast.error(error.message);
       }
     };
 
-    // Script yükleme yardımcı fonksiyonu
-    const loadScript = (src) => {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.async = true;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.body.appendChild(script);
-      });
-    };
+    initPayment();
+  }, [orderDetails, onClose]);
 
-    initializePayment();
-  }, [orderDetails]);
+  const handleStartPayment = () => {
+    setShowPayment(true);
+  };
 
-  if (error) {
+  if (loading) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-red-500 mb-4">{error}</p>
+      <div className="flex flex-col items-center justify-center p-6">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
+        <p className="text-gray-600">Ödeme hazırlanıyor...</p>
+      </div>
+    );
+  }
+
+  if (!token) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6">
+        <p className="text-red-500 mb-4">Ödeme başlatılamadı</p>
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
         >
           Kapat
         </button>
@@ -95,14 +85,54 @@ export default function PayTRPayment({ orderDetails, onClose }) {
     );
   }
 
-  return (
-    <div className="relative">
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  if (!showPayment) {
+    return (
+      <div className="flex flex-col p-6">
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Sipariş Özeti</h3>
+          <div className="space-y-3">
+            {orderDetails.items.map((item, index) => (
+              <div key={index} className="flex justify-between text-sm">
+                <span className="text-gray-600">{item.product.name} x {item.quantity}</span>
+                <span className="font-medium">₺{(item.price * item.quantity).toFixed(2)}</span>
+              </div>
+            ))}
+            <div className="pt-3 border-t border-gray-200">
+              <div className="flex justify-between font-medium text-lg">
+                <span>Toplam Tutar</span>
+                <span className="text-primary">₺{orderDetails.totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
-      <div id="paytr-iframe-container" className="min-h-[600px]"></div>
+        
+        <button
+          onClick={handleStartPayment}
+          className="w-full bg-primary text-white py-3 rounded-xl hover:bg-primary-dark transition-colors font-medium"
+        >
+          Ödemeye Geç
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full max-w-2xl mx-auto">
+      <div className="aspect-[4/3] w-full">
+        <iframe
+          src={`https://www.paytr.com/odeme/guvenli/${token}`}
+          className="w-full h-full border-0"
+          allowFullScreen
+        ></iframe>
+      </div>
+      <button
+        onClick={onClose}
+        className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white/90 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
   );
 } 
