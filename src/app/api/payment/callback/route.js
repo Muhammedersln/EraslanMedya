@@ -24,7 +24,10 @@ export async function POST(req) {
       .digest('base64');
 
     if (hash !== calculatedHash) {
-      return NextResponse.json({ status: 'fail', message: 'Hash doğrulaması başarısız' });
+      return new Response('PAYTR notification failed: hash mismatch', {
+        status: 400,
+        headers: { 'Content-Type': 'text/plain' }
+      });
     }
 
     // Sipariş durumunu güncelle
@@ -34,7 +37,10 @@ export async function POST(req) {
     // Siparişi bul ve güncelle
     const order = await Order.findById(merchant_oid);
     if (!order) {
-      throw new Error('Sipariş bulunamadı');
+      return new Response('PAYTR notification failed: order not found', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain' }
+      });
     }
 
     // Sipariş durumunu güncelle
@@ -55,15 +61,13 @@ export async function POST(req) {
     // PayTR'ye OK yanıtı gönder
     return new Response('OK', {
       status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
+      headers: { 'Content-Type': 'text/plain' }
     });
   } catch (error) {
     console.error('PayTR callback error:', error);
-    return NextResponse.json(
-      { error: 'Bildirim işlenirken bir hata oluştu' },
-      { status: 500 }
-    );
+    return new Response('PAYTR notification failed: ' + error.message, {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain' }
+    });
   }
 } 

@@ -1,12 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
 export default function PayTRPayment({ orderDetails, onClose }) {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
+
+  const createOrder = useCallback(async () => {
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(orderDetails.orderData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Sipariş oluşturulamadı');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Create order error:', error);
+      throw error;
+    }
+  }, [orderDetails.orderData]);
 
   useEffect(() => {
     const getClientIp = async () => {
@@ -24,6 +47,9 @@ export default function PayTRPayment({ orderDetails, onClose }) {
       try {
         const ip = await getClientIp();
         
+        // Önce siparişi oluştur
+        const savedOrder = await createOrder();
+        
         const response = await fetch('/api/payment/paytr', {
           method: 'POST',
           headers: {
@@ -31,7 +57,10 @@ export default function PayTRPayment({ orderDetails, onClose }) {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify({
-            orderDetails,
+            orderDetails: {
+              ...orderDetails,
+              id: savedOrder._id // Kaydedilen siparişin ID'sini kullan
+            },
             userInfo: {
               email: orderDetails.email,
               ip
@@ -55,8 +84,12 @@ export default function PayTRPayment({ orderDetails, onClose }) {
       }
     };
 
-    initPayment();
-  }, [orderDetails, onClose]);
+    if (showPayment) {
+      initPayment();
+    } else {
+      setLoading(false);
+    }
+  }, [orderDetails, onClose, showPayment, createOrder]);
 
   const handleStartPayment = () => {
     setShowPayment(true);
@@ -67,20 +100,6 @@ export default function PayTRPayment({ orderDetails, onClose }) {
       <div className="flex flex-col items-center justify-center p-6">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
         <p className="text-gray-600">Ödeme hazırlanıyor...</p>
-      </div>
-    );
-  }
-
-  if (!token) {
-    return (
-      <div className="flex flex-col items-center justify-center p-6">
-        <p className="text-red-500 mb-4">Ödeme başlatılamadı</p>
-        <button
-          onClick={onClose}
-          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          Kapat
-        </button>
       </div>
     );
   }
@@ -140,11 +159,25 @@ export default function PayTRPayment({ orderDetails, onClose }) {
     );
   }
 
+  if (!token) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6">
+        <p className="text-red-500 mb-4">Ödeme başlatılamadı</p>
+        <button
+          onClick={onClose}
+          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        >
+          Kapat
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-xl">
         <div className="relative">
-          <div className="h-[600px]">
+          <div className="h-[500px]">
             <iframe
               src={`https://www.paytr.com/odeme/guvenli/${token}`}
               className="w-full h-full border-0 rounded-xl"

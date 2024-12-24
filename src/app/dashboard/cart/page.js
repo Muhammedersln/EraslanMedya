@@ -212,36 +212,20 @@ export default function Cart() {
         items: formattedItems
       };
 
-      // Siparişi veritabanına kaydet
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(orderDetails)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Sipariş oluşturulamadı');
-      }
-
-      const savedOrder = await response.json();
-      
       // PayTR için gerekli bilgileri hazırla
       const paytrOrderDetails = {
-        id: savedOrder._id,
-        totalAmount: savedOrder.totalAmount,
+        id: orderDetails._id, // Henüz kaydedilmemiş sipariş ID'si
+        totalAmount: orderDetails.totalAmount,
         email: user.email,
-        items: savedOrder.items.map(item => ({
+        items: formattedItems.map(item => ({
           product: {
             id: item.product,
             name: cartItems.find(cartItem => cartItem.product._id === item.product)?.product.name || 'Ürün'
           },
           price: item.price,
           quantity: item.quantity
-        }))
+        })),
+        orderData: orderDetails // Tüm sipariş verilerini PayTR bileşenine geçiriyoruz
       };
       
       setOrderDetails(paytrOrderDetails);
