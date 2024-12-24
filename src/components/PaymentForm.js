@@ -33,7 +33,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       // Format basket items
       const userBasket = orderDetails.items.map(item => ({
         name: item.product.name,
-        price: parseFloat((item.price * 100).toFixed(0)),
+        price: Math.round(item.price * 100),
         quantity: item.quantity
       }));
 
@@ -46,7 +46,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
         },
         body: JSON.stringify({
           orderId: orderDetails.id,
-          amount: parseFloat((orderDetails.totalAmount * 100).toFixed(0)),
+          amount: Math.round(orderDetails.totalAmount * 100),
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
             ? `${orderDetails.firstName} ${orderDetails.lastName}`
@@ -69,7 +69,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       if (!response.ok) {
         console.log('Payment request details:', {
           orderId: orderDetails.id,
-          amount: parseFloat((orderDetails.totalAmount * 100).toFixed(0)),
+          amount: Math.round(orderDetails.totalAmount * 100),
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
             ? `${orderDetails.firstName} ${orderDetails.lastName}`
