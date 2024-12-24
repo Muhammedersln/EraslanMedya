@@ -54,57 +54,65 @@ export async function POST(request) {
       );
     }
 
-    // Validate cart items and create temporary order
-    const validatedItems = await Promise.all(
-      cartItems.map(async (item) => {
-        const product = await Product.findById(item.product);
-        if (!product) {
-          throw new Error(`Product not found: ${item.product}`);
-        }
-
-        return {
-          product: product._id,
-          quantity: item.quantity,
-          price: product.price,
-          taxRate: product.taxRate || 0.18,
-          productData: item.productData,
-          targetCount: item.targetCount,
-          currentCount: 0
-        };
-      })
-    );
-
-    // Create temporary order
-    const tempOrder = await Order.create({
-      _id: orderId,
-      user: user.id,
-      items: validatedItems,
-      totalAmount: amount / 100, // Convert from kuruş to TL
-      status: 'pending',
-      paymentDetails: {
-        status: 'pending'
-      }
-    });
-
     // Get user IP
     const userIp = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
                   request.headers.get('x-client-ip') ||
                   '127.0.0.1';
 
-    // Create payment token
+    // Create payment token first
     const paymentData = await createPaymentToken({
       orderId,
       amount,
       email,
       userBasket,
       userIp,
-      callbackUrl,
+      callbackUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/payment/callback`,
       testMode: '1',
       currency: 'TL',
       noInstallment: '1',
       maxInstallment: '1'
     });
+
+    if (paymentData.status === 'success') {
+      // Validate cart items and create temporary order
+      const validatedItems = await Promise.all(
+        cartItems.map(async (item) => {
+          const product = await Product.findById(item.product);
+          if (!product) {
+            throw new Error(`Product not found: ${item.product}`);
+          }
+
+          return {
+            product: product._id,
+            quantity: item.quantity,
+            price: product.price,
+            taxRate: product.taxRate || 0.18,
+            productData: item.productData,
+            targetCount: item.targetCount,
+            currentCount: 0
+          };
+        })
+      );
+
+      // Create temporary order
+      const tempOrder = await Order.create({
+        _id: orderId,
+        user: user.id,
+        items: validatedItems,
+        totalAmount: amount / 100, // Convert from kuruş to TL
+        status: 'pending',
+        paymentDetails: {
+          status: 'pending'
+        }
+      });
+
+      console.log('Temporary order created:', {
+        orderId: tempOrder._id,
+        userId: user.id,
+        amount: amount / 100
+      });
+    }
 
     return NextResponse.json(paymentData);
   } catch (error) {
