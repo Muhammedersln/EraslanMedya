@@ -33,7 +33,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       // Format basket items
       const userBasket = orderDetails.items.map(item => ({
         name: item.product.name,
-        price: parseFloat(item.price),
+        price: Math.round(parseFloat(item.price) * 100),
         quantity: parseInt(item.quantity)
       }));
 

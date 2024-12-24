@@ -47,14 +47,14 @@ export const createPaymentToken = async ({
     // Format basket for PayTR
     const basketItems = userBasket.map(item => [
       item.name,
-      (parseFloat(item.price) * 100).toFixed(0),
+      item.price.toString(),
       item.quantity
     ]);
     const basketStr = JSON.stringify(basketItems);
     const basketBase64 = Buffer.from(basketStr).toString('base64');
 
-    // Convert amount to kuruş (1 TL = 100 kuruş) and ensure it's an integer
-    const paymentAmount = Math.round(parseFloat(amount) * 100).toString();
+    // Amount should already be in kuruş from the client
+    const paymentAmount = amount.toString();
 
     // Use a real IP if ::1 is provided
     const clientIp = userIp === '::1' ? '127.0.0.1' : userIp;
