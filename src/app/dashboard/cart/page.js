@@ -193,7 +193,7 @@ export default function Cart() {
           id: item.product._id,
           name: item.product.name
         },
-        price: parseFloat(item.product.price.toFixed(2)),
+        price: item.product.price,
         quantity: item.quantity,
         productData: item.productData,
         targetCount: item.quantity
