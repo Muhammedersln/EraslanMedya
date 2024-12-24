@@ -7,7 +7,7 @@ const MERCHANT_ID = process.env.PAYTR_MERCHANT_ID;
 const MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY;
 const MERCHANT_SALT = process.env.PAYTR_MERCHANT_SALT;
 
-export async function POST(req) {
+export async function PUT(req) {
   try {
     await dbConnect();
 
@@ -30,10 +30,6 @@ export async function POST(req) {
       });
     }
 
-    // Sipariş durumunu güncelle
-    const orderStatus = status === 'success' ? 'processing' : 'cancelled';
-    const paymentStatus = status === 'success' ? 'paid' : 'failed';
-
     // Siparişi bul ve güncelle
     const order = await Order.findById(merchant_oid);
     if (!order) {
@@ -43,18 +39,33 @@ export async function POST(req) {
       });
     }
 
-    // Sipariş durumunu güncelle
-    order.status = orderStatus;
-    order.paymentStatus = paymentStatus;
-    order.paymentDetails = {
-      ...order.paymentDetails,
-      status: paymentStatus,
-      amount: total_amount / 100, // Kuruş to TL
-      paidAt: status === 'success' ? new Date() : null,
-      paymentType: 'paytr',
-      paytrMerchantOid: merchant_oid,
-      paytrResponse: Object.fromEntries(data.entries())
-    };
+    // Ödeme durumuna göre sipariş durumunu güncelle
+    if (status === 'success') {
+      order.status = 'processing'; // Ödeme başarılıysa siparişi aktif et
+      order.paymentStatus = 'paid';
+      order.paymentDetails = {
+        ...order.paymentDetails,
+        status: 'paid',
+        amount: total_amount / 100,
+        paidAt: new Date(),
+        paymentType: 'paytr',
+        paytrMerchantOid: merchant_oid,
+        paytrResponse: Object.fromEntries(data.entries())
+      };
+    } else {
+      // Ödeme başarısızsa sipariş iptal durumunda kalsın
+      order.status = 'cancelled';
+      order.paymentStatus = 'failed';
+      order.paymentDetails = {
+        ...order.paymentDetails,
+        status: 'failed',
+        amount: total_amount / 100,
+        failedAt: new Date(),
+        paymentType: 'paytr',
+        paytrMerchantOid: merchant_oid,
+        paytrResponse: Object.fromEntries(data.entries())
+      };
+    }
 
     await order.save();
 

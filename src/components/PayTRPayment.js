@@ -16,7 +16,11 @@ export default function PayTRPayment({ orderDetails, onClose }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(orderDetails.orderData)
+        body: JSON.stringify({
+          ...orderDetails.orderData,
+          status: 'cancelled',
+          paymentStatus: 'pending'
+        })
       });
 
       if (!response.ok) {
