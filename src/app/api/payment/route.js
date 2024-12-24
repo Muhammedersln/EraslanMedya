@@ -27,6 +27,30 @@ export async function POST(request) {
       callbackUrl,
     } = body;
 
+    // Validate required parameters
+    const requiredParams = {
+      orderId,
+      amount,
+      email,
+      userName,
+      userPhone,
+      userAddress,
+      userBasket,
+      callbackUrl
+    };
+
+    const missingParams = Object.entries(requiredParams)
+      .filter(([key, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingParams.length > 0) {
+      console.error('Missing parameters:', missingParams);
+      return NextResponse.json(
+        { error: `Missing required parameters: ${missingParams.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
     // Get user IP
     const userIp = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
