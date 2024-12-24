@@ -1,5 +1,6 @@
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'react-hot-toast';
+import Script from 'next/script';
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -76,7 +77,20 @@ function ClientLayout({ children }) {
 export default function RootLayout({ children }) {
   return (
     <html lang="tr">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}>
+      <head />
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background `}>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-11512697197"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-11512697197');
+          `}
+        </Script>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
