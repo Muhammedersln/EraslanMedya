@@ -67,7 +67,13 @@ const orderSchema = new mongoose.Schema({
     paidAt: Date,
     paymentId: String,
     paymentType: String,
-    failReason: String
+    failReason: String,
+    paytrMerchantOid: String,
+    paytrToken: String,
+    paytrResponse: {
+      type: Map,
+      of: String
+    }
   }
 }, {
   timestamps: true

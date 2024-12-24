@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { FaTrash, FaShoppingCart, FaArrowRight, FaInstagram, FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
 import PaymentForm from '@/components/PaymentForm';
+import PayTRPayment from '@/components/PayTRPayment';
 
 export default function Cart() {
   const router = useRouter();
@@ -188,28 +189,62 @@ export default function Cart() {
     }
   };
 
-  const handleCheckout = () => {
-    const formattedItems = cartItems.map(item => ({
-      product: {
-        id: item.product._id,
-        name: item.product.name
-      },
-      price: parseFloat(item.product.price),
-      quantity: parseInt(item.quantity),
-      productData: item.productData,
-      targetCount: parseInt(item.quantity)
-    }));
+  const handleCheckout = async () => {
+    try {
+      const formattedItems = cartItems.map(item => ({
+        product: item.product._id,
+        quantity: parseInt(item.quantity),
+        price: parseFloat(item.product.price),
+        taxRate: settings.taxRate,
+        productData: item.productData,
+        targetCount: parseInt(item.quantity)
+      }));
 
-    const orderDetails = {
-      id: `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`,
-      totalAmount: parseFloat(totalPrice.total.toFixed(2)),
-      email: user.email,
-      items: formattedItems
-    };
-    
-    console.log('Created orderDetails:', orderDetails);
-    setOrderDetails(orderDetails);
-    setShowPaymentForm(true);
+      const orderDetails = {
+        _id: `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`,
+        user: user._id,
+        totalAmount: parseFloat(totalPrice.total.toFixed(2)),
+        items: formattedItems
+      };
+
+      // Siparişi veritabanına kaydet
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(orderDetails)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Sipariş oluşturulamadı');
+      }
+
+      const savedOrder = await response.json();
+      
+      // PayTR için gerekli bilgileri hazırla
+      const paytrOrderDetails = {
+        id: savedOrder._id,
+        totalAmount: savedOrder.totalAmount,
+        email: user.email,
+        items: savedOrder.items.map(item => ({
+          product: {
+            id: item.product,
+            name: cartItems.find(cartItem => cartItem.product._id === item.product)?.product.name || 'Ürün'
+          },
+          price: item.price,
+          quantity: item.quantity
+        }))
+      };
+      
+      setOrderDetails(paytrOrderDetails);
+      setShowPaymentForm(true);
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error(error.message || 'Sipariş oluşturulurken bir hata oluştu');
+    }
   };
 
   const getImageUrl = (imageUrl) => {
@@ -691,7 +726,7 @@ export default function Cart() {
         {showPaymentForm && orderDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <PaymentForm
+              <PayTRPayment
                 orderDetails={orderDetails}
                 onClose={() => {
                   setShowPaymentForm(false);

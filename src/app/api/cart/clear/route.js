@@ -1,55 +1,26 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/middleware/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import dbConnect from '@/lib/dbConnect';
 import Cart from '@/lib/models/Cart';
-import dbConnect from '@/lib/db';
 
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const user = await auth(request);
-    if (!user) {
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 }
-      );
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     await dbConnect();
-    
-    // Önce sepeti kontrol et
-    const cartItems = await Cart.find({ user: user.id });
-    console.log('Current cart items:', {
-      userId: user.id,
-      itemCount: cartItems.length
-    });
-    
-    // Sepeti temizle
-    const result = await Cart.deleteMany({ user: user.id });
-    
-    // Temizleme sonucunu kontrol et
-    const remainingItems = await Cart.find({ user: user.id });
-    
-    console.log('Cart clearing result:', {
-      userId: user.id,
-      deletedCount: result.deletedCount,
-      remainingItems: remainingItems.length
-    });
 
-    if (remainingItems.length > 0) {
-      console.error('Cart not fully cleared:', {
-        userId: user.id,
-        remainingItems: remainingItems.length
-      });
-    }
+    // Kullanıcının sepetini temizle
+    await Cart.deleteMany({ user: session.user.id });
 
-    return NextResponse.json({ 
-      success: true,
-      deletedCount: result.deletedCount,
-      remainingItems: remainingItems.length
-    });
+    return NextResponse.json({ message: 'Cart cleared successfully' });
   } catch (error) {
-    console.error('Error clearing cart:', error);
+    console.error('Clear cart error:', error);
     return NextResponse.json(
-      { error: error.message },
+      { message: 'Failed to clear cart' },
       { status: 500 }
     );
   }
