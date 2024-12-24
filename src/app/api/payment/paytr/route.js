@@ -18,13 +18,13 @@ export async function POST(req) {
     const email = userInfo.email;
     const payment_amount = Math.floor(orderDetails.totalAmount * 100); // TL to kuruş
     const user_basket = JSON.stringify(orderDetails.items.map(item => [
-      item.product.name,
-      item.price,
-      item.quantity
+      item.product?.name || 'Ürün',
+      (item.price || 0).toFixed(2),
+      item.quantity || 1
     ]));
     const user_name = userInfo.name || userInfo.email;
     const user_address = 'Digital Delivery';
-    const user_phone = userInfo.phone || 'NA';
+    const user_phone = userInfo.phone || '05111111111';
     const merchant_ok_url = 'https://eraslanmedya.com/payment/success';
     const merchant_fail_url = 'https://eraslanmedya.com/payment/fail';
     const timeout_limit = '30';
@@ -74,7 +74,17 @@ export async function POST(req) {
       body: new URLSearchParams(formData)
     });
 
-    const data = await response.json();
+    // Response içeriğini text olarak al
+    const responseText = await response.text();
+    
+    // Response'un JSON olup olmadığını kontrol et
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('PayTR Raw Response:', responseText);
+      throw new Error('PayTR\'den geçersiz yanıt alındı: ' + responseText);
+    }
 
     if (data.status === 'success') {
       return NextResponse.json({ token: data.token });
@@ -99,11 +109,15 @@ export async function PUT(req) {
   try {
     await dbConnect();
 
-    const data = await req.formData();
-    const merchant_oid = data.get('merchant_oid');
-    const status = data.get('status');
-    const total_amount = data.get('total_amount');
-    const hash = data.get('hash');
+    // URL-encoded form verisini al
+    const text = await req.text();
+    const params = new URLSearchParams(text);
+    const data = Object.fromEntries(params);
+
+    const merchant_oid = data.merchant_oid;
+    const status = data.status;
+    const total_amount = data.total_amount;
+    const hash = data.hash;
 
     // Hash doğrulama
     const hashStr = `${MERCHANT_ID}${merchant_oid}${total_amount}${MERCHANT_SALT}`;
@@ -112,7 +126,17 @@ export async function PUT(req) {
       .digest('base64');
 
     if (hash !== calculatedHash) {
-      return NextResponse.json({ status: 'fail', message: 'Hash doğrulaması başarısız' });
+      console.error('Hash doğrulama hatası:', {
+        received: hash,
+        calculated: calculatedHash,
+        merchantId: MERCHANT_ID,
+        merchantOid: merchant_oid,
+        totalAmount: total_amount
+      });
+      return NextResponse.json(
+        { status: 'fail', message: 'Hash doğrulaması başarısız' },
+        { status: 400 }
+      );
     }
 
     // Sipariş durumunu güncelle
@@ -122,7 +146,11 @@ export async function PUT(req) {
     // Siparişi bul ve güncelle
     const order = await Order.findById(merchant_oid);
     if (!order) {
-      throw new Error('Sipariş bulunamadı');
+      console.error('Sipariş bulunamadı:', merchant_oid);
+      return NextResponse.json(
+        { status: 'fail', message: 'Sipariş bulunamadı' },
+        { status: 404 }
+      );
     }
 
     // Sipariş durumunu güncelle
@@ -135,12 +163,19 @@ export async function PUT(req) {
       paidAt: status === 'success' ? new Date() : null,
       paymentType: 'paytr',
       paytrMerchantOid: merchant_oid,
-      paytrResponse: Object.fromEntries(data.entries())
+      paytrResponse: data
     };
 
     await order.save();
+    
+    // PayTR'ye OK yanıtı dön
+    return new NextResponse('OK', {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain'
+      }
+    });
 
-    return NextResponse.json({ status: 'OK' });
   } catch (error) {
     console.error('PayTR webhook error:', error);
     return NextResponse.json(
