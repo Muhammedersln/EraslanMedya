@@ -8,6 +8,8 @@ const MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY;
 const MERCHANT_SALT = process.env.PAYTR_MERCHANT_SALT;
 
 export async function POST(req) {
+  console.log('PayTR callback received');
+  
   try {
     await dbConnect();
 
@@ -17,7 +19,7 @@ export async function POST(req) {
     const total_amount = data.get('total_amount');
     const hash = data.get('hash');
 
-    console.log('PayTR Callback received:', {
+    console.log('PayTR callback data:', {
       merchant_oid,
       status,
       total_amount
@@ -50,15 +52,6 @@ export async function POST(req) {
       });
     }
 
-    // Eğer sipariş zaten işlendiyse tekrar işleme
-    if (order.paymentStatus === 'paid' && status === 'success') {
-      console.log('PayTR duplicate success notification:', merchant_oid);
-      return new Response('OK', {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain' }
-      });
-    }
-
     // Ödeme durumuna göre sipariş durumunu güncelle
     if (status === 'success') {
       order.status = 'processing';
@@ -72,13 +65,6 @@ export async function POST(req) {
         paytrMerchantOid: merchant_oid,
         paytrResponse: Object.fromEntries(data.entries())
       };
-
-      // Email bildirimi gönder
-      try {
-        await sendOrderConfirmationEmail(order);
-      } catch (emailError) {
-        console.error('Order confirmation email failed:', emailError);
-      }
     } else {
       order.status = 'cancelled';
       order.paymentStatus = 'failed';
@@ -95,20 +81,22 @@ export async function POST(req) {
     }
 
     await order.save();
-    console.log('PayTR order updated successfully:', {
+    console.log('PayTR order updated:', {
       orderId: merchant_oid,
       status: order.status,
       paymentStatus: order.paymentStatus
     });
 
+    // PayTR'ye başarılı yanıt gönder
     return new Response('OK', {
       status: 200,
       headers: { 'Content-Type': 'text/plain' }
     });
   } catch (error) {
     console.error('PayTR callback error:', error);
-    return new Response('PAYTR notification failed: ' + error.message, {
-      status: 500,
+    // Hata durumunda bile PayTR'ye OK yanıtı gönder
+    return new Response('OK', {
+      status: 200,
       headers: { 'Content-Type': 'text/plain' }
     });
   }
