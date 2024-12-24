@@ -46,7 +46,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
         },
         body: JSON.stringify({
           orderId: orderDetails.id,
-          amount: Math.round(orderDetails.totalAmount * 100),
+          amount: parseInt((orderDetails.totalAmount * 100).toFixed(0)),
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
             ? `${orderDetails.firstName} ${orderDetails.lastName}`
@@ -69,7 +69,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
       if (!response.ok) {
         console.log('Payment request details:', {
           orderId: orderDetails.id,
-          amount: Math.round(orderDetails.totalAmount * 100),
+          amount: parseInt((orderDetails.totalAmount * 100).toFixed(0)),
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
             ? `${orderDetails.firstName} ${orderDetails.lastName}`
