@@ -444,7 +444,7 @@ export default function Cart() {
                         disabled={cartItems.length === 0}
                         className="w-full mt-4 bg-primary text-white py-3 sm:py-4 rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium"
                       >
-                        Siparişi Onayla
+                        Ödemeye Geç
                       </button>
                     </div>
                   </div>
