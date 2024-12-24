@@ -40,6 +40,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
+          orderId: orderDetails.id,
           amount: Math.round(orderDetails.totalAmount.toFixed(2) * 100),
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
