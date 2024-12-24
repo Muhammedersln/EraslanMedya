@@ -142,20 +142,28 @@ export default function PaymentForm({ orderDetails, onClose }) {
                   }
                 });
 
-                if (!clearCartResponse.ok) {
-                  console.error('Error clearing cart:', await clearCartResponse.text());
+                const clearCartData = await clearCartResponse.json();
+
+                if (!clearCartResponse.ok || !clearCartData.success) {
+                  console.error('Error clearing cart:', clearCartData);
                   toast.error('Sepet temizlenirken bir hata oluştu');
                   return;
                 }
 
-                // Sepet güncellendiğinde event tetikle
-                window.dispatchEvent(new Event('cartUpdated'));
-                
-                toast.success(data.message || 'Ödeme başarıyla tamamlandı');
-                // Sayfayı yenilemeden önce kısa bir bekleme ekleyelim
-                setTimeout(() => {
-                  window.location.href = '/dashboard/orders';
-                }, 1500);
+                // Sepet başarıyla temizlendiyse
+                if (clearCartData.deletedCount > 0) {
+                  // Sepet güncellendiğinde event tetikle
+                  window.dispatchEvent(new Event('cartUpdated'));
+                  
+                  toast.success(data.message || 'Ödeme başarıyla tamamlandı');
+                  // Sayfayı yenilemeden önce kısa bir bekleme ekleyelim
+                  setTimeout(() => {
+                    window.location.href = '/dashboard/orders';
+                  }, 1500);
+                } else {
+                  console.error('Cart items not deleted:', clearCartData);
+                  toast.error('Sepet temizlenirken bir hata oluştu');
+                }
               } catch (error) {
                 console.error('Error clearing cart:', error);
                 toast.error('Sepet temizlenirken bir hata oluştu');
