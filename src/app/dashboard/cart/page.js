@@ -26,7 +26,7 @@ export default function Cart() {
     const validItems = items.filter(item => item.product);
     
     const subtotal = validItems.reduce((sum, item) => 
-      sum + (parseFloat((item.product.price * item.quantity).toFixed(2))), 0);
+      sum + (parseFloat(item.product.price) * item.quantity), 0);
     
     const taxRate = settings.taxRate;
     const taxAmount = parseFloat((subtotal * taxRate).toFixed(2));
@@ -34,7 +34,7 @@ export default function Cart() {
     const total = parseFloat((subtotal + taxAmount).toFixed(2));
 
     setTotalPrice({
-      subtotal: subtotal,
+      subtotal: parseFloat(subtotal.toFixed(2)),
       tax: taxAmount,
       total: total,
       taxDetails: [{
@@ -186,14 +186,14 @@ export default function Cart() {
   const handleCheckout = () => {
     const orderDetails = {
       id: `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`,
-      totalAmount: totalPrice.total,
+      totalAmount: parseFloat(totalPrice.total.toFixed(2)),
       email: user.email,
       items: cartItems.map(item => ({
         product: {
           id: item.product._id,
           name: item.product.name
         },
-        price: item.product.price,
+        price: parseFloat(item.product.price),
         quantity: item.quantity,
         productData: item.productData,
         targetCount: item.quantity
