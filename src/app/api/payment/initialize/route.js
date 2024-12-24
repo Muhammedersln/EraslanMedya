@@ -44,15 +44,14 @@ export async function POST(request) {
     const merchant_id = process.env.PAYTR_MERCHANT_ID;
     const merchant_key = process.env.PAYTR_MERCHANT_KEY;
     const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
-    const merchant_ok_url = `${process.env.NEXT_PUBLIC_API_URL}/payment/success`;
-    const merchant_fail_url = `${process.env.NEXT_PUBLIC_API_URL}/payment/fail`;
-    const callback_url = `${process.env.NEXT_PUBLIC_API_URL}/api/payment/callback`;
+    const merchant_ok_url = "https://www.eraslanmedya.com/dashboard/orders/success";
+    const merchant_fail_url = "https://www.eraslanmedya.com/dashboard/orders/fail";
+    const callback_url = "https://www.eraslanmedya.com/api/payment/callback";
 
     console.log('PayTR URLs:', {
       merchant_ok_url,
       merchant_fail_url,
-      callback_url,
-      base_url: process.env.NEXT_PUBLIC_API_URL
+      callback_url
     });
 
     const timeout_limit = "30";
