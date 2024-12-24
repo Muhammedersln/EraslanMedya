@@ -121,9 +121,33 @@ export default function PaymentForm({ orderDetails, onClose }) {
       if (event.origin === 'https://www.paytr.com') {
         const { status } = event.data;
         if (status === 'success') {
-          toast.success('Ödeme başarıyla tamamlandı');
-          window.location.href = '/dashboard/orders';
+          // Sepeti temizle
+          fetch('/api/cart/clear', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          }).then(() => {
+            toast.success('Ödeme başarıyla tamamlandı');
+            window.location.href = '/dashboard/orders';
+          }).catch(error => {
+            console.error('Error clearing cart:', error);
+            toast.success('Ödeme başarıyla tamamlandı');
+            window.location.href = '/dashboard/orders';
+          });
         } else if (status === 'failed') {
+          // Başarısız ödeme durumunda siparişi sil
+          fetch(`/api/payment/cancel/${orderDetails.id}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          }).catch(error => {
+            console.error('Error canceling order:', error);
+          });
+
           setError('Ödeme işlemi başarısız oldu');
           toast.error('Ödeme işlemi başarısız oldu');
           handleIframeClose();
@@ -133,7 +157,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [handleIframeClose]);
+  }, [handleIframeClose, orderDetails?.id]);
 
   return (
     <div className="space-y-6">
