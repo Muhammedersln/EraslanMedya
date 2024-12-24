@@ -81,10 +81,26 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
+// Normal indeks ekle (TTL olmayan)
+orderSchema.index({ expiresAt: 1 });
+
 // Güncelleme zamanını otomatik ayarla
 orderSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
 });
 
-export default mongoose.models.Order || mongoose.model('Order', orderSchema); 
+// Model oluşturulduğunda mevcut TTL indeksini sil
+const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+
+if (mongoose.connection.readyState === 1) { // Eğer veritabanına bağlıysak
+  Order.collection.dropIndex('expiresAt_1')
+    .then(() => console.log('TTL indeksi başarıyla silindi'))
+    .catch(err => {
+      if (err.code !== 27) { // 27: indeks bulunamadı hatası
+        console.error('TTL indeksi silinirken hata:', err);
+      }
+    });
+}
+
+export default Order; 

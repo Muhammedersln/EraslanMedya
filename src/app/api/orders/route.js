@@ -3,6 +3,66 @@ import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
 import { auth } from '@/lib/middleware/auth';
 
+// Süresi dolan siparişleri kontrol et ve güncelle
+async function checkExpiredOrders() {
+  try {
+    // Süresi dolan ve hala pending olan siparişleri bul
+    const expiredOrders = await Order.find({
+      paymentStatus: 'pending',
+      expiresAt: { $lte: new Date() }
+    });
+
+    // Her bir siparişi güncelle
+    for (const order of expiredOrders) {
+      order.status = 'cancelled';
+      order.paymentStatus = 'expired';
+      await order.save();
+      console.log('Süresi dolan sipariş iptal edildi:', order._id);
+    }
+  } catch (error) {
+    console.error('Sipariş kontrol hatası:', error);
+  }
+}
+
+export async function GET(req) {
+  try {
+    const user = await auth(req);
+    if (!user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    await dbConnect();
+
+    // Her istek geldiğinde süresi dolan siparişleri kontrol et
+    await checkExpiredOrders();
+
+    const orders = await Order.find({ user: user.id })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: 'items.product',
+        model: 'Product',
+        select: 'name price subCategory'
+      });
+
+    // Null veya undefined product referanslarını filtrele
+    const validOrders = orders.map(order => {
+      const validItems = order.items.filter(item => item.product);
+      return {
+        ...order.toObject(),
+        items: validItems
+      };
+    });
+
+    return NextResponse.json(validOrders);
+  } catch (error) {
+    console.error('Get orders error:', error);
+    return NextResponse.json(
+      { message: 'Failed to fetch orders' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req) {
   try {
     const user = await auth(req);
@@ -46,71 +106,11 @@ export async function POST(req) {
     // Siparişi kaydet
     const savedOrder = await order.save();
     
-    // Otomatik iptal için timeout başlat - sadece ödeme bekleyen siparişler için
-    if (savedOrder.paymentStatus === 'pending') {
-      setTimeout(async () => {
-        try {
-          // Sadece ödeme bekleyen ve süresi dolan siparişi bul
-          const expiredOrder = await Order.findOne({
-            _id: order._id,
-            paymentStatus: 'pending', // Sadece ödemesi bekleyenleri kontrol et
-            expiresAt: { $lte: new Date() }
-          });
-
-          // Eğer sipariş hala ödeme bekliyorsa iptal et
-          if (expiredOrder) {
-            expiredOrder.status = 'cancelled';
-            expiredOrder.paymentStatus = 'expired';
-            await expiredOrder.save();
-            console.log('Ödeme yapılmayan sipariş iptal edildi:', order._id, 'Süre:', new Date());
-          }
-        } catch (error) {
-          console.error('Sipariş iptal hatası:', error);
-        }
-      }, 2 * 60 * 1000); // 2 dakika
-    }
-
     return NextResponse.json(savedOrder);
   } catch (error) {
     console.error('Create order error:', error);
     return NextResponse.json(
       { message: error.message || 'Failed to create order' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(req) {
-  try {
-    const user = await auth(req);
-    if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    await dbConnect();
-
-    const orders = await Order.find({ user: user.id })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: 'items.product',
-        model: 'Product',
-        select: 'name price subCategory'
-      });
-
-    // Null veya undefined product referanslarını filtrele
-    const validOrders = orders.map(order => {
-      const validItems = order.items.filter(item => item.product);
-      return {
-        ...order.toObject(),
-        items: validItems
-      };
-    });
-
-    return NextResponse.json(validOrders);
-  } catch (error) {
-    console.error('Get orders error:', error);
-    return NextResponse.json(
-      { message: 'Failed to fetch orders' },
       { status: 500 }
     );
   }

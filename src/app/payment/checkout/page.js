@@ -22,6 +22,29 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    // Sayfa yüklendiğinde siparişleri kontrol et
+    fetch('/api/orders', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    // Sayfa kapatıldığında veya yenilendiğinde siparişleri kontrol et
+    const handleBeforeUnload = () => {
+      fetch('/api/orders', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     let isSubscribed = true;
 
     const initPayment = async () => {
