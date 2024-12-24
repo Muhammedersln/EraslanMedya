@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
@@ -161,8 +163,9 @@ export default function CheckoutPage() {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [router]);
+  }, [router, user]);
 
   if (loading) {
     return (
