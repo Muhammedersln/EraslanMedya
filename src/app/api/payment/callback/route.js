@@ -48,20 +48,6 @@ export async function POST(request) {
       };
       await order.save();
 
-      // Sepeti temizle
-      try {
-        await Cart.deleteMany({ user: order.user });
-      } catch (error) {
-        console.error('Error clearing cart:', error);
-        // Sepet temizleme hatası durumunda siparişe not ekle
-        order.notes = [...(order.notes || []), {
-          type: 'error',
-          message: 'Sepet temizlenirken hata oluştu',
-          timestamp: new Date()
-        }];
-        await order.save();
-      }
-
       return NextResponse.json({ 
         status: 'success',
         message: 'Ödeme başarıyla tamamlandı'

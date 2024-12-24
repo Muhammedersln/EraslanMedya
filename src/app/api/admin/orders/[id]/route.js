@@ -38,10 +38,24 @@ export async function PATCH(request, context) {
 
     await order.save();
     await order.populate('user', 'username email');
-    await order.populate('items.product', 'name price subCategory');
+    await order.populate('items.product', 'name price subCategory category');
 
-    return NextResponse.json(order);
+    // Format order for response
+    const formattedOrder = {
+      ...order.toObject(),
+      items: order.items.map(item => ({
+        ...item.toObject(),
+        price: parseFloat(item.price || 0),
+        taxRate: parseFloat(item.taxRate || 0.18),
+        currentCount: parseInt(item.currentCount || 0),
+        targetCount: parseInt(item.targetCount || 0)
+      })),
+      totalAmount: parseFloat(order.totalAmount || 0)
+    };
+
+    return NextResponse.json(formattedOrder);
   } catch (error) {
+    console.error('Error updating order:', error);
     return NextResponse.json(
       { message: 'Server error', error: error.message },
       { status: 500 }

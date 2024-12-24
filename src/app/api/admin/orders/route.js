@@ -17,10 +17,29 @@ export async function GET(request) {
     await dbConnect();
     const orders = await Order.find()
       .populate('user', 'username email')
-      .populate('items.product', 'name price subCategory')
-      .sort('-createdAt');
+      .populate('items.product', 'name price subCategory category')
+      .sort('-createdAt')
+      .lean()
+      .exec();
 
-    return NextResponse.json(orders);
+    // Format orders for response
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      items: order.items.map(item => ({
+        ...item,
+        product: item.product ? {
+          ...item.product,
+          price: parseFloat(item.product.price || 0)
+        } : null,
+        price: parseFloat(item.price || 0),
+        taxRate: parseFloat(item.taxRate || 0.18),
+        currentCount: parseInt(item.currentCount || 0),
+        targetCount: parseInt(item.targetCount || 0)
+      })),
+      totalAmount: parseFloat(order.totalAmount || 0)
+    }));
+
+    return NextResponse.json(formattedOrders);
   } catch (error) {
     return NextResponse.json(
       { message: 'Server error', error: error.message },

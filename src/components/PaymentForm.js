@@ -134,24 +134,32 @@ export default function PaymentForm({ orderDetails, onClose }) {
             
             if (data.status === 'success') {
               // Sepeti temizle
-              const clearCartResponse = await fetch('/api/cart/clear', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+              try {
+                const clearCartResponse = await fetch('/api/cart/clear', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  }
+                });
+
+                if (!clearCartResponse.ok) {
+                  console.error('Error clearing cart:', await clearCartResponse.text());
+                  toast.error('Sepet temizlenirken bir hata oluştu');
+                  return;
                 }
-              });
 
-              if (!clearCartResponse.ok) {
-                console.error('Error clearing cart:', await clearCartResponse.text());
+                // Sepet güncellendiğinde event tetikle
+                window.dispatchEvent(new Event('cartUpdated'));
+                
+                toast.success(data.message || 'Ödeme başarıyla tamamlandı');
+                // Sayfayı yenilemeden önce kısa bir bekleme ekleyelim
+                setTimeout(() => {
+                  window.location.href = '/dashboard/orders';
+                }, 1500);
+              } catch (error) {
+                console.error('Error clearing cart:', error);
                 toast.error('Sepet temizlenirken bir hata oluştu');
-                return;
               }
-
-              toast.success(data.message || 'Ödeme başarıyla tamamlandı');
-              // Sayfayı yenilemeden önce kısa bir bekleme ekleyelim
-              setTimeout(() => {
-                window.location.href = '/dashboard/orders';
-              }, 1500);
             } else if (data.status === 'failed') {
               throw new Error(data.message || 'Ödeme başarısız oldu');
             } else {
