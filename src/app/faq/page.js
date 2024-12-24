@@ -251,8 +251,7 @@ export default function FAQ() {
                             Aradığınız cevabı bulamadınız mı?
                         </h3>
                         <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
-                            Destek ekibimiz size yardımcı olmak için hazır.
-                            7/24 canlı destek hizmetimizden faydalanabilir veya destek talebi oluşturabilirsiniz.
+                            test test test test
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <motion.a
