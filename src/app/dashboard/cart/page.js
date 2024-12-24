@@ -214,20 +214,30 @@ export default function Cart() {
         return;
       }
 
+      // Sipariş öğelerini hazırla
       const formattedItems = cartItems.map(item => ({
         product: item.product._id,
         quantity: parseInt(item.quantity),
         price: parseFloat(item.product.price),
         taxRate: settings.taxRate,
         productData: item.productData,
-        targetCount: parseInt(item.quantity)
+        targetCount: parseInt(item.quantity),
+        currentCount: 0 // Yeni eklenen alan
       }));
 
+      // Sipariş detaylarını hazırla
       const orderDetails = {
         _id: `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`,
         user: user._id,
         totalAmount: parseFloat(totalPrice.total.toFixed(2)),
-        items: formattedItems
+        items: formattedItems,
+        status: 'pending',
+        paymentStatus: 'pending',
+        paymentDetails: {
+          status: 'pending',
+          amount: parseFloat(totalPrice.total.toFixed(2)),
+          paymentType: 'paytr'
+        }
       };
 
       // PayTR için gerekli bilgileri hazırla

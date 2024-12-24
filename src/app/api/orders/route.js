@@ -46,28 +46,29 @@ export async function POST(req) {
     // Siparişi kaydet
     const savedOrder = await order.save();
     
-    // Otomatik iptal için timeout başlat
-    setTimeout(async () => {
-      try {
-        // Sadece belirli siparişi bul ve durumunu kontrol et
-        const expiredOrder = await Order.findOne({
-          _id: order._id,
-          status: 'pending',
-          paymentStatus: 'pending',
-          expiresAt: { $lte: new Date() }
-        });
+    // Otomatik iptal için timeout başlat - sadece ödeme bekleyen siparişler için
+    if (savedOrder.paymentStatus === 'pending') {
+      setTimeout(async () => {
+        try {
+          // Sadece ödeme bekleyen ve süresi dolan siparişi bul
+          const expiredOrder = await Order.findOne({
+            _id: order._id,
+            paymentStatus: 'pending', // Sadece ödemesi bekleyenleri kontrol et
+            expiresAt: { $lte: new Date() }
+          });
 
-        // Eğer sipariş bulunduysa ve hala pending durumundaysa iptal et
-        if (expiredOrder) {
-          expiredOrder.status = 'cancelled';
-          expiredOrder.paymentStatus = 'expired';
-          await expiredOrder.save();
-          console.log('Süresi dolmuş sipariş iptal edildi:', order._id);
+          // Eğer sipariş hala ödeme bekliyorsa iptal et
+          if (expiredOrder) {
+            expiredOrder.status = 'cancelled';
+            expiredOrder.paymentStatus = 'expired';
+            await expiredOrder.save();
+            console.log('Ödeme yapılmayan sipariş iptal edildi:', order._id, 'Süre:', new Date());
+          }
+        } catch (error) {
+          console.error('Sipariş iptal hatası:', error);
         }
-      } catch (error) {
-        console.error('Sipariş iptal hatası:', error);
-      }
-    }, 2 * 60 * 1000); // 2 dakika
+      }, 2 * 60 * 1000); // 2 dakika
+    }
 
     return NextResponse.json(savedOrder);
   } catch (error) {
