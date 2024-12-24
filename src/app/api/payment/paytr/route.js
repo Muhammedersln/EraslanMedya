@@ -29,7 +29,7 @@ export async function POST(req) {
     const merchant_fail_url = 'https://eraslanmedya.com/payment/fail';
     const timeout_limit = '30';
     const debug_on = '1';
-    const test_mode = "0";
+    const test_mode = "1";
     const no_installment = '0';
     const max_installment = '0';
     const currency = 'TL';
@@ -62,7 +62,7 @@ export async function POST(req) {
       currency,
       test_mode,
       lang,
-      merchant_notify_url: `https://eraslanmedya.com/api/payment/callback`
+      merchant_notify_url: `https://eraslanmedya.com/api/payment/paytr`
     };
 
     // PayTR API'ye istek
