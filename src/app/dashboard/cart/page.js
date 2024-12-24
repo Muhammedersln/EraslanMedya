@@ -187,6 +187,7 @@ export default function Cart() {
 
   const handleCheckout = () => {
     setOrderDetails({
+      id: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       totalAmount: totalPrice.total,
       email: user.email,
       items: cartItems.map(item => ({
