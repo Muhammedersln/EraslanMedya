@@ -5,28 +5,41 @@ import { toast } from 'react-hot-toast';
 
 export default function PaymentForm({ orderDetails, onClose }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showIframe, setShowIframe] = useState(false);
   const [iframeUrl, setIframeUrl] = useState('');
-  const [error, setError] = useState(null);
+  const [orderId, setOrderId] = useState(null);
 
   const handlePayment = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Validate orderDetails
-      if (!orderDetails?.id) {
-        throw new Error('Sipariş ID eksik');
+      // Önce siparişi oluştur
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          cartItems: orderDetails.items.map(item => ({
+            product: item.product.id,
+            quantity: item.quantity,
+            productData: item.productData,
+            targetCount: item.targetCount
+          })),
+          status: 'pending'
+        })
+      });
+
+      if (!orderResponse.ok) {
+        const error = await orderResponse.json();
+        throw new Error(error.message || 'Sipariş oluşturulamadı');
       }
-      if (!orderDetails?.totalAmount) {
-        throw new Error('Sipariş tutarı eksik');
-      }
-      if (!orderDetails?.email) {
-        throw new Error('E-posta adresi eksik');
-      }
-      if (!orderDetails?.items?.length) {
-        throw new Error('Sipariş ürünleri eksik');
-      }
+
+      const order = await orderResponse.json();
+      setOrderId(order._id);
 
       // Format basket items
       const userBasket = orderDetails.items.map(item => ({
@@ -35,7 +48,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
         quantity: item.quantity
       }));
 
-      // Create payment request
+      // Ödeme işlemini başlat
       const response = await fetch('/api/payment', {
         method: 'POST',
         headers: {
@@ -43,7 +56,7 @@ export default function PaymentForm({ orderDetails, onClose }) {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          orderId: orderDetails.id,
+          orderId: order._id,
           amount: orderDetails.totalAmount,
           email: orderDetails.email,
           userName: orderDetails.firstName && orderDetails.lastName 
@@ -73,17 +86,47 @@ export default function PaymentForm({ orderDetails, onClose }) {
       console.error('Payment error:', error);
       setError(error.message || 'Ödeme işlemi başlatılırken bir hata oluştu');
       toast.error(error.message || 'Ödeme işlemi başlatılırken bir hata oluştu');
+      
+      // Hata durumunda siparişi iptal et
+      if (orderId) {
+        try {
+          await fetch(`/api/orders/${orderId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+        } catch (deleteError) {
+          console.error('Sipariş iptal hatası:', deleteError);
+        }
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = async () => {
+    // Eğer sipariş oluşturulduysa ve ödeme tamamlanmadıysa siparişi iptal et
+    if (orderId) {
+      try {
+        await fetch(`/api/orders/${orderId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } catch (error) {
+        console.error('Sipariş iptal hatası:', error);
+      }
+    }
+    setOrderId(null);
+    onClose();
+  };
+
   const handleIframeClose = useCallback(() => {
     setShowIframe(false);
     setIframeUrl('');
-    setError(null);
-    onClose?.();
-  }, [onClose]);
+  }, []);
 
   // Listen for payment result message
   useEffect(() => {
@@ -92,7 +135,6 @@ export default function PaymentForm({ orderDetails, onClose }) {
         const { status } = event.data;
         if (status === 'success') {
           toast.success('Ödeme başarıyla tamamlandı');
-          handleIframeClose();
           window.location.href = '/dashboard/orders';
         } else if (status === 'failed') {
           setError('Ödeme işlemi başarısız oldu');
@@ -107,74 +149,92 @@ export default function PaymentForm({ orderDetails, onClose }) {
   }, [handleIframeClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl">
-        {error && (
-          <div className="p-4 mb-4 text-red-700 bg-red-50 rounded-xl mx-6 mt-6 border border-red-100">
-            <p className="text-sm">{error}</p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">Ödeme</h2>
+          <p className="text-sm text-gray-600">Güvenli ödeme için PayTR kullanılmaktadır.</p>
+        </div>
+        {!showIframe && (
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-500"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
         )}
-        
-        {!showIframe ? (
-          <div className="p-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Ödeme Yap</h2>
-            <div className="mb-8 space-y-4">
-              <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                <p className="text-2xl font-semibold text-gray-800">{orderDetails?.totalAmount?.toFixed(2)} TL</p>
-                <p className="text-sm text-gray-600 mt-2">Toplam Ödenecek Tutar</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <p className="text-sm text-gray-600 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                  </svg>
-                  Güvenli ödeme işleminiz PayTR altyapısı üzerinden gerçekleştirilecektir.
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={onClose}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-                disabled={loading}
-              >
-                İptal
-              </button>
-              <button
-                onClick={handlePayment}
-                className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200 shadow-lg shadow-blue-200"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    İşleniyor...
-                  </span>
-                ) : 'Ödeme Yap'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="relative">
-            <button
-              onClick={handleIframeClose}
-              className="absolute right-4 top-4 z-10 text-gray-500 hover:text-gray-700 bg-white rounded-full p-2 shadow-lg transition-transform hover:scale-105"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <iframe
-              src={iframeUrl}
-              className="w-full h-[600px] rounded-xl"
-              frameBorder="0"
-            />
-          </div>
+        {showIframe && (
+          <button
+            onClick={handleIframeClose}
+            className="text-gray-400 hover:text-gray-500"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
+      {showIframe ? (
+        <iframe
+          src={iframeUrl}
+          className="w-full h-[600px] border-0"
+          frameBorder="0"
+        />
+      ) : (
+        <div>
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-gray-900 mb-2">Sipariş Özeti</h3>
+            <div className="space-y-2">
+              {orderDetails.items.map((item, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span>{item.product.name} x {item.quantity}</span>
+                  <span>₺{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="border-t pt-2 mt-2">
+                <div className="flex justify-between font-medium">
+                  <span>Toplam</span>
+                  <span>₺{orderDetails.totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={handleClose}
+              className="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+              disabled={loading}
+            >
+              İptal
+            </button>
+            <button
+              onClick={handlePayment}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200 shadow-lg shadow-blue-200"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  İşleniyor...
+                </span>
+              ) : 'Ödeme Yap'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

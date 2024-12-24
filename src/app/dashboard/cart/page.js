@@ -185,50 +185,22 @@ export default function Cart() {
     }
   };
 
-  const handleCheckout = async () => {
-    try {
-      const response = await fetch(`/api/orders`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+  const handleCheckout = () => {
+    setOrderDetails({
+      totalAmount: totalPrice.total,
+      email: user.email,
+      items: cartItems.map(item => ({
+        product: {
+          id: item.product._id,
+          name: item.product.name
         },
-        body: JSON.stringify({
-          cartItems: cartItems.map(item => ({
-            product: item.product._id,
-            quantity: item.quantity,
-            productData: item.productData,
-            targetCount: item.quantity
-          }))
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Sipariş oluşturulamadı');
-      }
-
-      const order = await response.json();
-      console.log('Created Order:', order); // Debug log
-      
-      setOrderDetails({
-        id: order._id,
-        totalAmount: totalPrice.total,
-        email: user.email,
-        items: cartItems.map(item => ({
-          product: {
-            name: item.product.name
-          },
-          price: item.product.price,
-          quantity: item.quantity
-        }))
-      });
-      
-      setShowPaymentForm(true);
-    } catch (error) {
-      console.error('Checkout hatası:', error);
-      toast.error(error.message || 'Sipariş oluşturulurken bir hata oluştu');
-    }
+        price: item.product.price,
+        quantity: item.quantity,
+        productData: item.productData,
+        targetCount: item.quantity
+      }))
+    });
+    setShowPaymentForm(true);
   };
 
   const getImageUrl = (imageUrl) => {
@@ -711,19 +683,11 @@ export default function Cart() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
               <PaymentForm
-                orderDetails={{
-                  id: orderDetails.id,
-                  totalAmount: orderDetails.totalAmount,
-                  email: orderDetails.email,
-                  items: orderDetails.items.map(item => ({
-                    product: {
-                      name: item.product.name
-                    },
-                    price: item.price,
-                    quantity: item.quantity
-                  }))
+                orderDetails={orderDetails}
+                onClose={() => {
+                  setShowPaymentForm(false);
+                  setOrderDetails(null);
                 }}
-                onClose={() => setShowPaymentForm(false)}
               />
             </div>
           </div>

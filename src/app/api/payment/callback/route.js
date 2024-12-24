@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyPaymentCallback } from '@/lib/paytr';
 import { updateOrderStatus } from '@/lib/orders';
+import { Order } from '@/models/order';
 
 export async function POST(request) {
   try {
@@ -52,6 +53,13 @@ export async function POST(request) {
         orderId: params.merchant_oid,
         reason: params.failed_reason_msg
       });
+    }
+    
+    // Ödeme başarılı ise siparişi güncelle
+    if (result.status === 'success') {
+      await Order.findByIdAndUpdate(params.merchant_oid, { status: 'processing' });
+    } else {
+      await Order.findByIdAndUpdate(params.merchant_oid, { status: 'cancelled' });
     }
     
     // PayTR her zaman "OK" yanıtı bekler
