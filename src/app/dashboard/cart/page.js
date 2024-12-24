@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { FaTrash, FaShoppingCart, FaArrowRight, FaInstagram, FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
-import PaymentForm from '@/components/PaymentForm';
 import PayTRPayment from '@/components/PayTRPayment';
 
 export default function Cart() {

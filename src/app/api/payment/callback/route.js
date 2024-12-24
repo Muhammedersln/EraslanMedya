@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import dbConnect from '@/lib/dbConnect';
+import db from '@/lib/db';
 import Order from '@/lib/models/Order';
 
 const MERCHANT_ID = process.env.PAYTR_MERCHANT_ID;
@@ -9,7 +9,7 @@ const MERCHANT_SALT = process.env.PAYTR_MERCHANT_SALT;
 
 export async function POST(req) {
   try {
-    await dbConnect();
+    await db.connect();
 
     const data = await req.formData();
     const merchant_oid = data.get('merchant_oid');

@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/dbConnect';
+import { auth } from '@/lib/middleware/auth';
 import Cart from '@/lib/models/Cart';
+import db from '@/lib/db';
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
+    const user = await auth(req);
+    if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await db.connect();
 
     // Kullanıcının sepetini temizle
-    await Cart.deleteMany({ user: session.user.id });
+    await Cart.deleteMany({ user: user.id });
 
     return NextResponse.json({ message: 'Cart cleared successfully' });
   } catch (error) {
