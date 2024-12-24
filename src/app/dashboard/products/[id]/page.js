@@ -826,18 +826,31 @@ export default function ProductDetail() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full shadow-lg m-4"
+              className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl m-4"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Giriş Yapın</h3>
-              <p className="text-sm text-gray-600 mb-6">Devam etmek için lütfen giriş yapın veya hesap oluşturun.</p>
-              <div className="space-y-3">
+              {/* Modal Header */}
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Giriş Yapın</h3>
+                <p className="text-gray-600">Devam etmek için lütfen giriş yapın veya hesap oluşturun.</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-4">
                 <button
                   onClick={() => {
                     setShowAuthModal(false);
                     router.push('/login');
                   }}
-                  className="w-full px-4 py-2 bg-primary text-white text-sm rounded-lg font-medium hover:bg-primary-dark transition-colors"
+                  className="w-full px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition-all duration-200 flex items-center justify-center gap-2 group"
                 >
+                  <svg className="w-5 h-5 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
                   Giriş Yap
                 </button>
                 <button
@@ -845,14 +858,20 @@ export default function ProductDetail() {
                     setShowAuthModal(false);
                     router.push('/register');
                   }}
-                  className="w-full px-4 py-2 bg-gray-100 text-gray-800 text-sm rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  className="w-full px-6 py-3 bg-gray-100 text-gray-800 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2 group"
                 >
+                  <svg className="w-5 h-5 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
                   Hesap Oluştur
                 </button>
                 <button
                   onClick={() => setShowAuthModal(false)}
-                  className="w-full text-gray-500 hover:text-gray-700 text-xs font-medium py-2"
+                  className="w-full text-gray-500 hover:text-gray-700 font-medium py-2 flex items-center justify-center gap-2 group"
                 >
+                  <svg className="w-5 h-5 transform group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                   Vazgeç
                 </button>
               </div>

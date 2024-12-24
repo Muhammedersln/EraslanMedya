@@ -58,14 +58,9 @@ export default function Products() {
   useEffect(() => {
     if (authLoading) return;
     
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    
     fetchProducts();
     fetchSettings();
-  }, [user, router, authLoading]);
+  }, [authLoading]);
     
   useEffect(() => {
     const checkMobile = () => {
