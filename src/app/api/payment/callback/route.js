@@ -1,84 +1,70 @@
-import { verifyPaymentCallback } from '@/lib/paytr';
-import dbConnect from '@/lib/db';
+import { NextResponse } from 'next/server';
 import Order from '@/lib/models/Order';
+import Cart from '@/lib/models/Cart';
+import dbConnect from '@/lib/db';
+import crypto from 'crypto';
 
 export async function POST(request) {
   try {
-    // IP kontrolü
-    const clientIp = request.headers.get('x-forwarded-for') || 
-                    request.headers.get('x-real-ip') || 
-                    request.headers.get('x-client-ip');
-                    
-    // PayTR'nin IP adreslerini kontrol et
-    const allowedIps = ['193.192.59.22', '193.192.59.23'];
-    if (!allowedIps.includes(clientIp)) {
-      console.error('Unauthorized callback attempt from IP:', clientIp);
-      return new Response('OK'); // PayTR her zaman "OK" bekler
+    const formData = await request.formData();
+    const merchant_oid = formData.get('merchant_oid');
+    const status = formData.get('status');
+    const hash = formData.get('hash');
+
+    // Hash doğrulama
+    const merchant_key = process.env.PAYTR_MERCHANT_KEY;
+    const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
+    const hashStr = formData.get('merchant_oid') + merchant_salt + status + formData.get('total_amount');
+    const computedHash = crypto.createHmac('sha256', merchant_key).update(hashStr).digest('base64');
+
+    if (hash !== computedHash) {
+      console.error('Invalid hash in callback');
+      return NextResponse.json({ status: 'error', message: 'Invalid hash' }, { status: 400 });
     }
 
     await dbConnect();
 
-    const body = await request.formData();
-    const params = Object.fromEntries(body.entries());
-    
-    // Callback işlemini logla
-    console.log('Payment callback received:', {
-      orderId: params.merchant_oid,
-      status: params.status,
-      amount: params.total_amount,
-      timestamp: new Date().toISOString()
-    });
-    
-    const result = verifyPaymentCallback(params);
-    
-    try {
-      // Siparişi bul
-      const order = await Order.findById(params.merchant_oid);
-      
-      if (!order) {
-        console.error('Order not found:', params.merchant_oid);
-        return new Response('OK');
-      }
-
-      if (result.status === 'success') {
-        // Siparişi güncelle
-        order.status = 'processing';
-        order.paymentDetails = {
-          status: 'paid',
-          amount: result.amount,
-          paidAt: new Date(),
-          paymentId: params.payment_id,
-          paymentType: 'paytr'
-        };
-      } else {
-        // Başarısız ödeme
-        order.status = 'cancelled';
-        order.paymentDetails = {
-          status: 'failed',
-          amount: result.amount,
-          paidAt: new Date(),
-          paymentId: params.payment_id,
-          paymentType: 'paytr',
-          failReason: params.failed_reason_msg
-        };
-      }
-
-      await order.save();
-      
-      console.log('Order updated:', {
-        orderId: order._id,
-        status: order.status,
-        paymentStatus: order.paymentDetails.status
-      });
-    } catch (error) {
-      console.error('Error updating order:', error);
+    // Siparişi bul
+    const order = await Order.findById(merchant_oid);
+    if (!order) {
+      console.error('Order not found:', merchant_oid);
+      return NextResponse.json({ status: 'error', message: 'Order not found' }, { status: 404 });
     }
 
-    // PayTR her zaman "OK" yanıtı bekler
-    return new Response('OK');
+    console.log('Processing payment callback:', {
+      orderId: merchant_oid,
+      status,
+      currentOrderStatus: order.status
+    });
+
+    if (status === 'success') {
+      // Ödeme başarılıysa siparişi onayla
+      order.status = 'confirmed';
+      order.paymentStatus = 'paid';
+      await order.save();
+
+      // Sepeti temizle
+      try {
+        const cartResult = await Cart.deleteMany({ user: order.user });
+        console.log('Cart cleared after successful payment:', {
+          orderId: merchant_oid,
+          userId: order.user,
+          deletedCount: cartResult.deletedCount
+        });
+      } catch (error) {
+        console.error('Error clearing cart:', error);
+      }
+
+      return NextResponse.json({ status: 'success' });
+    } else {
+      // Ödeme başarısızsa siparişi iptal et ve sil
+      console.log('Payment failed, deleting order:', merchant_oid);
+      await Order.findByIdAndDelete(merchant_oid);
+      
+      return NextResponse.json({ status: 'error', message: 'Payment failed' });
+    }
   } catch (error) {
     console.error('Payment callback error:', error);
-    // Hata durumunda bile "OK" dönmeliyiz
-    return new Response('OK');
+    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
   }
 } 

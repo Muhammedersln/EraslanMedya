@@ -1,25 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createPaymentToken } from '@/lib/paytr';
 import { auth } from '@/lib/middleware/auth';
 import Order from '@/lib/models/Order';
-import Product from '@/lib/models/Product';
 import dbConnect from '@/lib/db';
+import crypto from 'crypto';
 
 export async function POST(request) {
   try {
-    // Authenticate user
     const user = await auth(request);
     if (!user) {
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    await dbConnect();
-
-    // Get request body
-    const body = await request.json();
     const {
       orderId,
       amount,
@@ -29,69 +20,100 @@ export async function POST(request) {
       userAddress,
       userBasket,
       cartItems
-    } = body;
+    } = await request.json();
 
-    // Validate cart items
-    const validatedItems = await Promise.all(
-      cartItems.map(async (item) => {
-        const product = await Product.findById(item.product);
-        if (!product) {
-          throw new Error(`Product not found: ${item.product}`);
-        }
+    await dbConnect();
 
-        return {
-          product: product._id,
-          quantity: item.quantity,
-          price: product.price,
-          taxRate: product.taxRate || 0.18,
-          productData: item.productData,
-          targetCount: item.targetCount,
-          currentCount: 0
-        };
-      })
+    // Geçici sipariş oluştur (pending status ile)
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        user: user.id,
+        items: cartItems,
+        status: 'pending', // Ödeme başarılı olana kadar pending
+        totalAmount: amount / 100, // Kuruş to TL
+        paymentStatus: 'pending',
+        shippingAddress: userAddress,
+        email: email,
+        phone: userPhone
+      },
+      { new: true, upsert: true }
     );
 
-    // Create temporary order
-    const tempOrder = await Order.create({
-      _id: orderId,
-      user: user.id,
-      items: validatedItems,
-      totalAmount: amount / 100, // Convert from kuruş to TL
-      status: 'pending',
-      paymentDetails: {
-        status: 'pending'
-      }
-    });
+    // PayTR için gerekli değişkenler
+    const merchant_id = process.env.PAYTR_MERCHANT_ID;
+    const merchant_key = process.env.PAYTR_MERCHANT_KEY;
+    const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
+    const merchant_ok_url = `${process.env.NEXT_PUBLIC_API_URL}/payment/success`;
+    const merchant_fail_url = `${process.env.NEXT_PUBLIC_API_URL}/payment/fail`;
+    const timeout_limit = "30";
+    const currency = "TL";
+    const test_mode = "1";
+    const debug_on = "1";
+    const lang = "tr";
 
-    console.log('Temporary order created:', {
-      orderId: tempOrder._id,
-      userId: user.id,
-      amount: amount / 100
-    });
+    // Benzersiz sipariş numarası
+    const merchant_oid = order._id.toString();
 
-    // Get PayTR token
-    const paymentData = await createPaymentToken({
-      orderId,
-      amount,
+    // User IP
+    const user_ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
+
+    // Hash string
+    const hashStr = `${merchant_id}${user_ip}${merchant_oid}${email}${amount}${userBasket}${test_mode}`;
+    const paytr_token = crypto.createHmac('sha256', merchant_key)
+      .update(hashStr + merchant_salt)
+      .digest('base64');
+
+    const params = {
+      merchant_id,
+      user_ip,
+      merchant_oid,
       email,
-      userBasket,
-      userIp: request.headers.get('x-forwarded-for') || 
-              request.headers.get('x-real-ip') || 
-              request.headers.get('x-client-ip') ||
-              '127.0.0.1',
-      callbackUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/payment/callback`,
-      testMode: '1',
-      currency: 'TL',
-      noInstallment: '1',
-      maxInstallment: '1'
+      payment_amount: amount,
+      paytr_token,
+      user_basket: userBasket,
+      merchant_ok_url,
+      merchant_fail_url,
+      user_name: userName,
+      user_phone: userPhone,
+      user_address: userAddress,
+      timeout_limit,
+      debug_on,
+      test_mode,
+      currency,
+      lang,
+      no_installment: "0",
+      max_installment: "0"
+    };
+
+    // PayTR token al
+    const paytrResponse = await fetch('https://www.paytr.com/odeme/api/get-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams(params)
     });
 
-    return NextResponse.json(paymentData);
+    const paytrData = await paytrResponse.json();
+
+    if (paytrData.status === 'success') {
+      return NextResponse.json({
+        status: 'success',
+        token: paytrData.token,
+        orderId: order._id
+      });
+    } else {
+      // PayTR'den token alınamazsa siparişi sil
+      await Order.findByIdAndDelete(order._id);
+      
+      return NextResponse.json({
+        status: 'error',
+        error: paytrData.reason || 'Token alınamadı'
+      }, { status: 400 });
+    }
   } catch (error) {
     console.error('Payment initialization error:', error);
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 } 
