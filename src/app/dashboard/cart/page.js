@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { FaTrash, FaShoppingCart, FaArrowRight, FaInstagram, FaTiktok } from 'react-icons/fa';
 import Footer from '@/components/Footer';
-import PayTRPayment from '@/components/PayTRPayment';
 
 export default function Cart() {
   const router = useRouter();
@@ -20,8 +19,6 @@ export default function Cart() {
   const [editingItem, setEditingItem] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [settings, setSettings] = useState({ taxRate: 0.18 });
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [orderDetails, setOrderDetails] = useState(null);
 
   const calculateTotal = useCallback((items) => {
     const validItems = items.filter(item => item.product);
@@ -196,6 +193,42 @@ export default function Cart() {
 
   const handleCheckout = async () => {
     try {
+      // Sepet boş kontrolü
+      if (cartItems.length === 0) {
+        toast.error('Sepetiniz boş');
+        return;
+      }
+
+      // Token kontrolü
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        router.push('/login');
+        return;
+      }
+
+      // Kullanıcı bilgileri kontrolü
+      if (!user || !user.email) {
+        toast.error('Kullanıcı bilgilerinize ulaşılamadı');
+        return;
+      }
+
+      // Ürün verilerinin kontrolü
+      const missingData = cartItems.find(item => {
+        if (item.product.subCategory === 'followers' && !item.productData?.username) {
+          return true;
+        }
+        if (item.product.subCategory !== 'followers' && (!item.productData?.links || item.productData.links.length === 0)) {
+          return true;
+        }
+        return false;
+      });
+
+      if (missingData) {
+        toast.error('Lütfen tüm ürünler için gerekli bilgileri girin');
+        return;
+      }
+
       const formattedItems = cartItems.map(item => ({
         product: item.product._id,
         quantity: parseInt(item.quantity),
@@ -230,6 +263,9 @@ export default function Cart() {
 
       // Sipariş detaylarını local storage'a kaydet
       localStorage.setItem('pendingOrderDetails', JSON.stringify(paytrOrderDetails));
+      
+      // Loading toast göster
+      toast.loading('Ödeme sayfasına yönlendiriliyorsunuz...');
       
       // Ödeme sayfasına yönlendir
       router.push('/payment/checkout');
