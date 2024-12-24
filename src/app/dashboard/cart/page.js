@@ -40,7 +40,7 @@ export default function Cart() {
       tax: roundedTax,
       total: total,
       taxDetails: [{
-        rate: taxRate * 100,
+        rate: parseFloat((taxRate * 100).toFixed(1)),
         amount: roundedSubtotal,
         taxAmount: roundedTax
       }]
@@ -188,14 +188,14 @@ export default function Cart() {
   const handleCheckout = () => {
     const orderDetails = {
       id: `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`,
-      totalAmount: totalPrice.total,
+      totalAmount: parseFloat(totalPrice.total.toFixed(2)),
       email: user.email,
       items: cartItems.map(item => ({
         product: {
           id: item.product._id,
           name: item.product.name
         },
-        price: item.product.price,
+        price: parseFloat(item.product.price.toFixed(2)),
         quantity: item.quantity,
         productData: item.productData,
         targetCount: item.quantity
