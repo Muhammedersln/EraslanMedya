@@ -18,7 +18,25 @@ const geistMono = localFont({
 
 export const metadata = {
   title: "Eraslan Medya",
-  description: "Eraslan Medya | Sosyal Medya Pazarlama",
+  description: "Eraslan Medya | Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri. Instagram, Facebook, Twitter ve diğer sosyal medya platformları için profesyonel yönetim ve danışmanlık.",
+  keywords: "sosyal medya yönetimi, dijital pazarlama, sosyal medya danışmanlığı, instagram yönetimi, facebook reklamları, sosyal medya reklamları",
+  authors: [{ name: "Eraslan Medya" }],
+  creator: "Eraslan Medya",
+  publisher: "Eraslan Medya",
+  robots: "index, follow",
+  openGraph: {
+    title: "Eraslan Medya",
+    description: "Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri",
+    url: "https://eraslanmedya.com",
+    siteName: "Eraslan Medya",
+    locale: "tr_TR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Eraslan Medya",
+    description: "Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri",
+  },
   icons: {
     icon: [
       {
@@ -79,6 +97,34 @@ export default function RootLayout({ children }) {
     <html lang="tr">
       <head />
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background `}>
+        <Script
+          type="application/ld+json"
+          id="schema-org"
+          strategy="afterInteractive"
+        >
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Eraslan Medya",
+              "description": "Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri",
+              "url": "https://eraslanmedya.com",
+              "logo": "https://eraslanmedya.com/logo.png",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "",
+                "contactType": "customer service",
+                "areaServed": "TR",
+                "availableLanguage": "Turkish"
+              },
+              "sameAs": [
+                "https://facebook.com/eraslanmedya",
+                "https://instagram.com/eraslanmedya",
+                "https://twitter.com/eraslanmedya"
+              ]
+            }
+          `}
+        </Script>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-11512697197"
           strategy="afterInteractive"
