@@ -10,6 +10,8 @@
     "create-admin": "node scripts/createAdmin.js"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
+    "@heroicons/react": "^2.2.0",
     "@sendgrid/mail": "^8.1.4",
     "@tailwindcss/line-clamp": "^0.4.4",
     "bcryptjs": "^2.4.3",

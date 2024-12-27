@@ -1,9 +1,11 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { Menu, Transition } from '@headlessui/react';
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +100,51 @@ export default function AdminUsers() {
     }
   };
 
+  const handleVerifyUser = async (userId) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/verify`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Kullanıcı hesabı doğrulandı');
+        fetchUsers();
+      } else {
+        const data = await response.json();
+        throw new Error(data.message || 'Kullanıcı doğrulanamadı');
+      }
+    } catch (error) {
+      console.error('Kullanıcı doğrulanırken hata:', error);
+      toast.error(error.message || 'Kullanıcı doğrulanırken bir hata oluştu');
+    }
+  };
+
+  const handleResendVerification = async (userId) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Doğrulama e-postası yeniden gönderildi');
+      } else {
+        const data = await response.json();
+        throw new Error(data.message || 'Doğrulama e-postası gönderilemedi');
+      }
+    } catch (error) {
+      console.error('Doğrulama e-postası gönderilirken hata:', error);
+      toast.error(error.message || 'Doğrulama e-postası gönderilirken bir hata oluştu');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -128,6 +175,9 @@ export default function AdminUsers() {
                   Kullanıcı Adı
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hesap Durumu
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Kayıt Tarihi
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -147,22 +197,92 @@ export default function AdminUsers() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {user.username}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      user.isEmailVerified
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {user.isEmailVerified ? 'Doğrulanmış' : 'Doğrulanmamış'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {new Date(user.createdAt).toLocaleDateString('tr-TR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link 
-                      href={`/admin/users/${user._id}`}
-                      className="text-primary hover:text-primary-dark mr-3"
-                    >
-                      Detay
-                    </Link>
-                    <button 
-                      onClick={() => handleDelete(user._id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Sil
-                    </button>
+                    <Menu as="div" className="relative inline-block text-left">
+                      <div>
+                        <Menu.Button className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                          <EllipsisVerticalIcon className="h-5 w-5" />
+                        </Menu.Button>
+                      </div>
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
+                        <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                          <div className="py-1">
+                            <Menu.Item>
+                              {({ active }) => (
+                                <Link
+                                  href={`/admin/users/${user._id}`}
+                                  className={`${
+                                    active ? 'bg-gray-100' : ''
+                                  } flex px-4 py-2 text-sm text-gray-700`}
+                                >
+                                  Detay
+                                </Link>
+                              )}
+                            </Menu.Item>
+                            {!user.isEmailVerified && (
+                              <>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleVerifyUser(user._id)}
+                                      className={`${
+                                        active ? 'bg-gray-100' : ''
+                                      } flex w-full px-4 py-2 text-sm text-green-600`}
+                                    >
+                                      Doğrula
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleResendVerification(user._id)}
+                                      className={`${
+                                        active ? 'bg-gray-100' : ''
+                                      } flex w-full px-4 py-2 text-sm text-blue-600`}
+                                    >
+                                      E-posta Gönder
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              </>
+                            )}
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleDelete(user._id)}
+                                  className={`${
+                                    active ? 'bg-gray-100' : ''
+                                  } flex w-full px-4 py-2 text-sm text-red-600`}
+                                >
+                                  Sil
+                                </button>
+                              )}
+                            </Menu.Item>
+                          </div>
+                        </Menu.Items>
+                      </Transition>
+                    </Menu>
                   </td>
                 </tr>
               ))}
@@ -182,18 +302,79 @@ export default function AdminUsers() {
                     <div className="text-sm text-gray-500">@{user.username}</div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Link 
-                      href={`/admin/users/${user._id}`}
-                      className="text-primary hover:text-primary-dark text-sm font-medium"
-                    >
-                      Detay
-                    </Link>
-                    <button 
-                      onClick={() => handleDelete(user._id)}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium"
-                    >
-                      Sil
-                    </button>
+                    <Menu as="div" className="relative inline-block text-left">
+                      <div>
+                        <Menu.Button className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                          <EllipsisVerticalIcon className="h-5 w-5" />
+                        </Menu.Button>
+                      </div>
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
+                        <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                          <div className="py-1">
+                            <Menu.Item>
+                              {({ active }) => (
+                                <Link
+                                  href={`/admin/users/${user._id}`}
+                                  className={`${
+                                    active ? 'bg-gray-100' : ''
+                                  } flex px-4 py-2 text-sm text-gray-700`}
+                                >
+                                  Detay
+                                </Link>
+                              )}
+                            </Menu.Item>
+                            {!user.isEmailVerified && (
+                              <>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleVerifyUser(user._id)}
+                                      className={`${
+                                        active ? 'bg-gray-100' : ''
+                                      } flex w-full px-4 py-2 text-sm text-green-600`}
+                                    >
+                                      Doğrula
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleResendVerification(user._id)}
+                                      className={`${
+                                        active ? 'bg-gray-100' : ''
+                                      } flex w-full px-4 py-2 text-sm text-blue-600`}
+                                    >
+                                      E-posta Gönder
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              </>
+                            )}
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleDelete(user._id)}
+                                  className={`${
+                                    active ? 'bg-gray-100' : ''
+                                  } flex w-full px-4 py-2 text-sm text-red-600`}
+                                >
+                                  Sil
+                                </button>
+                              )}
+                            </Menu.Item>
+                          </div>
+                        </Menu.Items>
+                      </Transition>
+                    </Menu>
                   </div>
                 </div>
               </div>
@@ -204,6 +385,17 @@ export default function AdminUsers() {
                   <span className="ml-2 text-gray-900">{user.email}</span>
                 </div>
                 
+                <div className="text-sm">
+                  <span className="text-gray-500">Hesap Durumu:</span>
+                  <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    user.isEmailVerified
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {user.isEmailVerified ? 'Doğrulanmış' : 'Doğrulanmamış'}
+                  </span>
+                </div>
+
                 <div className="text-sm">
                   <span className="text-gray-500">Kayıt Tarihi:</span>
                   <span className="ml-2 text-gray-900">

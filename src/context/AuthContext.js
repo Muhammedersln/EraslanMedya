@@ -48,27 +48,35 @@ export function AuthProvider({ children }) {
         }
 
         // Önce localStorage'dan kullanıcı bilgilerini yükle
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
         
-        // Sonra sunucudan doğrula
+        // Sunucudan doğrulama yap
         const userData = await checkAuth(token);
+        
         if (userData) {
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
+          setLoading(false);
         } else {
-          // Token geçersizse çıkış yap
+          // Token geçersizse sessiz kalarak yönlendirme yap
+          if (parsedUser?.role === 'admin' && window.location.pathname.startsWith('/admin')) {
+            router.push('/login');
+          }
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
-          router.push('/login');
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        // Hata durumunda da çıkış yap
+        // Hata durumunda sessiz kalarak yönlendirme yap
+        const parsedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (parsedUser?.role === 'admin' && window.location.pathname.startsWith('/admin')) {
+          router.push('/login');
+        }
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
-        router.push('/login');
       } finally {
         setLoading(false);
       }
