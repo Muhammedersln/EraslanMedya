@@ -177,37 +177,28 @@ export async function PUT(request) {
 
     // Send verification email using SendGrid
     try {
-      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}&email=${email}`;
-      
-      const msg = {
-        to: email,
-        from: process.env.SENDGRID_FROM_EMAIL,
-        subject: 'E-posta Adresinizi Doğrulayın',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #333; text-align: center;">E-posta Adresinizi Doğrulayın</h1>
-            <p style="color: #666;">Merhaba ${firstName},</p>
-            <p style="color: #666;">Hesabınızı doğrulamak için aşağıdaki butona tıklayın:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${verificationUrl}" 
-                 style="background-color: #4F46E5; color: white; padding: 12px 24px; 
-                        text-decoration: none; border-radius: 5px; display: inline-block;">
-                Hesabımı Doğrula
-              </a>
-            </div>
-            <p style="color: #666;">Veya aşağıdaki linki tarayıcınıza kopyalayabilirsiniz:</p>
-            <p style="color: #666; word-break: break-all;">${verificationUrl}</p>
-            <p style="color: #666;">Bu link 24 saat içinde geçerliliğini yitirecektir.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="color: #999; font-size: 12px; text-align: center;">
-              Bu e-posta hesabınızı doğrulamak için gönderilmiştir.
-              Eğer bu işlemi siz yapmadıysanız, lütfen bu e-postayı dikkate almayın.
-            </p>
-          </div>
-        `
-      };
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://eraslanmedya.com.tr' 
+        : process.env.NEXT_PUBLIC_APP_URL;
+        
+      const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}&email=${email}`;
 
-      await sgMail.send(msg);
+      // Merkezi email gönderme API'sini kullan
+      const emailResponse = await fetch('/api/send-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          token: verificationToken,
+          verificationLink: verificationUrl
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error('Email sending failed');
+      }
     } catch (emailError) {
       console.error('SendGrid error:', emailError);
       // Delete the user if email sending fails

@@ -74,9 +74,10 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   try {
     const user = await adminAuth(request);
-    if (!user) {
+    if (!user || user.role !== 'admin') {
+      console.error('Admin yetkisi reddedildi:', user);
       return NextResponse.json(
-        { message: 'Admin access required' },
+        { message: 'Admin erişimi gerekli' },
         { status: 403 }
       );
     }
@@ -88,15 +89,16 @@ export async function DELETE(request) {
     const deletedUser = await User.findByIdAndDelete(userId);
     if (!deletedUser) {
       return NextResponse.json(
-        { message: 'User not found' },
+        { message: 'Kullanıcı bulunamadı' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ message: 'User deleted successfully' });
+    return NextResponse.json({ message: 'Kullanıcı başarıyla silindi' });
   } catch (error) {
+    console.error('Kullanıcı silme hatası:', error);
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { message: 'Sunucu hatası', error: error.message },
       { status: 500 }
     );
   }

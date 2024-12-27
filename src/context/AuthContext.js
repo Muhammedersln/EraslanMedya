@@ -44,11 +44,15 @@ export function AuthProvider({ children }) {
         
         if (!token || !storedUser) {
           setLoading(false);
+          if (window.location.pathname.startsWith('/admin')) {
+            router.push('/login');
+          }
           return;
         }
 
         // Önce localStorage'dan kullanıcı bilgilerini yükle
         const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser); // Hemen kullanıcı bilgilerini set et
         
         // Sunucudan doğrulama yap
         const userData = await checkAuth(token);

@@ -16,6 +16,14 @@ export async function POST(request) {
       throw new Error('SENDGRID_FROM_EMAIL is not defined');
     }
 
+    // Production veya development URL'ini belirle
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://eraslanmedya.com.tr' 
+      : process.env.NEXT_PUBLIC_APP_URL;
+
+    // Doğrulama linkini oluştur
+    const finalVerificationLink = verificationLink || `${baseUrl}/verify-email?token=${token}&email=${email}`;
+
     // Modern ve spam skorunu düşürecek şablon
     const msg = {
       to: email,
@@ -24,7 +32,7 @@ export async function POST(request) {
         name: 'Eraslan Medya'
       },
       subject: 'E-posta Adresinizi Doğrulayın - Eraslan Medya',
-      text: `Eraslan Medya'ya hoş geldiniz! Hesabınızı doğrulamak için şu bağlantıyı kullanın: ${verificationLink}`,
+      text: `Eraslan Medya'ya hoş geldiniz! Hesabınızı doğrulamak için şu bağlantıyı kullanın: ${finalVerificationLink}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -44,7 +52,7 @@ export async function POST(request) {
                   <!-- Header with Logo -->
                   <tr>
                     <td align="center" style="padding-bottom: 32px;">
-                      <img src="${process.env.NEXT_PUBLIC_APP_URL}/images/logo.png" alt="Eraslan Medya Logo" style="width: 180px; height: auto;">
+                      <img src="${baseUrl}/images/logo.png" alt="Eraslan Medya Logo" style="width: 180px; height: auto;">
                     </td>
                   </tr>
                   
@@ -65,7 +73,7 @@ export async function POST(request) {
                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                               <tr>
                                 <td align="center" style="padding: 32px 0;">
-                                  <a href="${verificationLink}" 
+                                  <a href="${finalVerificationLink}" 
                                      style="display: inline-block; padding: 16px 32px; font-size: 16px; font-weight: 600; 
                                             color: #ffffff; background: linear-gradient(135deg, #4F46E5, #6366F1); 
                                             text-decoration: none; border-radius: 12px;
@@ -81,7 +89,7 @@ export async function POST(request) {
                                 Butona tıklayamıyor musunuz? Aşağıdaki bağlantıyı tarayıcınıza kopyalayabilirsiniz:
                               </p>
                               <p style="margin: 0; font-size: 12px; color: #9ca3af; word-break: break-all;">
-                                ${verificationLink}
+                                ${finalVerificationLink}
                               </p>
                             </div>
                             

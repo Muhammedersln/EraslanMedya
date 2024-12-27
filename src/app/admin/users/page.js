@@ -55,12 +55,17 @@ export default function AdminUsers() {
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
-        if (!user) {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+
+        if (!token || !storedUser) {
+          toast.error('Oturum süresi dolmuş');
           router.push('/login');
           return;
         }
 
-        if (user.role !== 'admin') {
+        const parsedUser = JSON.parse(storedUser);
+        if (!parsedUser || parsedUser.role !== 'admin') {
           toast.error('Bu sayfaya erişim yetkiniz yok');
           router.push('/');
           return;
@@ -74,7 +79,7 @@ export default function AdminUsers() {
     };
 
     checkAdminAccess();
-  }, [user, router, fetchUsers]);
+  }, [router, fetchUsers]);
 
   const handleDelete = async (userId) => {
     if (!window.confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {
@@ -82,8 +87,13 @@ export default function AdminUsers() {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`/api/admin/users?id=${userId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         credentials: 'include'
       });
 
