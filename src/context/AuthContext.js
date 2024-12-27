@@ -49,7 +49,6 @@ export function AuthProvider({ children }) {
 
         // Önce localStorage'dan kullanıcı bilgilerini yükle
         const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
         
         // Sunucudan doğrulama yap
         const userData = await checkAuth(token);
@@ -57,26 +56,27 @@ export function AuthProvider({ children }) {
         if (userData) {
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
-          setLoading(false);
         } else {
-          // Token geçersizse sessiz kalarak yönlendirme yap
-          if (parsedUser?.role === 'admin' && window.location.pathname.startsWith('/admin')) {
-            router.push('/login');
-          }
+          // Token geçersizse veya kullanıcı bulunamazsa
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
+          
+          // Sadece admin sayfasındaysa login'e yönlendir
+          if (window.location.pathname.startsWith('/admin')) {
+            router.push('/login');
+          }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        // Hata durumunda sessiz kalarak yönlendirme yap
-        const parsedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        if (parsedUser?.role === 'admin' && window.location.pathname.startsWith('/admin')) {
-          router.push('/login');
-        }
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
+        
+        // Sadece admin sayfasındaysa login'e yönlendir
+        if (window.location.pathname.startsWith('/admin')) {
+          router.push('/login');
+        }
       } finally {
         setLoading(false);
       }
@@ -100,6 +100,9 @@ export function AuthProvider({ children }) {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 403 && data.requiresVerification) {
+          throw new Error('EMAIL_VERIFICATION_REQUIRED');
+        }
         throw new Error(data.message || 'Giriş yapılırken bir hata oluştu');
       }
 

@@ -57,6 +57,14 @@ export async function POST(request) {
       );
     }
 
+    // E-posta doğrulaması kontrolü (admin hesapları hariç)
+    if (user.role !== 'admin' && !user.isEmailVerified) {
+      return NextResponse.json(
+        { message: 'Lütfen önce e-posta adresinizi doğrulayın', requiresVerification: true },
+        { status: 403 }
+      );
+    }
+
     // Token oluştur (jose kütüphanesi ile)
     const token = await new SignJWT({ 
       id: user._id.toString(), 

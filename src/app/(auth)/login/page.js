@@ -30,22 +30,10 @@ export default function Login() {
     try {
       const response = await login(formData.username, formData.password);
 
-      // Backend'den gelen yanıtı kontrol et
-      if (response.status === 'error') {
-        throw new Error(response.message);
-      }
-
-      // Admin kullanıcıları için e-posta doğrulamayı es geç
+      // Admin kullanıcıları için direkt yönlendirme
       if (response.user.role === 'admin') {
         toast.success('Admin girişi başarılı!');
-        router.push('/admin')
-        return;
-      }
-
-      // Normal kullanıcılar için e-posta doğrulama kontrolü
-      if (!response.user.isEmailVerified) {
-        toast.error('Lütfen önce e-posta adresinizi doğrulayın.');
-        router.push('/verification-pending');
+        router.push('/admin');
         return;
       }
 
@@ -53,15 +41,13 @@ export default function Login() {
       toast.success('Giriş başarılı!');
       router.push('/dashboard');
     } catch (err) {
-      const errorMessage = err.message || 'Giriş yapılırken bir hata oluştu!';
-
-      if (errorMessage.toLowerCase().includes('e-posta') ||
-        errorMessage.toLowerCase().includes('doğrula')) {
+      if (err.message === 'EMAIL_VERIFICATION_REQUIRED') {
         toast.error('Lütfen önce e-posta adresinizi doğrulayın.');
-        router.push('/verification-pending');
-      } else {
-        toast.error(errorMessage);
+        router.push('/verify-email');
+        return;
       }
+
+      toast.error(err.message || 'Giriş yapılırken bir hata oluştu!');
     }
   };
 

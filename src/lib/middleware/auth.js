@@ -37,18 +37,17 @@ export async function adminAuth(request) {
   try {
     const user = await auth(request);
     
-    if (!user || user.role !== 'admin') {
-      return new NextResponse(
-        JSON.stringify({ message: 'Admin access required' }),
-        { status: 403 }
-      );
+    if (!user) {
+      return null;
+    }
+
+    if (user.role !== 'admin') {
+      return null;
     }
 
     return user;
   } catch (error) {
-    return new NextResponse(
-      JSON.stringify({ message: 'Admin authentication failed' }),
-      { status: 403 }
-    );
+    console.error('Admin authentication error:', error);
+    return null;
   }
 } 
