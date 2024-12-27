@@ -7,7 +7,7 @@ import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 export default function VerifyEmail() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [verificationStatus, setVerificationStatus] = useState('verifying'); // 'verifying', 'success', 'error'
+  const [verificationStatus, setVerificationStatus] = useState('verifying');
   const [message, setMessage] = useState('E-posta adresiniz doğrulanıyor...');
 
   useEffect(() => {
@@ -16,21 +16,25 @@ export default function VerifyEmail() {
 
     if (success === 'true') {
       setVerificationStatus('success');
-      setMessage('E-posta adresiniz başarıyla doğrulandı.');
+      setMessage('E-posta adresiniz başarıyla doğrulandı. Artık giriş yapabilirsiniz.');
     } else if (error) {
       setVerificationStatus('error');
       switch (error) {
         case 'invalid':
-          setMessage('Geçersiz doğrulama bağlantısı.');
+          setMessage('Geçersiz doğrulama bağlantısı. Lütfen e-postanızdaki bağlantıyı kontrol edin.');
           break;
         case 'expired':
-          setMessage('Geçersiz veya süresi dolmuş doğrulama bağlantısı.');
+          setMessage('Geçersiz veya süresi dolmuş doğrulama bağlantısı. Lütfen yeni bir doğrulama e-postası talep edin.');
+          break;
+        case 'already-verified':
+          setMessage('Bu e-posta adresi zaten doğrulanmış. Giriş yapabilirsiniz.');
+          setVerificationStatus('success');
           break;
         case 'server':
-          setMessage('Doğrulama işlemi sırasında bir hata oluştu.');
+          setMessage('Sunucu hatası. Lütfen daha sonra tekrar deneyin.');
           break;
         default:
-          setMessage('Doğrulama işlemi başarısız oldu.');
+          setMessage('Doğrulama işlemi başarısız oldu. Lütfen tekrar deneyin.');
       }
     }
   }, [searchParams]);
@@ -69,7 +73,7 @@ export default function VerifyEmail() {
           <p className="text-gray-600 mb-8">{message}</p>
 
           <div className="space-y-4">
-            {verificationStatus !== 'verifying' && (
+            {(verificationStatus === 'success' || verificationStatus === 'error') && (
               <Link
                 href="/login"
                 className="block w-full bg-primary text-white py-3 px-4 rounded-xl hover:bg-primary-dark transition-colors"
@@ -80,10 +84,10 @@ export default function VerifyEmail() {
             
             {verificationStatus === 'error' && (
               <Link
-                href="/register"
+                href="/send-verification"
                 className="block w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors"
               >
-                Kayıt Ol
+                Yeni Doğrulama E-postası İste
               </Link>
             )}
           </div>

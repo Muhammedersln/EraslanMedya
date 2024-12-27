@@ -14,14 +14,23 @@ export async function GET(request) {
 
     await dbConnect();
 
+    // Decode email and clean token
+    const decodedEmail = decodeURIComponent(email).toLowerCase();
+    const cleanToken = decodeURIComponent(token).trim();
+
     // Find user with matching token and email
     const user = await User.findOne({
-      email: decodeURIComponent(email).toLowerCase(),
-      verificationToken: token
+      email: decodedEmail,
+      verificationToken: cleanToken
     });
 
     if (!user) {
+      console.log('User not found or invalid token:', { email: decodedEmail });
       return NextResponse.redirect(new URL('/verify-email?error=expired', request.url));
+    }
+
+    if (user.isEmailVerified) {
+      return NextResponse.redirect(new URL('/verify-email?error=already-verified', request.url));
     }
 
     // Update user verification status
@@ -29,7 +38,9 @@ export async function GET(request) {
     user.verificationToken = undefined;
     await user.save();
 
-    return NextResponse.redirect(new URL('/verify-email?success=true', request.url));
+    // Redirect to success page
+    const successUrl = new URL('/verify-email?success=true', request.url);
+    return NextResponse.redirect(successUrl);
   } catch (error) {
     console.error('Email verification error:', error);
     return NextResponse.redirect(new URL('/verify-email?error=server', request.url));
