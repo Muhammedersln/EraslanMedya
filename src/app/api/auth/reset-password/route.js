@@ -36,17 +36,6 @@ export async function POST(request) {
       );
     }
 
-    // Son şifre değişikliğinden bu yana 24 saat geçmiş mi kontrol et
-    const lastPasswordReset = user.resetPasswordExpires ? new Date(user.resetPasswordExpires).getTime() - 3600000 : 0;
-    const twentyFourHours = 24 * 60 * 60 * 1000;
-    
-    if (Date.now() - lastPasswordReset < twentyFourHours) {
-      return NextResponse.json(
-        { error: 'Şifrenizi 24 saat içinde tekrar değiştiremezsiniz.' },
-        { status: 400 }
-      );
-    }
-
     // Eski şifre ile aynı olup olmadığını kontrol et
     const isSamePassword = await bcrypt.compare(password, user.password);
     if (isSamePassword) {

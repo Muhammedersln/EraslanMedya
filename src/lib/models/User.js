@@ -66,7 +66,7 @@ userSchema.methods.generateVerificationToken = function() {
 userSchema.methods.generatePasswordResetToken = function() {
   const token = crypto.randomBytes(32).toString('hex');
   this.resetPasswordToken = token;
-  this.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 saat geçerli
+  this.resetPasswordExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 saat geçerli
   return token;
 };
 
