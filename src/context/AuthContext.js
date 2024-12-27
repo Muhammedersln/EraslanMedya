@@ -130,8 +130,8 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/auth', {
-        method: 'PUT',
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -141,9 +141,12 @@ export function AuthProvider({ children }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Kayıt olurken bir hata oluştu');
+        throw new Error(data.error || 'Kayıt işlemi başarısız oldu.');
       }
 
+      // Başarılı kayıt sonrası verification-pending sayfasına yönlendir
+      router.push('/verification-pending');
+      
       return { success: true, message: data.message };
     } catch (err) {
       setError(err.message);

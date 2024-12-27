@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -48,11 +49,26 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   verificationToken: String,
+  verificationTokenExpires: Date,
   resetPasswordToken: String,
   resetPasswordExpires: Date
 }, {
   timestamps: true
 });
+
+userSchema.methods.generateVerificationToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.verificationToken = token;
+  this.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 saat geçerli
+  return token;
+};
+
+userSchema.methods.generatePasswordResetToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.resetPasswordToken = token;
+  this.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 saat geçerli
+  return token;
+};
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

@@ -1,96 +1,97 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import Navbar from '@/components/navbar/Navbar';
 
 export default function VerifyEmail() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [verificationStatus, setVerificationStatus] = useState('verifying');
-  const [message, setMessage] = useState('E-posta adresiniz doğrulanıyor...');
+  const router = useRouter();
+  const [status, setStatus] = useState('verifying'); // verifying, success, error
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const success = searchParams.get('success');
-    const error = searchParams.get('error');
-
-    if (success === 'true') {
-      setVerificationStatus('success');
-      setMessage('E-posta adresiniz başarıyla doğrulandı. Artık giriş yapabilirsiniz.');
-    } else if (error) {
-      setVerificationStatus('error');
-      switch (error) {
-        case 'invalid':
-          setMessage('Geçersiz doğrulama bağlantısı. Lütfen e-postanızdaki bağlantıyı kontrol edin.');
-          break;
-        case 'expired':
-          setMessage('Geçersiz veya süresi dolmuş doğrulama bağlantısı. Lütfen yeni bir doğrulama e-postası talep edin.');
-          break;
-        case 'already-verified':
-          setMessage('Bu e-posta adresi zaten doğrulanmış. Giriş yapabilirsiniz.');
-          setVerificationStatus('success');
-          break;
-        case 'server':
-          setMessage('Sunucu hatası. Lütfen daha sonra tekrar deneyin.');
-          break;
-        default:
-          setMessage('Doğrulama işlemi başarısız oldu. Lütfen tekrar deneyin.');
+    const verifyEmail = async () => {
+      const token = searchParams.get('token');
+      
+      if (!token) {
+        setStatus('error');
+        setMessage('Geçersiz doğrulama bağlantısı.');
+        return;
       }
-    }
-  }, [searchParams]);
+
+      try {
+        const response = await fetch('/api/auth/verify-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setStatus('success');
+          setMessage(data.message);
+          // 3 saniye sonra login sayfasına yönlendir
+          setTimeout(() => {
+            router.push('/login');
+          }, 3000);
+        } else {
+          setStatus('error');
+          setMessage(data.error);
+        }
+      } catch (error) {
+        setStatus('error');
+        setMessage('Doğrulama işlemi sırasında bir hata oluştu.');
+      }
+    };
+
+    verifyEmail();
+  }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background-dark flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          {verificationStatus === 'verifying' && (
-            <>
-              <div className="w-16 h-16 mx-auto mb-4">
-                <div className="w-full h-full border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Doğrulanıyor</h2>
-            </>
+    <div className="min-h-screen bg-gradient-to-b from-background to-background-dark">
+      <Navbar />
+      
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-lg text-center">
+          {status === 'verifying' && (
+            <div className="animate-pulse">
+              <div className="w-16 h-16 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <h2 className="mt-6 text-xl font-medium text-gray-900">
+                E-posta adresi doğrulanıyor...
+              </h2>
+            </div>
           )}
 
-          {verificationStatus === 'success' && (
-            <>
-              <div className="w-16 h-16 mx-auto mb-4 text-green-500">
-                <FaCheckCircle className="w-full h-full" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Doğrulama Başarılı</h2>
-            </>
+          {status === 'success' && (
+            <div>
+              <FaCheckCircle className="w-16 h-16 mx-auto text-green-500" />
+              <h2 className="mt-6 text-xl font-medium text-gray-900">
+                {message}
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Giriş sayfasına yönlendiriliyorsunuz...
+              </p>
+            </div>
           )}
 
-          {verificationStatus === 'error' && (
-            <>
-              <div className="w-16 h-16 mx-auto mb-4 text-red-500">
-                <FaTimesCircle className="w-full h-full" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Doğrulama Başarısız</h2>
-            </>
-          )}
-
-          <p className="text-gray-600 mb-8">{message}</p>
-
-          <div className="space-y-4">
-            {(verificationStatus === 'success' || verificationStatus === 'error') && (
-              <Link
-                href="/login"
-                className="block w-full bg-primary text-white py-3 px-4 rounded-xl hover:bg-primary-dark transition-colors"
+          {status === 'error' && (
+            <div>
+              <FaTimesCircle className="w-16 h-16 mx-auto text-red-500" />
+              <h2 className="mt-6 text-xl font-medium text-gray-900">
+                {message}
+              </h2>
+              <button
+                onClick={() => router.push('/login')}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
-                Giriş Yap
-              </Link>
-            )}
-            
-            {verificationStatus === 'error' && (
-              <Link
-                href="/send-verification"
-                className="block w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors"
-              >
-                Yeni Doğrulama E-postası İste
-              </Link>
-            )}
-          </div>
+                Giriş sayfasına dön
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -145,38 +145,25 @@ export default function Login() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-xl transition-all duration-300 transform hover:scale-[0.99] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
-                    <span>Giriş yapılıyor...</span>
-                  </div>
-                ) : 'Giriş Yap'}
-              </button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">veya</span>
-                </div>
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+                </button>
               </div>
 
-              <div className="text-center">
-                <p className="text-sm text-gray-600">
-                  Hesabınız yok mu?{' '}
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
                   <Link
                     href="/register"
-                    className="font-semibold text-primary hover:text-primary-dark transition-colors"
+                    className="font-medium text-primary hover:text-primary-dark"
                   >
-                    Kayıt Ol
+                    Hesabınız yok mu? Kayıt olun
                   </Link>
-                </p>
+                </div>
               </div>
             </form>
           </div>
