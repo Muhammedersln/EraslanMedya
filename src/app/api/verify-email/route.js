@@ -7,10 +7,11 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
     const email = searchParams.get('email');
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://eraslanmedya.com.tr';
 
     if (!token || !email) {
       console.log('Missing parameters:', { token: !!token, email: !!email });
-      return NextResponse.redirect(new URL('/verify-email?error=invalid', request.url));
+      return NextResponse.redirect(`${baseUrl}/verify-email?error=invalid`);
     }
 
     await dbConnect();
@@ -32,7 +33,7 @@ export async function GET(request) {
 
     if (!user) {
       console.log('User not found or token mismatch:', { email: decodedEmail });
-      return NextResponse.redirect(new URL('/verify-email?error=invalid', request.url));
+      return NextResponse.redirect(`${baseUrl}/verify-email?error=invalid`);
     }
 
     console.log('User found:', {
@@ -42,7 +43,7 @@ export async function GET(request) {
     });
 
     if (user.isEmailVerified) {
-      return NextResponse.redirect(new URL('/verify-email?error=already-verified', request.url));
+      return NextResponse.redirect(`${baseUrl}/verify-email?error=already-verified`);
     }
 
     // Update user verification status
@@ -52,10 +53,12 @@ export async function GET(request) {
 
     console.log('Verification successful:', { email: decodedEmail });
 
-    // Redirect to success page
-    return NextResponse.redirect(new URL('/verify-email?success=true', request.url));
+    // Redirect to success page with 307 temporary redirect
+    return NextResponse.redirect(`${baseUrl}/verify-email?success=true`, {
+      status: 307
+    });
   } catch (error) {
     console.error('Email verification error:', error);
-    return NextResponse.redirect(new URL('/verify-email?error=server', request.url));
+    return NextResponse.redirect(`${baseUrl}/verify-email?error=server`);
   }
 }
