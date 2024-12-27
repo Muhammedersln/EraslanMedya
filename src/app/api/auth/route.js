@@ -177,13 +177,10 @@ export async function PUT(request) {
 
     // Send verification email using SendGrid
     try {
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://eraslanmedya.com.tr' 
-        : process.env.NEXT_PUBLIC_APP_URL;
-        
+      const baseUrl = 'https://eraslanmedya.com.tr';
       const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}&email=${email}`;
 
-      // Merkezi email gönderme API'sini kullan
+      // Doğrudan API'yi çağır
       const emailResponse = await fetch(`${baseUrl}/api/send-verification`, {
         method: 'POST',
         headers: {
@@ -200,6 +197,9 @@ export async function PUT(request) {
         const errorData = await emailResponse.json();
         throw new Error(errorData.message || 'Email sending failed');
       }
+
+      const responseData = await emailResponse.json();
+      console.log('Email sending response:', responseData);
     } catch (emailError) {
       console.error('SendGrid error:', emailError);
       // Delete the user if email sending fails

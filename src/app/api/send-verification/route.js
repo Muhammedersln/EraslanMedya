@@ -12,6 +12,10 @@ export async function POST(request) {
       throw new Error('NEXT_PUBLIC_APP_URL is not defined');
     }
 
+    if (!process.env.SENDGRID_API_KEY) {
+      throw new Error('SENDGRID_API_KEY is not defined');
+    }
+
     if (!process.env.SENDGRID_FROM_EMAIL) {
       throw new Error('SENDGRID_FROM_EMAIL is not defined');
     }
@@ -22,7 +26,7 @@ export async function POST(request) {
       : process.env.NEXT_PUBLIC_APP_URL;
 
     // Doğrulama linkini oluştur
-    const finalVerificationLink = verificationLink || `${baseUrl}/verify-email?token=${token}&email=${email}`;
+    const finalVerificationLink = verificationLink || `https://eraslanmedya.com.tr/verify-email?token=${token}&email=${email}`;
 
     // Modern ve spam skorunu düşürecek şablon
     const msg = {
