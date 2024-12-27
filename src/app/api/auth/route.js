@@ -184,7 +184,7 @@ export async function PUT(request) {
       const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}&email=${email}`;
 
       // Merkezi email gönderme API'sini kullan
-      const emailResponse = await fetch('/api/send-verification', {
+      const emailResponse = await fetch(`${baseUrl}/api/send-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -197,7 +197,8 @@ export async function PUT(request) {
       });
 
       if (!emailResponse.ok) {
-        throw new Error('Email sending failed');
+        const errorData = await emailResponse.json();
+        throw new Error(errorData.message || 'Email sending failed');
       }
     } catch (emailError) {
       console.error('SendGrid error:', emailError);
