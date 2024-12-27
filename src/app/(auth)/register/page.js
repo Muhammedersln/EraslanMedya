@@ -81,12 +81,23 @@ export default function Register() {
         password: formData.password
       };
 
-      const response = await register(userData);
-      
-      if (response.success) {
-        toast.success('Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.');
-        router.push('/verification-pending');
+      // API'ye direkt istek at
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Kayıt işlemi başarısız oldu.');
       }
+
+      toast.success(data.message || 'Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.');
+      router.push('/verification-pending');
     } catch (err) {
       console.error('Register Error:', err);
       toast.error(err.message || 'Kayıt olurken bir hata oluştu!');
