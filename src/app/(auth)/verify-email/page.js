@@ -22,7 +22,13 @@ export default function VerifyEmail() {
           return;
         }
 
-        const response = await fetch(`/api/verify-email?token=${token}&email=${email}`);
+        const response = await fetch(`/api/verify-email?token=${token}&email=${email}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
         const data = await response.json();
 
         if (!response.ok) {

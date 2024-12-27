@@ -19,7 +19,7 @@ export async function GET(request) {
 
     // Find user with matching token and email
     const user = await User.findOne({
-      email: email.toLowerCase(),
+      email: decodeURIComponent(email).toLowerCase(),
       verificationToken: token
     });
 
