@@ -36,21 +36,8 @@ export async function POST(request) {
       );
     }
 
-    // Eski şifre ile aynı olup olmadığını kontrol et
-    const isSamePassword = await bcrypt.compare(password, user.password);
-    if (isSamePassword) {
-      return NextResponse.json(
-        { error: 'Yeni şifreniz eski şifrenizle aynı olamaz.' },
-        { status: 400 }
-      );
-    }
-
-    // Yeni şifreyi hashle
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     // Şifreyi güncelle ve tokenleri temizle
-    user.password = hashedPassword;
+    user.password = password; // Mongoose pre-save hook şifreyi otomatik hashleyecek
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();

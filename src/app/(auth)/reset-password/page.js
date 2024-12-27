@@ -94,16 +94,6 @@ export default function ResetPassword() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Password Tips */}
-              <div className="bg-blue-50 rounded-xl p-4 space-y-2">
-                <h3 className="text-sm font-medium text-blue-800">Güvenli Şifre İpuçları:</h3>
-                <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
-                  <li>En az 6 karakter uzunluğunda olmalı</li>
-                  <li>Büyük ve küçük harfler içermeli</li>
-                  <li>Sayı ve özel karakterler kullanın</li>
-                </ul>
-              </div>
-
               <div className="space-y-4">
                 {/* Password Input */}
                 <div className="space-y-2">
@@ -155,30 +145,6 @@ export default function ResetPassword() {
                   </div>
                 </div>
               </div>
-
-              {/* Password Strength Indicator */}
-              {formData.password && (
-                <div className="space-y-2">
-                  <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-300 ${
-                        formData.password.length < 6 
-                          ? 'w-1/4 bg-red-500' 
-                          : formData.password.length < 8
-                            ? 'w-2/4 bg-yellow-500'
-                            : 'w-full bg-green-500'
-                      }`}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-600 text-right">
-                    {formData.password.length < 6 
-                      ? 'Zayıf' 
-                      : formData.password.length < 8
-                        ? 'Orta'
-                        : 'Güçlü'} şifre
-                  </p>
-                </div>
-              )}
 
               <button
                 type="submit"
