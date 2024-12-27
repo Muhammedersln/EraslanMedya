@@ -177,11 +177,10 @@ export async function PUT(request) {
 
     // Send verification email using SendGrid
     try {
-      const baseUrl = 'https://eraslanmedya.com.tr';
-      const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}&email=${email}`;
+      const verificationUrl = `https://eraslanmedya.com.tr/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
 
-      // Doğrudan API'yi çağır
-      const emailResponse = await fetch(`${baseUrl}/api/send-verification`, {
+      // Doğrudan /api/send-verification endpoint'ine istek yap
+      const emailResponse = await fetch('/api/send-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -193,15 +192,16 @@ export async function PUT(request) {
         }),
       });
 
+      const responseData = await emailResponse.json();
+      
       if (!emailResponse.ok) {
-        const errorData = await emailResponse.json();
-        throw new Error(errorData.message || 'Email sending failed');
+        console.error('Email sending error:', responseData);
+        throw new Error(responseData.message || 'Email sending failed');
       }
 
-      const responseData = await emailResponse.json();
-      console.log('Email sending response:', responseData);
+      console.log('Email sending success:', responseData);
     } catch (emailError) {
-      console.error('SendGrid error:', emailError);
+      console.error('Email sending error:', emailError);
       // Delete the user if email sending fails
       await User.findByIdAndDelete(user._id);
       return NextResponse.json(
@@ -220,7 +220,7 @@ export async function PUT(request) {
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { message: error.message || 'Kayıt işlemi sırasında bir hata oluştu' },
+      { message: error.message || 'Kayıt işlemi s��rasında bir hata oluştu' },
       { status: 500 }
     );
   }
