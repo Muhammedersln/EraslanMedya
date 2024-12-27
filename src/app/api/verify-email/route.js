@@ -9,10 +9,7 @@ export async function GET(request) {
     const email = searchParams.get('email');
 
     if (!token || !email) {
-      return NextResponse.json(
-        { message: 'Token ve email gereklidir.' },
-        { status: 400 }
-      );
+      return NextResponse.redirect(new URL('/verify-email?error=invalid', request.url));
     }
 
     await dbConnect();
@@ -24,10 +21,7 @@ export async function GET(request) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { message: 'Geçersiz veya süresi dolmuş doğrulama bağlantısı.' },
-        { status: 400 }
-      );
+      return NextResponse.redirect(new URL('/verify-email?error=expired', request.url));
     }
 
     // Update user verification status
@@ -35,15 +29,9 @@ export async function GET(request) {
     user.verificationToken = undefined;
     await user.save();
 
-    return NextResponse.json(
-      { message: 'E-posta adresiniz başarıyla doğrulandı.' },
-      { status: 200 }
-    );
+    return NextResponse.redirect(new URL('/verify-email?success=true', request.url));
   } catch (error) {
     console.error('Email verification error:', error);
-    return NextResponse.json(
-      { message: 'Doğrulama işlemi sırasında bir hata oluştu.' },
-      { status: 500 }
-    );
+    return NextResponse.redirect(new URL('/verify-email?error=server', request.url));
   }
 }

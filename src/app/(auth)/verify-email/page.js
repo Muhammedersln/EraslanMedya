@@ -11,40 +11,28 @@ export default function VerifyEmail() {
   const [message, setMessage] = useState('E-posta adresiniz doğrulanıyor...');
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      try {
-        const token = searchParams.get('token');
-        const email = searchParams.get('email');
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
 
-        if (!token || !email) {
-          setVerificationStatus('error');
+    if (success === 'true') {
+      setVerificationStatus('success');
+      setMessage('E-posta adresiniz başarıyla doğrulandı.');
+    } else if (error) {
+      setVerificationStatus('error');
+      switch (error) {
+        case 'invalid':
           setMessage('Geçersiz doğrulama bağlantısı.');
-          return;
-        }
-
-        const response = await fetch(`/api/verify-email?token=${token}&email=${email}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Doğrulama işlemi başarısız oldu.');
-        }
-
-        setVerificationStatus('success');
-        setMessage(data.message || 'E-posta adresiniz başarıyla doğrulandı.');
-      } catch (error) {
-        console.error('Verification error:', error);
-        setVerificationStatus('error');
-        setMessage(error.message || 'Doğrulama işlemi sırasında bir hata oluştu.');
+          break;
+        case 'expired':
+          setMessage('Geçersiz veya süresi dolmuş doğrulama bağlantısı.');
+          break;
+        case 'server':
+          setMessage('Doğrulama işlemi sırasında bir hata oluştu.');
+          break;
+        default:
+          setMessage('Doğrulama işlemi başarısız oldu.');
       }
-    };
-
-    verifyEmail();
+    }
   }, [searchParams]);
 
   return (
