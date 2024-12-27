@@ -16,40 +16,33 @@ export async function GET(request) {
     await dbConnect();
 
     // Decode email and clean token
-    const decodedEmail = decodeURIComponent(email).toLowerCase();
-    const cleanToken = token.trim(); // Don't decode the token as it's a hex string
+    const decodedEmail = decodeURIComponent(email).toLowerCase().trim();
+    const cleanToken = token.trim();
 
     console.log('Verification attempt:', {
       email: decodedEmail,
       tokenLength: cleanToken.length
     });
 
-    // Find user with matching token and email
+    // Find user with matching email
     const user = await User.findOne({
-      email: decodedEmail
+      email: decodedEmail,
+      verificationToken: cleanToken
     });
 
     if (!user) {
-      console.log('User not found:', { email: decodedEmail });
-      return NextResponse.redirect(new URL('/verify-email?error=expired', request.url));
+      console.log('User not found or token mismatch:', { email: decodedEmail });
+      return NextResponse.redirect(new URL('/verify-email?error=invalid', request.url));
     }
 
-    console.log('User found, comparing tokens:', {
-      providedToken: cleanToken,
-      storedToken: user.verificationToken,
-      isEmailVerified: user.isEmailVerified
+    console.log('User found:', {
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+      tokenMatch: user.verificationToken === cleanToken
     });
 
     if (user.isEmailVerified) {
       return NextResponse.redirect(new URL('/verify-email?error=already-verified', request.url));
-    }
-
-    if (!user.verificationToken || user.verificationToken !== cleanToken) {
-      console.log('Token mismatch:', {
-        providedToken: cleanToken,
-        storedToken: user.verificationToken
-      });
-      return NextResponse.redirect(new URL('/verify-email?error=invalid', request.url));
     }
 
     // Update user verification status
