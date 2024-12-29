@@ -22,7 +22,11 @@ export default function UserDetail() {
 
   const fetchUserData = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`/api/admin/users/${params.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include'
       });
       
@@ -48,8 +52,12 @@ export default function UserDetail() {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`/api/admin/users?id=${params.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include'
       });
 

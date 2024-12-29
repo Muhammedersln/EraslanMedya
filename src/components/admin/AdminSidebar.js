@@ -136,7 +136,7 @@ export default function AdminSidebar() {
           </div>
 
           {/* Navigation - Scrollable Area */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <nav className="flex-1 space-y-1 mt-4 overflow-y-auto">
               {menuItems.map((item) => (
                 <Link
@@ -158,7 +158,7 @@ export default function AdminSidebar() {
             </nav>
 
             {/* Footer - Çıkış Butonu */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="mt-4 pt-4 border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl
