@@ -72,29 +72,16 @@ export async function POST(request) {
       username,
       email,
       phone,
-      password
+      password,
+      isEmailVerified: true // Otomatik doğrulama
     });
-
-    // Doğrulama tokeni oluştur
-    const verificationToken = user.generateVerificationToken();
 
     // Kullanıcıyı kaydet
     await user.save();
 
-    // Doğrulama e-postası gönder
-    const emailResult = await sendVerificationEmail(email, verificationToken);
-    
-    if (!emailResult.success) {
-      // E-posta gönderilemezse kullanıcıyı sil
-      await User.findByIdAndDelete(user._id);
-      return NextResponse.json(
-        { error: 'Doğrulama e-postası gönderilemedi. Lütfen tekrar deneyin.' },
-        { status: 500 }
-      );
-    }
-
+    // Doğrulama e-postası göndermeyi atla
     return NextResponse.json({
-      message: 'Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.',
+      message: 'Kayıt başarılı!',
       user: {
         id: user._id,
         firstName: user.firstName,

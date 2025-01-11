@@ -96,8 +96,8 @@ export default function Register() {
         throw new Error(data.error || 'Kayıt işlemi başarısız oldu.');
       }
 
-      toast.success(data.message || 'Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.');
-      router.push('/verification-pending');
+      toast.success(data.message || 'Kayıt başarılı!');
+      router.push('/login');
     } catch (err) {
       console.error('Register Error:', err);
       toast.error(err.message || 'Kayıt olurken bir hata oluştu!');
