@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
+import { sendOrderNotificationEmail } from '@/lib/utils/sendEmail';
+import User from '@/lib/models/User';
 
 const MERCHANT_ID = process.env.PAYTR_MERCHANT_ID;
 const MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY;
@@ -163,6 +165,30 @@ export async function POST(request) {
         };
 
         await order.save();
+        
+        // Sipariş başarıyla ödendiyse bildirim e-postası gönder
+        if (status === 'success') {
+          try {
+            // Sipariş sahibi kullanıcıyı bul
+            const user = await User.findById(order.user);
+            if (user) {
+              // Kullanıcı bilgileri
+              const userInfo = {
+                name: user.name,
+                email: user.email,
+                // Diğer kullanıcı bilgileri gerekirse eklenebilir
+              };
+              
+              // Bildirim e-postası gönder
+              await sendOrderNotificationEmail(order, userInfo);
+              console.log('Sipariş bildirim e-postası gönderildi. Sipariş ID:', merchant_oid);
+            } else {
+              console.error('Kullanıcı bulunamadı, e-posta gönderilemedi. Kullanıcı ID:', order.user);
+            }
+          } catch (emailError) {
+            console.error('E-posta gönderme hatası:', emailError);
+          }
+        }
       } catch (dbError) {
         console.error('Veritabanı güncelleme hatası:', dbError);
       }
