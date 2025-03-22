@@ -9,6 +9,9 @@ import HeroSection from "@/components/Section/HeroSection";
 import ProductsGridSection from "@/components/Section/ProductsGridSection";
 import FeaturesSection from "@/components/Section/FeaturesSection";
 
+// Ana sayfa için statik metadata değerleri bu bileşende kullanılmaz
+// metadata.js ve layout.js içerisinde tanımlanmıştır
+
 export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
@@ -26,6 +29,28 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Navbar />
+      
+      {/* Schema.org için article yapısı */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            'name': 'Eraslan Medya | Sosyal Medya Büyütme Hizmetleri',
+            'description': 'Sosyal medya hesaplarınızı büyütmek için güvenilir ve hızlı çözümler sunuyoruz. Instagram ve TikTok takipçi, beğeni ve etkileşim hizmetleri.',
+            'publisher': {
+              '@type': 'Organization',
+              'name': 'Eraslan Medya',
+              'logo': {
+                '@type': 'ImageObject',
+                'url': 'https://eraslanmedya.com/logo.png'
+              }
+            }
+          })
+        }}
+      />
+      
       <HeroSection />
       <ProductsGridSection />
       <FeaturesSection />
@@ -43,6 +68,7 @@ export default function Home() {
             <Link 
               href="/register" 
               className="inline-block bg-white text-primary px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors font-medium"
+              aria-label="Ücretsiz hesap oluştur"
             >
               Ücretsiz Hesap Oluştur
             </Link>

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import SupportTicket from '@/lib/models/SupportTicket';
 import { auth } from '@/lib/middleware/auth';
+import User from '@/lib/models/User';
+import { sendSupportTicketNotificationEmail } from '@/lib/utils/sendEmail';
 
 // Get user's support tickets
 export async function GET(request) {
@@ -47,6 +49,25 @@ export async function POST(request) {
       message,
       priority
     });
+
+    try {
+      // Kullanıcı bilgilerini veritabanından al
+      const userDetails = await User.findById(user.id);
+      if (userDetails) {
+        // Kullanıcı bilgileri
+        const userInfo = {
+          name: userDetails.name,
+          email: userDetails.email
+        };
+        
+        // Bildirim e-postası gönder
+        await sendSupportTicketNotificationEmail(ticket, userInfo);
+        console.log('Destek talebi bildirim e-postası gönderildi. Talep ID:', ticket._id);
+      }
+    } catch (emailError) {
+      // E-posta gönderilemese bile işlem devam etsin, sadece log atalım
+      console.error('Destek talebi bildirim e-postası gönderme hatası:', emailError);
+    }
 
     return NextResponse.json(ticket);
   } catch (error) {

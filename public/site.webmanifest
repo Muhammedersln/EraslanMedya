@@ -1,0 +1,33 @@
+{
+  "name": "Eraslan Medya | Sosyal Medya Büyütme Hizmetleri",
+  "short_name": "Eraslan Medya",
+  "description": "Instagram, TikTok ve diğer sosyal medya platformları için güvenilir takipçi, beğeni ve etkileşim hizmetleri.",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "orientation": "portrait",
+  "lang": "tr-TR",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "categories": ["business", "social", "shopping"]
+} 

@@ -2,51 +2,24 @@ import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import Script from 'next/script';
 import localFont from "next/font/local";
+import { defaultMetadata } from '@/lib/metadata';
 import "./globals.css";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
+  display: "swap", // Hızlı font yüklemesi için
 });
 
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
+  display: "swap", // Hızlı font yüklemesi için
 });
 
-export const metadata = {
-  title: "Eraslan Medya",
-  description: "Eraslan Medya | Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri. Instagram, Facebook, Twitter ve diğer sosyal medya platformları için profesyonel yönetim ve danışmanlık.",
-  keywords: "sosyal medya yönetimi, dijital pazarlama, sosyal medya danışmanlığı, instagram yönetimi, facebook reklamları, sosyal medya reklamları",
-  authors: [{ name: "Eraslan Medya" }],
-  creator: "Eraslan Medya",
-  publisher: "Eraslan Medya",
-  robots: "index, follow",
-  openGraph: {
-    title: "Eraslan Medya",
-    description: "Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri",
-    url: "https://eraslanmedya.com",
-    siteName: "Eraslan Medya",
-    locale: "tr_TR",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Eraslan Medya",
-    description: "Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri",
-  },
-  icons: {
-    icon: [
-      {
-        rel: 'icon',
-        url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiM0RjQ2RTUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM2MzY2RjEiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0idXJsKCNhKSIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0xNjAgMTYwaDgwdjE5MmgtNDB2LTgwSDE2MHYtNDBIMjAwdi0zMkgxNjB6TTMwMCAxNjBoNTJ2NDBIMzAwdjcyaDUydjQwSDMwMHYtMTUyeiIvPjwvc3ZnPg==',
-        type: 'image/svg+xml'
-      }
-    ]
-  }
-};
+export const metadata = defaultMetadata;
 
 function ClientLayout({ children }) {
   return (
@@ -94,9 +67,17 @@ function ClientLayout({ children }) {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr">
-      <head />
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background `}>
+    <html lang="tr" className="scroll-smooth">
+      <head>
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#4f46e5" />
+        <meta name="msapplication-TileColor" content="#4f46e5" />
+        <meta name="theme-color" content="#ffffff" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background`}>
         <Script
           type="application/ld+json"
           id="schema-org"
@@ -107,9 +88,10 @@ export default function RootLayout({ children }) {
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "Eraslan Medya",
-              "description": "Sosyal Medya Pazarlama ve Dijital Reklam Hizmetleri",
+              "description": "Sosyal Medya Büyütme Hizmetleri",
               "url": "https://eraslanmedya.com",
               "logo": "https://eraslanmedya.com/logo.png",
+              "image": "https://eraslanmedya.com/images/og-image.jpg",
               "contactPoint": {
                 "@type": "ContactPoint",
                 "telephone": "",
@@ -117,14 +99,63 @@ export default function RootLayout({ children }) {
                 "areaServed": "TR",
                 "availableLanguage": "Turkish"
               },
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "TR"
+              },
               "sameAs": [
                 "https://facebook.com/eraslanmedya",
                 "https://instagram.com/eraslanmedya",
                 "https://twitter.com/eraslanmedya"
-              ]
+              ],
+              "offers": {
+                "@type": "AggregateOffer",
+                "priceCurrency": "TRY",
+                "highPrice": "999.99",
+                "lowPrice": "9.99",
+                "offerCount": "100",
+                "offers": [{
+                  "@type": "Offer",
+                  "name": "Instagram Takipçi Hizmetleri",
+                  "description": "Instagram için takipçi büyütme hizmetleri",
+                  "availability": "https://schema.org/InStock"
+                }, {
+                  "@type": "Offer",
+                  "name": "TikTok İzlenme Hizmetleri",
+                  "description": "TikTok için izlenme artırma hizmetleri",
+                  "availability": "https://schema.org/InStock"
+                }]
+              }
             }
           `}
         </Script>
+        
+        {/* BreadcrumbList için JSON-LD */}
+        <Script
+          type="application/ld+json"
+          id="breadcrumbs-schema"
+          strategy="afterInteractive"
+        >
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              "itemListElement": [{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Ana Sayfa",
+                "item": "https://eraslanmedya.com"
+              }, {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Hizmetler",
+                "item": "https://eraslanmedya.com/dashboard/products"
+              }]
+            }
+          `}
+        </Script>
+        
+        {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-11512697197"
           strategy="afterInteractive"
@@ -137,6 +168,7 @@ export default function RootLayout({ children }) {
             gtag('config', 'AW-11512697197');
           `}
         </Script>
+        
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

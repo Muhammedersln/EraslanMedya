@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { MdEmail, MdClose } from "react-icons/md";
+import { MdEmail, MdClose, MdCampaign } from "react-icons/md";
 import { useState, useEffect } from "react";
 import { HiMenuAlt2 } from "react-icons/hi";
 import { 
@@ -61,6 +61,11 @@ export default function AdminSidebar() {
       path: '/admin/support', 
       label: 'Destek Talepleri', 
       icon: <MdEmail className="w-5 h-5" />
+    },
+    { 
+      path: '/admin/announcements', 
+      label: 'Duyurular', 
+      icon: <MdCampaign className="w-5 h-5" />
     },
     { 
       path: '/admin/settings', 

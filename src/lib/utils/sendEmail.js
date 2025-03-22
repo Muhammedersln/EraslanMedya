@@ -8,19 +8,13 @@ const emailTemplate = (content) => `
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-posta Doğrulama</title>
+  <title>E-posta</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; line-height: 1.6; background-color: #f9fafb;">
   <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f9fafb">
     <tr>
       <td align="center" style="padding: 40px 20px;">
         <table width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; margin: 0 auto;">
-          <tr>
-            <td align="center" style="padding-bottom: 32px;">
-              <img src="${process.env.NEXT_PUBLIC_APP_URL}/images/logo.png" alt="Logo" style="width: 180px; height: auto;">
-            </td>
-          </tr>
-          
           <tr>
             <td bgcolor="#ffffff" style="padding: 48px 40px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
               ${content}
@@ -33,7 +27,7 @@ const emailTemplate = (content) => `
                 <tr>
                   <td style="text-align: center;">
                     <p style="margin: 0; font-size: 14px; color: #6b7280;">
-                      © ${new Date().getFullYear()} Tüm hakları saklıdır.
+                      © ${new Date().getFullYear()} Eraslan Medya. Tüm hakları saklıdır.
                     </p>
                   </td>
                 </tr>
@@ -141,12 +135,6 @@ export const sendPasswordResetEmail = async (to, resetToken) => {
             </p>
             <p style="margin: 0; font-size: 12px; color: #9ca3af; word-break: break-all;">
               ${resetUrl}
-            </p>
-          </div>
-          
-          <div style="margin: 32px 0 0; padding: 24px; background-color: #fee2e2; border-radius: 12px;">
-            <p style="margin: 0; font-size: 14px; color: #991b1b;">
-              Bu e-postayı siz talep etmediyseniz, lütfen dikkate almayın ve hesabınızın güvenliği için şifrenizi değiştirmeyi düşünün.
             </p>
           </div>
         </td>
@@ -299,4 +287,201 @@ export const sendOrderNotificationEmail = async (order, userInfo) => {
     console.error('SendGrid Error:', error);
     return { success: false, error: error.message };
   }
+};
+
+export const sendSupportTicketNotificationEmail = async (ticket, userInfo) => {
+  const adminEmail = 'muhammed.ersln@icloud.com';
+  const ticketUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/support/${ticket._id}`;
+  
+  // Öncelik seviyesine göre renk belirleme
+  const getPriorityColor = (priority) => {
+    switch(priority) {
+      case 'high': return '#ef4444'; // Kırmızı
+      case 'normal': return '#f59e0b'; // Turuncu
+      case 'low': return '#10b981'; // Yeşil
+      default: return '#f59e0b';
+    }
+  };
+  
+  // Öncelik seviyesini Türkçe karşılığı
+  const getPriorityText = (priority) => {
+    switch(priority) {
+      case 'high': return 'Yüksek';
+      case 'normal': return 'Normal';
+      case 'low': return 'Düşük';
+      default: return 'Normal';
+    }
+  };
+
+  const content = `
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>
+          <h1 style="margin: 0 0 24px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">
+            Yeni Destek Talebi Oluşturuldu!
+          </h1>
+          
+          <div style="margin: 0 0 32px; padding: 16px; background-color: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #111827;">
+              Talep Detayları:
+            </p>
+            <p style="margin: 0 0 4px; font-size: 14px; color: #4b5563;">
+              <strong>Talep ID:</strong> ${ticket._id}
+            </p>
+            <p style="margin: 0 0 4px; font-size: 14px; color: #4b5563;">
+              <strong>Tarih:</strong> ${new Date(ticket.createdAt).toLocaleString('tr-TR')}
+            </p>
+            <p style="margin: 0 0 4px; font-size: 14px; color: #4b5563;">
+              <strong>Konu:</strong> ${ticket.subject}
+            </p>
+            <p style="margin: 0; font-size: 14px; color: #4b5563;">
+              <strong>Öncelik:</strong> 
+              <span style="color: ${getPriorityColor(ticket.priority)}; font-weight: 600;">
+                ${getPriorityText(ticket.priority)}
+              </span>
+            </p>
+          </div>
+          
+          <div style="margin: 0 0 32px; padding: 16px; background-color: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #111827;">
+              Müşteri Bilgileri:
+            </p>
+            <p style="margin: 0 0 4px; font-size: 14px; color: #4b5563;">
+              <strong>Müşteri:</strong> ${userInfo.name || 'İsimsiz'}
+            </p>
+            <p style="margin: 0; font-size: 14px; color: #4b5563;">
+              <strong>E-posta:</strong> ${userInfo.email || 'Bilgi yok'}
+            </p>
+          </div>
+          
+          <div style="margin: 0 0 32px; padding: 16px; background-color: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #111827;">
+              Mesaj:
+            </p>
+            <p style="margin: 0; font-size: 14px; color: #4b5563; white-space: pre-line;">
+              ${ticket.message}
+            </p>
+          </div>
+          
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td align="center" style="padding: 32px 0;">
+                <a href="${ticketUrl}" 
+                   style="display: inline-block; padding: 16px 32px; font-size: 16px; font-weight: 600; 
+                          color: #ffffff; background: linear-gradient(135deg, #4F46E5, #6366F1); 
+                          text-decoration: none; border-radius: 12px;
+                          box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);">
+                  Talebi Görüntüle
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const msg = {
+    to: adminEmail,
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: 'Yeni Destek Talebi! - Konu: ' + ticket.subject,
+    html: emailTemplate(content),
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log('Support ticket notification email sent to admin');
+    return { success: true };
+  } catch (error) {
+    console.error('SendGrid Error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendAnnouncementEmail = async (recipients, subject, message, buttonText, buttonUrl) => {
+  // E-posta içeriği
+  const content = `
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>
+          <h1 style="margin: 0 0 24px; font-size: 24px; font-weight: 700; color: #111827; text-align: center;">
+            ${subject}
+          </h1>
+          
+          <div style="margin: 0 0 32px; padding: 16px; background-color: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0; font-size: 16px; color: #4b5563; line-height: 1.6; white-space: pre-line;">
+              ${message}
+            </p>
+          </div>
+          
+          ${buttonText && buttonUrl ? `
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td align="center" style="padding: 32px 0;">
+                <a href="${buttonUrl}" 
+                   style="display: inline-block; padding: 16px 32px; font-size: 16px; font-weight: 600; 
+                          color: #ffffff; background: linear-gradient(135deg, #4F46E5, #6366F1); 
+                          text-decoration: none; border-radius: 12px;
+                          box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);">
+                  ${buttonText}
+                </a>
+              </td>
+            </tr>
+          </table>
+          ` : ''}
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const msg = {
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: subject,
+    html: emailTemplate(content),
+  };
+
+  // Başarılı ve başarısız e-postaları saymak için
+  const results = {
+    success: 0,
+    failed: 0,
+    errors: []
+  };
+
+  // Eğer hiç alıcı yoksa özel hata dön
+  if (!recipients || recipients.length === 0) {
+    console.error('E-posta alıcısı bulunamadı');
+    return {
+      success: 0,
+      failed: 0,
+      errors: [{ email: 'none', error: 'Alıcı listesi boş' }]
+    };
+  }
+
+  console.log(`Toplam ${recipients.length} alıcıya e-posta gönderilecek`);
+
+  // Her alıcıya tek tek e-posta gönderme (toplu gönderim limitlerine takılmamak için)
+  // Admin e-postasını ekleyelim, her seferinde alması için
+  const uniqueRecipients = [...new Set([...recipients, 'muhammed.ersln@icloud.com'])];
+  
+  // Sınırı kaldırdık - tüm kullanıcılara gönderilecek
+  for (const recipient of uniqueRecipients) {
+    try {
+      if (!recipient || !recipient.includes('@')) {
+        results.failed += 1;
+        results.errors.push({ email: recipient || 'invalid', error: 'Geçersiz e-posta adresi' });
+        continue;
+      }
+
+      const currentMsg = { ...msg, to: recipient };
+      await sgMail.send(currentMsg);
+      results.success += 1;
+      console.log(`E-posta gönderildi: ${recipient}`);
+    } catch (error) {
+      console.error(`E-posta gönderme hatası (${recipient}):`, error);
+      results.failed += 1;
+      results.errors.push({ email: recipient, error: error.message });
+    }
+  }
+
+  return results;
 }; 

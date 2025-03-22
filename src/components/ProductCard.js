@@ -22,6 +22,33 @@ export default function ProductCard({ product }) {
     links: ['']
   });
   
+  // SEO için product schema hazırlığı
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    sku: product._id,
+    mpn: product._id,
+    image: product.image || 'https://eraslanmedya.com/default-product.jpg',
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'TRY',
+      price: product.price,
+      availability: 'https://schema.org/InStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Eraslan Medya'
+      },
+      url: `https://eraslanmedya.com/dashboard/products/${product._id}`
+    },
+    brand: {
+      '@type': 'Brand',
+      name: 'Eraslan Medya'
+    },
+    category: product.category
+  };
+  
   const handlePostCountChange = (e) => {
     const count = parseInt(e.target.value) || 1;
     const validCount = Math.min(10, Math.max(1, count));
@@ -397,6 +424,11 @@ export default function ProductCard({ product }) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      
       {/* Mobil Tasarım */}
       <div className="md:hidden">
         <motion.div
